@@ -1,0 +1,621 @@
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//arch/x86/syscalls/syscall_32.tbl modified_linux.3.8.13//arch/x86/syscalls/syscall_32.tbl
+--- second_linux.3.8.13//arch/x86/syscalls/syscall_32.tbl	2013-05-11 22:57:46.000000000 +0200
++++ modified_linux.3.8.13//arch/x86/syscalls/syscall_32.tbl	2013-11-28 11:32:18.000000000 +0100
+@@ -357,3 +357,5 @@
+ 348	i386	process_vm_writev	sys_process_vm_writev		compat_sys_process_vm_writev
+ 349	i386	kcmp			sys_kcmp
+ 350	i386	finit_module		sys_finit_module
++351	i386	set_smp_prio		sys_set_smp_prio
++352	i386	set_task_futex		sys_set_task_futex
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//arch/x86/syscalls/syscall_64.tbl modified_linux.3.8.13//arch/x86/syscalls/syscall_64.tbl
+--- second_linux.3.8.13//arch/x86/syscalls/syscall_64.tbl	2013-05-11 22:57:46.000000000 +0200
++++ modified_linux.3.8.13//arch/x86/syscalls/syscall_64.tbl	2013-11-28 11:34:28.000000000 +0100
+@@ -320,6 +320,8 @@
+ 311	64	process_vm_writev	sys_process_vm_writev
+ 312	common	kcmp			sys_kcmp
+ 313	common	finit_module		sys_finit_module
++314	64	set_smp_prio		sys_set_smp_prio
++315	64	set_task_futex		sys_set_task_futex		
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//drivers/gpu/drm/i915/intel_pm.c modified_linux.3.8.13//drivers/gpu/drm/i915/intel_pm.c
+--- second_linux.3.8.13//drivers/gpu/drm/i915/intel_pm.c	2013-05-11 22:57:46.000000000 +0200
++++ modified_linux.3.8.13//drivers/gpu/drm/i915/intel_pm.c	2013-11-14 22:30:33.000000000 +0100
+@@ -4408,6 +4408,8 @@ void intel_gt_init(struct drm_device *de
+ 
+ 	intel_gt_reset(dev);
+ 
++	spin_lock_init(&dev_priv->gt_lock);
++
+ 	if (IS_VALLEYVIEW(dev)) {
+ 		dev_priv->gt.force_wake_get = vlv_force_wake_get;
+ 		dev_priv->gt.force_wake_put = vlv_force_wake_put;
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//include/linux/futex.h modified_linux.3.8.13//include/linux/futex.h
+--- second_linux.3.8.13//include/linux/futex.h	2013-05-11 22:57:46.000000000 +0200
++++ modified_linux.3.8.13//include/linux/futex.h	2013-12-16 17:45:52.000000000 +0100
+@@ -14,6 +14,9 @@ long do_futex(u32 __user *uaddr, int op,
+ extern int
+ handle_futex_death(u32 __user *uaddr, struct task_struct *curr, int pi);
+ 
++extern struct task_struct*
++get_top_waiter_diff_cpu(u32 __user *uaddr, int cpu);
++
+ /*
+  * Futexes are matched on equal values of this key.
+  * The key type depends on whether it's a shared or private mapping.
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//include/linux/sched.h modified_linux.3.8.13//include/linux/sched.h
+--- second_linux.3.8.13//include/linux/sched.h	2014-01-12 00:21:29.000000000 +0100
++++ modified_linux.3.8.13//include/linux/sched.h	2014-01-10 15:36:49.000000000 +0100
+@@ -1237,6 +1237,7 @@ enum perf_event_task_context {
+ };
+ 
+ struct task_struct {
++
+ 	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
+ 	void *stack;
+ 	atomic_t usage;
+@@ -1248,7 +1249,6 @@ struct task_struct {
+ 	int on_cpu;
+ #endif
+ 	int on_rq;
+-
+ 	int prio, static_prio, normal_prio;
+ 	unsigned int rt_priority;
+ 	const struct sched_class *sched_class;
+@@ -1606,6 +1606,15 @@ struct task_struct {
+ #ifdef CONFIG_UPROBES
+ 	struct uprobe_task *utask;
+ #endif
++
++	/*mss531: adding smp priority array*/
++	int prio_per_cpu;
++	char * smp_prio;
++	/*mss531: adding field to store locked futex*/
++	u32 * futex;
++	/*mss531: adding field to store cpu list*/
++	int pi_cpu_list[4];
++	cpumask_t pi_cpus;	
+ };
+ 
+ /* Future-safe accessor for struct task_struct's cpus_allowed. */
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//include/linux/syscalls.h modified_linux.3.8.13//include/linux/syscalls.h
+--- second_linux.3.8.13//include/linux/syscalls.h	2014-01-11 23:47:49.000000000 +0100
++++ modified_linux.3.8.13//include/linux/syscalls.h	2013-11-28 11:41:27.000000000 +0100
+@@ -883,4 +883,6 @@ asmlinkage long sys_process_vm_writev(pi
+ asmlinkage long sys_kcmp(pid_t pid1, pid_t pid2, int type,
+ 			 unsigned long idx1, unsigned long idx2);
+ asmlinkage long sys_finit_module(int fd, const char __user *uargs, int flags);
++asmlinkage long sys_set_smp_prio(pid_t pid, const char *smp_prio);
++asmlinkage long sys_set_task_futex(pid_t pid,u32 *futex);
+ #endif
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//kernel/futex.c modified_linux.3.8.13//kernel/futex.c
+--- second_linux.3.8.13//kernel/futex.c	2013-05-11 22:57:46.000000000 +0200
++++ modified_linux.3.8.13//kernel/futex.c	2014-01-11 12:08:43.000000000 +0100
+@@ -60,6 +60,7 @@
+ #include <linux/pid.h>
+ #include <linux/nsproxy.h>
+ #include <linux/ptrace.h>
++#include <linux/cpumask.h>
+ 
+ #include <asm/futex.h>
+ 
+@@ -404,6 +405,9 @@ static int fault_in_user_writeable(u32 _
+ 	return ret < 0 ? ret : 0;
+ }
+ 
++
++
++
+ /**
+  * futex_top_waiter() - Return the highest priority waiter on a futex
+  * @hb:		the hash bucket the futex_q's reside in
+@@ -423,6 +427,39 @@ static struct futex_q *futex_top_waiter(
+ 	return NULL;
+ }
+ 
++/**
++ * get_top_waiter_diff_cpu() - Return the highest priority waiter on a futex
++ *
++ *
++ * Must be called with the hb lock held.
++ */
++
++struct task_struct * get_top_waiter_diff_cpu(u32 __user *uaddr, int cpu)
++{
++	struct futex_q *this,*top_waiter = NULL;
++	union futex_key key = FUTEX_KEY_INIT;
++	struct futex_hash_bucket *hb;
++	struct task_struct *p = NULL;
++	int ret;
++
++	ret = get_futex_key(uaddr, 0, &key, VERIFY_READ);
++	if (unlikely(ret != 0))
++	   return NULL;
++
++	hb = hash_futex(&key);
++	spin_lock(&hb->lock);
++	printk(KERN_EMERG "List of pid waiting on %d",uaddr);
++	plist_for_each_entry(this, &hb->chain, list) {
++		printk (KERN_EMERG " %d",this->task->pid);
++	}
++	printk(KERN_EMERG "\n");
++	top_waiter = futex_top_waiter(hb, &key);
++	spin_unlock(&hb->lock);
++	if (top_waiter != NULL)
++	    p = top_waiter->task;
++	return p;
++}
++
+ static int cmpxchg_futex_value_locked(u32 *curval, u32 __user *uaddr,
+ 				      u32 uval, u32 newval)
+ {
+@@ -596,6 +633,7 @@ lookup_pi_state(u32 uval, struct futex_h
+ 	struct plist_head *head;
+ 	struct task_struct *p;
+ 	pid_t pid = uval & FUTEX_TID_MASK;
++	int cpu;
+ 
+ 	head = &hb->chain;
+ 
+@@ -634,6 +672,20 @@ lookup_pi_state(u32 uval, struct futex_h
+ 			}
+ 
+ 			atomic_inc(&pi_state->refcount);
++			/*mss531 : set owner pi_cpu_list with current prio*/
++	
++			if(current->prio_per_cpu){		
++				cpu = get_cpu();
++				if(!cpumask_test_and_set_cpu(cpu,&(pi_state->owner->cpus_allowed)))
++					cpumask_set_cpu(cpu,&(pi_state->owner->pi_cpus));
++				
++				char buf[10];
++				cpulist_scnprintf(buf,10,&(pi_state->owner->cpus_allowed));
++				printk(KERN_EMERG "lookup_pi: cpumask %s cpu %d owner %d waiter %d prio waiter %d ",
++						buf,get_cpu(),pi_state->owner->pid,current->pid,current->prio);
++				pi_state->owner->pi_cpu_list[cpu] = current->prio;		
++			}
++			
+ 			*ps = pi_state;
+ 
+ 			return 0;
+@@ -688,6 +740,16 @@ lookup_pi_state(u32 uval, struct futex_h
+ 
+ 	put_task_struct(p);
+ 
++	if(current->prio_per_cpu){		
++		cpu = get_cpu();
++		if(!cpumask_test_and_set_cpu(cpu,&(pi_state->owner->cpus_allowed)))
++			cpumask_set_cpu(cpu,&(pi_state->owner->pi_cpus));
++		char buf[10];
++		cpulist_scnprintf(buf,10,&(pi_state->owner->cpus_allowed));
++		printk(KERN_EMERG "lookup_pi (first): cpumask %s cpu %d owner %d waiter %d prio waiter %d ",
++				buf,get_cpu(),pi_state->owner->pid,current->pid,current->prio);
++		pi_state->owner->pi_cpu_list[cpu] = current->prio;		
++	}
+ 	*ps = pi_state;
+ 
+ 	return 0;
+@@ -2175,7 +2237,9 @@ retry:
+ out_unlock:
+ 	spin_unlock(&hb->lock);
+ 	put_futex_key(&key);
+-
++	/*mss531: removing inherited cpus*/
++	cpumask_xor(&(current->cpus_allowed),&(current->cpus_allowed),&(current->pi_cpus));
++	cpumask_clear(&(current->pi_cpus));
+ out:
+ 	return ret;
+ 
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//kernel/Kconfig.smpprio modified_linux.3.8.13//kernel/Kconfig.smpprio
+--- second_linux.3.8.13//kernel/Kconfig.smpprio	1970-01-01 01:00:00.000000000 +0100
++++ modified_linux.3.8.13//kernel/Kconfig.smpprio	2013-11-15 00:30:53.000000000 +0100
+@@ -0,0 +1,5 @@
++config SMP_PRIO
++bool "sets one priority per processor"
++default y
++help
++"sets smp priorities given a process id"
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//kernel/sched/core.c modified_linux.3.8.13//kernel/sched/core.c
+--- second_linux.3.8.13//kernel/sched/core.c	2014-01-12 00:20:42.000000000 +0100
++++ modified_linux.3.8.13//kernel/sched/core.c	2014-01-09 02:29:07.000000000 +0100
+@@ -73,7 +73,10 @@
+ #include <linux/init_task.h>
+ #include <linux/binfmts.h>
+ #include <linux/context_tracking.h>
++#include <linux/futex.h>
++#include <linux/log2.h>
+ 
++#include <asm/futex.h>
+ #include <asm/switch_to.h>
+ #include <asm/tlb.h>
+ #include <asm/irq_regs.h>
+@@ -89,6 +92,7 @@
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/sched.h>
+ 
++
+ void start_bandwidth_timer(struct hrtimer *period_timer, ktime_t period)
+ {
+ 	unsigned long delta;
+@@ -320,7 +324,7 @@ static inline struct rq *__task_rq_lock(
+ /*
+  * task_rq_lock - lock p->pi_lock and lock the rq @p resides on.
+  */
+-static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
++struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
+ 	__acquires(p->pi_lock)
+ 	__acquires(rq->lock)
+ {
+@@ -343,7 +347,7 @@ static void __task_rq_unlock(struct rq *
+ 	raw_spin_unlock(&rq->lock);
+ }
+ 
+-static inline void
++inline void
+ task_rq_unlock(struct rq *rq, struct task_struct *p, unsigned long *flags)
+ 	__releases(rq->lock)
+ 	__releases(p->pi_lock)
+@@ -719,14 +723,14 @@ static void set_load_weight(struct task_
+ 	load->inv_weight = prio_to_wmult[prio];
+ }
+ 
+-static void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
++void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
+ {
+ 	update_rq_clock(rq);
+ 	sched_info_queued(p);
+ 	p->sched_class->enqueue_task(rq, p, flags);
+ }
+ 
+-static void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
++void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
+ {
+ 	update_rq_clock(rq);
+ 	sched_info_dequeued(p);
+@@ -894,7 +898,7 @@ inline int task_curr(const struct task_s
+ 	return cpu_curr(task_cpu(p)) == p;
+ }
+ 
+-static inline void check_class_changed(struct rq *rq, struct task_struct *p,
++inline void check_class_changed(struct rq *rq, struct task_struct *p,
+ 				       const struct sched_class *prev_class,
+ 				       int oldprio)
+ {
+@@ -3743,7 +3747,7 @@ static struct task_struct *find_process_
+ }
+ 
+ /* Actually do priority change: must hold rq lock. */
+-static void
++ void
+ __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio)
+ {
+ 	p->policy = policy;
+@@ -4752,6 +4756,39 @@ out:
+ EXPORT_SYMBOL_GPL(set_cpus_allowed_ptr);
+ 
+ /*
++ * The task state array is a strange "bitmap" of
++ * reasons to sleep. Thus "running" is zero, and
++ * you can test for combinations of others with
++ * simple bit tests.
++ */
++static const char * const task_state_array[] = {
++        "R (running)",          /*   0 */
++        "S (sleeping)",         /*   1 */
++        "D (disk sleep)",       /*   2 */
++        "T (stopped)",          /*   4 */
++        "t (tracing stop)",     /*   8 */
++        "Z (zombie)",           /*  16 */
++        "X (dead)",             /*  32 */
++        "x (dead)",             /*  64 */
++        "K (wakekill)",         /* 128 */
++        "W (waking)",           /* 256 */
++        "P (parked)",           /* 512 */
++};
++
++static inline const char *get_task_state(struct task_struct *tsk)
++{
++        unsigned int state = (tsk->state & TASK_REPORT) | tsk->exit_state;
++        const char * const *p = &task_state_array[0];
++
++        BUILD_BUG_ON(1 + ilog2(TASK_STATE_MAX) != ARRAY_SIZE(task_state_array));
++
++        while (state) {
++                p++;
++                state >>= 1;
++        }
++        return *p;
++}
++/*
+  * Move (not current) task off this cpu, onto dest cpu. We're doing
+  * this because either it can't run here any more (set_cpus_allowed()
+  * away from this CPU, or CPU going down), or because we're
+@@ -4764,15 +4801,17 @@ EXPORT_SYMBOL_GPL(set_cpus_allowed_ptr);
+  */
+ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
+ {
+-	struct rq *rq_dest, *rq_src;
+-	int ret = 0;
+-
++	struct rq *rq_dest, *rq_src, *rq;
++	int on_rq,running,ret = 0;
++	struct sched_param param ;
++	struct task_struct *waiter = NULL;
++	
+ 	if (unlikely(!cpu_active(dest_cpu)))
+ 		return ret;
+ 
+ 	rq_src = cpu_rq(src_cpu);
+ 	rq_dest = cpu_rq(dest_cpu);
+-
++	
+ 	raw_spin_lock(&p->pi_lock);
+ 	double_rq_lock(rq_src, rq_dest);
+ 	/* Already moved. */
+@@ -4787,8 +4826,32 @@ static int __migrate_task(struct task_st
+ 	 * placed properly.
+ 	 */
+ 	if (p->on_rq) {
++	/*	if(p->futex != NULL && p->waiter != NULL){
++			printk(KERN_EMERG "migrate_task: cpu %d p %d f %d waiter %d state %s\n",src_cpu,p->pid,p->futex,p->waiter->pid,get_task_state(p->waiter)); 
++			waiter = get_top_waiter_diff_cpu(p->futex,src_cpu);
++		}*/
+ 		dequeue_task(rq_src, p, 0);
+ 		set_task_cpu(p, dest_cpu);
++			if(p->prio_per_cpu){
++			int old_prio = p->rt_priority;
++			//param.sched_priority = p->smp_prio[dest_cpu];
++			param.sched_priority = p->pi_cpu_list[dest_cpu];
++			__setscheduler(rq_dest, p, SCHED_FIFO, param.sched_priority);
++			printk(KERN_EMERG "migrate_task: task %d on cpu %d old priority %d new priority %d\n",p->pid ,dest_cpu,old_prio, p->rt_priority);
++			}
++		 
++/*		if(p->futex != NULL && p->waiter != NULL){
++			printk(KERN_EMERG "migrate_task: cpu %d p %d f %d waiter %d state %s\n",src_cpu,p->pid,p->futex,p->waiter->pid,get_task_state(p->waiter)); 
++			waiter = get_top_waiter_diff_cpu(p->futex,src_cpu);
++			printk(KERN_EMERG "migrate_task: process %d futex not null checking waiter\n",p->pid); 
++			if(waiter != NULL){
++			int old_prio = p->rt_priority;
++			param.sched_priority = waiter->rt_priority +1;
++			__setscheduler(rq_dest,p,SCHED_FIFO,param.sched_priority);
++			printk(KERN_EMERG "migrate_task: task %d waiter %d old_prio %d, new_prio %d\n",p->pid, waiter->pid, old_prio, p->rt_priority);
++			}
++			else printk(KERN_EMERG "waiter is null :(\n");
++		}*/
+ 		enqueue_task(rq_dest, p, 0);
+ 		check_preempt_curr(rq_dest, p, 0);
+ 	}
+@@ -4813,6 +4876,7 @@ static int migration_cpu_stop(void *data
+ 	 * The original target cpu might have gone down and we might
+ 	 * be on another cpu but it doesn't matter.
+ 	 */
++	
+ 	local_irq_disable();
+ 	__migrate_task(arg->task, raw_smp_processor_id(), arg->dest_cpu);
+ 	local_irq_enable();
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//kernel/sched/fair.c modified_linux.3.8.13//kernel/sched/fair.c
+--- second_linux.3.8.13//kernel/sched/fair.c	2014-01-11 23:47:49.000000000 +0100
++++ modified_linux.3.8.13//kernel/sched/fair.c	2014-01-05 01:29:21.000000000 +0100
+@@ -3831,6 +3831,7 @@ struct lb_env {
+ 	unsigned int		loop_max;
+ };
+ 
++
+ /*
+  * move_task - move a task from one runqueue to another runqueue.
+  * Both runqueues must be locked.
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//security/tomoyo/builtin-policy.h modified_linux.3.8.13//security/tomoyo/builtin-policy.h
+--- second_linux.3.8.13//security/tomoyo/builtin-policy.h	1970-01-01 01:00:00.000000000 +0100
++++ modified_linux.3.8.13//security/tomoyo/builtin-policy.h	2013-11-15 09:54:21.000000000 +0100
+@@ -0,0 +1,12 @@
++static char tomoyo_builtin_profile[] __initdata =
++"";
++static char tomoyo_builtin_exception_policy[] __initdata =
++"initialize_domain /sbin/modprobe from any\n"
++"initialize_domain /sbin/hotplug from any\n"
++"";
++static char tomoyo_builtin_domain_policy[] __initdata =
++"";
++static char tomoyo_builtin_manager[] __initdata =
++"";
++static char tomoyo_builtin_stat[] __initdata =
++"";
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//security/tomoyo/policy/exception_policy.conf modified_linux.3.8.13//security/tomoyo/policy/exception_policy.conf
+--- second_linux.3.8.13//security/tomoyo/policy/exception_policy.conf	1970-01-01 01:00:00.000000000 +0100
++++ modified_linux.3.8.13//security/tomoyo/policy/exception_policy.conf	2013-11-15 09:54:19.000000000 +0100
+@@ -0,0 +1,2 @@
++initialize_domain /sbin/modprobe from any
++initialize_domain /sbin/hotplug from any
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//smp_prio/futex.c modified_linux.3.8.13//smp_prio/futex.c
+--- second_linux.3.8.13//smp_prio/futex.c	1970-01-01 01:00:00.000000000 +0100
++++ modified_linux.3.8.13//smp_prio/futex.c	2014-01-08 11:10:36.000000000 +0100
+@@ -0,0 +1,96 @@
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/sched.h>
++#include <linux/syscalls.h>
++#include <linux/pid.h>
++#include <linux/cpumask.h>
++#include <asm-generic/barrier.h>
++#include <linux/futex.h>
++#include <asm/futex.h>
++#include <linux/log2.h>
++#include "../kernel/sched/sched.h"
++
++static struct rq *task_rq_lock(struct task_struct *p,unsigned long *flags);
++static inline void task_rq_unlock(struct rq*, struct task_struct *p, unsigned long *flags);
++
++void dequeue_task(struct rq *rq, struct task_struct *p, int flags);
++
++void enqueue_task(struct rq *rq, struct task_struct *p, int flags);
++
++/*
++ * The task state array is a strange "bitmap" of
++ * reasons to sleep. Thus "running" is zero, and
++ * you can test for combinations of others with
++ * simple bit tests.
++ */
++static const char * const task_state_array[] = {
++        "R (running)",          /*   0 */
++        "S (sleeping)",         /*   1 */
++        "D (disk sleep)",       /*   2 */
++        "T (stopped)",          /*   4 */
++        "t (tracing stop)",     /*   8 */
++        "Z (zombie)",           /*  16 */
++        "X (dead)",             /*  32 */
++        "x (dead)",             /*  64 */
++        "K (wakekill)",         /* 128 */
++        "W (waking)",           /* 256 */
++        "P (parked)",           /* 512 */
++};
++
++static inline const char *get_task_state(struct task_struct *tsk)
++{
++        unsigned int state = (tsk->state & TASK_REPORT) | tsk->exit_state;
++        const char * const *p = &task_state_array[0];
++
++        BUILD_BUG_ON(1 + ilog2(TASK_STATE_MAX) != ARRAY_SIZE(task_state_array));
++
++        while (state) {
++                p++;
++                state >>= 1;
++        }
++        return *p;
++}
++
++/* system call to set the new field in 
++ * task struct 'futex' that allows 
++ * a task to know which locks it helds 
++ * in the kernelspace.
++ */
++
++asmlinkage long sys_set_task_futex(pid_t pid, u32 *uaddr)
++{
++	struct rq *rq;
++	struct pid *pid_struct;
++	struct task_struct *p, *waiter = NULL;
++	unsigned long flags; 
++	int on_rq, running, oldprio,waitpid=0;
++
++	pid_struct = find_get_pid(pid);
++	p = pid_task(pid_struct,PIDTYPE_PID);
++	rq = task_rq_lock(p,&flags);
++	oldprio = p->prio;
++	on_rq = p->on_rq;
++	running = task_current(rq, p);
++
++	if (on_rq)
++		dequeue_task(rq, p, 0);
++	if (running)
++		p->sched_class->put_prev_task(rq, p);
++
++	p->futex = uaddr;
++
++	if (running)
++		p->sched_class->set_curr_task(rq);
++	if (on_rq)
++		enqueue_task(rq, p, ENQUEUE_HEAD );
++
++	task_rq_unlock(rq,p,&flags);
++	if(uaddr) waiter = get_top_waiter_diff_cpu(uaddr,1);
++	if(waiter) {
++		//p->waiter = waiter;
++		waitpid = (int)waiter->pid;
++		printk(KERN_EMERG "cpu %d Id %d has futex: %d | %d is %s\n", rq->cpu,p->pid,p->futex,waitpid,get_task_state(waiter)); 
++	};
++	return 0;
++}
++
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//smp_prio/Makefile modified_linux.3.8.13//smp_prio/Makefile
+--- second_linux.3.8.13//smp_prio/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ modified_linux.3.8.13//smp_prio/Makefile	2013-11-28 21:41:29.000000000 +0100
+@@ -0,0 +1,2 @@
++obj-y := smp_prio.o futex.o
++
+diff -rupN -x '*.config' -x '*.rej' -x '*.orig' second_linux.3.8.13//smp_prio/smp_prio.c modified_linux.3.8.13//smp_prio/smp_prio.c
+--- second_linux.3.8.13//smp_prio/smp_prio.c	1970-01-01 01:00:00.000000000 +0100
++++ modified_linux.3.8.13//smp_prio/smp_prio.c	2013-11-15 00:30:53.000000000 +0100
+@@ -0,0 +1,82 @@
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/sched.h>
++#include <linux/syscalls.h>
++#include <linux/pid.h>
++#include <linux/cpumask.h>
++#include <asm-generic/barrier.h>
++
++#include "../kernel/sched/sched.h"
++
++static struct rq *task_rq_lock(struct task_struct *p,unsigned long *flags);
++static inline void task_rq_unlock(struct rq*, struct task_struct *p, unsigned long *flags);
++
++void dequeue_task(struct rq *rq, struct task_struct *p, int flags);
++
++void enqueue_task(struct rq *rq, struct task_struct *p, int flags);
++inline void check_class_changed(struct rq *rq, struct task_struct *p,
++				       const struct sched_class *prev_class,
++				       int oldprio);
++ void __setscheduler(struct rq *rq, struct task_struct *p, int policy, int prio);
++
++ 
++ /*
++ * set_task_smp_prio_set - Hack to set the priorities per processor
++ */
++long set_task_smp_prio(const char * prio_per_proc, struct task_struct *p, int size_array)
++{
++	if(size_array != num_online_cpus())
++		return -1;
++
++	p->prio_per_cpu = 1;
++	p->smp_prio = (char*) prio_per_proc ;
++
++	printk(KERN_EMERG "SMP Priorities correctly set"); 
++	return 0;
++}
++
++
++/* system call to set the new field in 
++ * task struct 'smp_prio' that allows 
++ * one priority per processor on SMP machines
++ */
++
++asmlinkage long sys_set_smp_prio(pid_t pid, const char *smp_prio)
++{
++	struct rq *rq;
++	struct pid *pid_struct;
++	struct task_struct *p;
++	unsigned long flags; 
++	int on_rq, running, oldprio;
++
++	//printk(KERN_EMERG "Entering function\n");
++	pid_struct = find_get_pid(pid);
++	p = pid_task(pid_struct,PIDTYPE_PID);
++
++	rq = task_rq_lock(p,&flags);
++
++	//printk(KERN_EMERG "Got RQ lock\n");
++	oldprio = p->prio;
++	on_rq = p->on_rq;
++	running = task_current(rq, p);
++	if (on_rq)
++		dequeue_task(rq, p, 0);
++	if (running)
++		p->sched_class->put_prev_task(rq, p);
++
++	p->prio_per_cpu = 1;
++	p->smp_prio = (char*) smp_prio ;
++//	__setscheduler(rq,p,1,15);
++
++	if (running)
++		p->sched_class->set_curr_task(rq);
++	if (on_rq)
++		enqueue_task(rq, p, ENQUEUE_HEAD );
++
++	//check_class_changed(rq, p, 1, oldprio);
++	//printk(KERN_EMERG "Released RQ lock\n");
++	task_rq_unlock(rq,p,&flags);
++	printk(KERN_EMERG "SMP cpu %d rt_prio %d prio %d bool %d \n", rq->cpu, p->rt_priority, p->prio,p->prio_per_cpu); 
++	return 0;
++}
++
