@@ -125,10 +125,55 @@ LatexCommand tableofcontents
 
 \end_layout
 
+\begin_layout Abstract
+Multiprocessor real-time resource control algorithms are currently an active
+ research topic as more and more real-time systems become multicore.
+ A common approach is based on mutual exclusion locks with some form of
+ busy-waiting when the lock cannot be acquired.
+ The Real-Time System Group at York have recently proposed a new resource
+ sharing algorithm that can avoids deadlocks when nested locks are used.
+ This report provides an implementation in a Linux Real-Time kernel.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\size larger
+Ideas
+\end_layout
+
+\begin_layout Standard
+Difference between scheduling and resource sharing
+\end_layout
+
+\begin_layout Standard
+Chart illustrating the protocol (state machine diagram)
+\end_layout
+
+\begin_layout Standard
+Implement prototype in C as a working stand alone state machine (without
+ kernel complexities)
+\end_layout
+
+\begin_layout Standard
+Importance of metrics
+\end_layout
+
+\begin_layout Standard
+Implement protocol with kernel
+\end_layout
+
 \begin_layout Standard
 
 \series bold
-Investigate : How does Linux SMP real-time scheduling ?
+Investigate : How does Linux do SMP real-time scheduling ?
 \end_layout
 
 \begin_layout Standard
@@ -162,51 +207,6 @@ What is the estimated time ?
 Is there an overhead associated to a priority per processor ?
 \end_layout
 
-\begin_layout Abstract
-Abstract
-\end_layout
-
-\begin_layout Abstract
-Multiprocessor real-time resource control algorithms are currently an active
- research topic as more and more real-time systems become multicore.
- A common approach is based on mutual exclusion locks with some form of
- busy-waiting when the lock cannot be acquired.
- The Real-Time System Group at York have recently developed a new algorithm,
- which has some nice timing properties and can avoids deadlocks when nested
- locks are used [1].
- We have performed some initial evaluation of this algorithm by implementing
- with application-level code.
- However, the full benefits of the algorithm can only be achieved if it
- is implemented within a real-time kernel.
-\end_layout
-
-\begin_layout Abstract
-The goal of this project it to implement the algorithm within the Linux
- kernel (although, if the students prefers to use another real-time kernel,
- this may be possible).
- One possibility is to use Real-Time Litmus[2].
-\end_layout
-
-\begin_layout Standard
-\begin_inset Newpage newpage
-\end_inset
-
-Chart illustrating the protocol (state machine diagram)
-\end_layout
-
-\begin_layout Standard
-Implement prototype in C as a working stand alone state machine (without
- kernel complexities)
-\end_layout
-
-\begin_layout Standard
-Importance of metrics
-\end_layout
-
-\begin_layout Standard
-Implement protocol with kernel
-\end_layout
-
 \begin_layout Standard
 \begin_inset Newpage newpage
 \end_inset
@@ -215,7 +215,73 @@ Implement protocol with kernel
 \end_layout
 
 \begin_layout Section
-Real time scheduling protocols
+Introduction
+\end_layout
+
+\begin_layout Subsection
+Overview
+\end_layout
+
+\begin_layout Standard
+This section will briefly describe the reasons for undertaking this project.
+ It will introduce the technical requirements involved, as well as present
+ the development workflow and finally the ethics used to complete it.
+\end_layout
+
+\begin_layout Subsection
+Motivation
+\end_layout
+
+\begin_layout Standard
+There are many reasons for deciding to take this project.
+ First, real-time systems are a critical field with strong requirements
+ and very precise skills.
+ Life-critical systems integrate real-time techniques to meet their own
+ requirements of safety and security.
+ Secondly, the generalization of embedded multiprocessors systems have broaden
+ the application field of real-time programming.
+ Third, real-time in Linux is relatively not developed compared to its popularit
+y and reliability.
+\end_layout
+
+\begin_layout Subsection
+Requirements
+\end_layout
+
+\begin_layout Subsection
+Deliverables
+\end_layout
+
+\begin_layout Subsection
+Ethics in the project
+\end_layout
+
+\begin_layout Subsection
+Report structure
+\end_layout
+
+\begin_layout Section
+Overview of Real-time in Linux
+\end_layout
+
+\begin_layout Subsection
+RT-patch
+\end_layout
+
+\begin_layout Section
+Characteristics of SMP machines
+\end_layout
+
+\begin_layout Subsection
+Processor affinity
+\end_layout
+
+\begin_layout Subsection
+SMP Issues
+\end_layout
+
+\begin_layout Section
+Real time resource sharing protocols
 \end_layout
 
 \begin_layout Subsection
@@ -226,12 +292,20 @@ Resource sharing protocols on single processor systems
 Resource sharing protocols on multiprocessor systems
 \end_layout
 
+\begin_layout Subsection
+Partitioned Fixed Priority VS Earliest Deadline First
+\end_layout
+
 \begin_layout Section
 Multiprocessor Resource Sharing Protocol
 \end_layout
 
 \begin_layout Subsection
-Theory
+The problem of nested locks deadlocks
+\end_layout
+
+\begin_layout Subsection
+Schedulability Analysis
 \end_layout
 
 \begin_layout Subsection
@@ -243,7 +317,7 @@ Implementation in Linux Kernel
 \end_layout
 
 \begin_layout Subsection
-How does the Linux Kernel does real-time scheduling
+The Linux real-time scheduling algorithm
 \end_layout
 
 \begin_layout Subsection
@@ -256,6 +330,14 @@ Limitations
 
 \begin_layout Section
 Results and evaluation
+\end_layout
+
+\begin_layout Subsection
+QEMU
+\end_layout
+
+\begin_layout Subsection
+Kernelshark and trace-cmd
 \end_layout
 
 \begin_layout Section
