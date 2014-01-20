@@ -341,10 +341,6 @@ Overview of Real-time in Linux
 RT-patch
 \end_layout
 
-\begin_layout Subsection
-Migration thread
-\end_layout
-
 \begin_layout Section
 Implementation in Linux Kernel
 \end_layout

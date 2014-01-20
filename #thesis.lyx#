@@ -281,44 +281,44 @@ Real-time systems
 Real-time scheduling multiprocessor scheduling
 \end_layout
 
-\begin_layout Subsubsection
-Partitioned Fixed Priority VS Earliest Deadline First
-\end_layout
-
-\begin_layout Subsubsection
-Sporadic task model
-\end_layout
-
 \begin_layout Subsection
-Real-time resource sharing protocols on multiprocessors
+Real-time resource sharing on multiprocessors
 \end_layout
 
 \begin_layout Subsection
 The Multiprocessor Resource Sharing Protocol
 \end_layout
 
-\begin_layout Subsubsection
-A variant of the MSRP Protocol
+\begin_layout Section
+Real time resource sharing protocols
 \end_layout
 
-\begin_layout Standard
-Multiprocessor Stack Resource Policy
+\begin_layout Subsection
+Resource sharing protocols on single processor systems
 \end_layout
 
-\begin_layout Subsubsection
-Nested resources
+\begin_layout Subsection
+Resource sharing protocols on multiprocessor systems
 \end_layout
 
-\begin_layout Subsubsection
-Schedulability Analysis
-\end_layout
-
-\begin_layout Subsubsection
-Runtime Overhead in SMP computers
+\begin_layout Subsection
+Partitioned Fixed Priority VS Earliest Deadline First
 \end_layout
 
 \begin_layout Subsubsection
-Limitations
+Differences
+\end_layout
+
+\begin_layout Subsubsection
+Sporadic task model
+\end_layout
+
+\begin_layout Section
+Overview of Real-time in Linux
+\end_layout
+
+\begin_layout Subsection
+RT-patch
 \end_layout
 
 \begin_layout Section
@@ -330,19 +330,35 @@ Processor affinity
 \end_layout
 
 \begin_layout Subsection
-Processor Caches
+SMP Issues
 \end_layout
 
 \begin_layout Section
-Overview of Real-time in Linux
+Multiprocessor Resource Sharing Protocol
 \end_layout
 
 \begin_layout Subsection
-RT-patch
+A variant of the MSRP Protocol
+\end_layout
+
+\begin_layout Standard
+Multiprocessor Stack Resource Policy
 \end_layout
 
 \begin_layout Subsection
-Migration thread
+Nested resources (allowed)
+\end_layout
+
+\begin_layout Subsection
+Schedulability Analysis
+\end_layout
+
+\begin_layout Subsection
+Limitations
+\end_layout
+
+\begin_layout Subsubsection
+Runtime Overhead in SMP computers
 \end_layout
 
 \begin_layout Section
