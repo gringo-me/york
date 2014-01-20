@@ -245,10 +245,15 @@ Motivation
 \end_layout
 
 \begin_layout Standard
-A common approach is based on mutual exclusion locks with some form of busy-wait
-ing when the lock cannot be acquired.
- The Real-Time System Group at York have recently proposed a new resource
- sharing algorithm that can avoids deadlocks when nested locks are used.
+The Real-Time System Group at York have recently proposed a new resource
+ sharing algorithm
+\begin_inset CommandInset citation
+LatexCommand cite
+key "burns2013schedulability"
+
+\end_inset
+
+ based on a well known single processor resource sharing protocol.
  This report provides an implementation in a Linux Real-Time kernel.
  
 \end_layout
@@ -277,16 +282,94 @@ Background
 Real-time systems
 \end_layout
 
+\begin_layout Standard
+In the real-time paradigm besides of the usually expected functional correctness
+ of a system, the timing e.g.
+ the time needed to process an input must comply with a deadline.
+ Young
+\begin_inset CommandInset citation
+LatexCommand cite
+key "young1982real"
+
+\end_inset
+
+ gives the following definition : 
+\end_layout
+
+\begin_layout Quote
+Any information processing activity or system which has to respond to externally
+ generated input stimuli within a finite and specified period.
+\end_layout
+
+\begin_layout Standard
+A real-time system is ordinarily composed of concurrent tasks sharing common
+ resources.
+ Tasks execute a sequence of operations in parallel, they have a deadline
+ representing the maximum acceptable execution time.
+ Tasks can be classified as periodic meaning they are triggered at regular
+ intervals or aperiodic meaning they can be triggered at any time.
+ A subset of aperiodic tasks are sporadic tasks, these can be triggered
+ at any time with the condition that they respect a minimum time between
+ each release.
+\end_layout
+
+\begin_layout Standard
+Concurrent programming has been studied and developed a long time before
+ the apparition of multiprocessors architectures.
+ It might seem odd to have concurrent execution of tasks on single processor
+ systems and indeed operating systems 
+\shape italic
+give the impression 
+\shape default
+of concurrency by allocating short execution time to each task according
+ to a policy implemented in the task scheduler.
+\end_layout
+
+\begin_layout Standard
+We make the difference between 
+\shape italic
+hard, soft 
+\shape default
+and
+\shape italic
+ firm
+\shape default
+ real-time systems.
+ Hard real-time systems put a strict constraint on respecting the deadline,
+ they are usually used in industries in which response time is critical
+ and where a failure to execute within the deadline equals to a system failure.
+ On the other hand, soft real-time systems consider the deadline as a recommenda
+tion therefore missing a deadline is not a serious error however it does
+ decrease the value of the expected output.
+ In firm real-time systems, missing a deadline is not a system failure although
+ the output of a task is discarded by the system.
+\end_layout
+
 \begin_layout Subsection
-Real-time scheduling multiprocessor scheduling
+Real-time multiprocessor scheduling
+\end_layout
+
+\begin_layout Standard
+Real-time multiprocessor scheduling protocols are divided among two classes
+ : 
+\shape italic
+partitioned scheduling, semi-partitioned scheduling 
+\shape default
+and
+\shape italic
+ global scheduling
 \end_layout
 
 \begin_layout Subsubsection
-Partitioned Fixed Priority VS Earliest Deadline First
+Partitioned scheduling protocols
 \end_layout
 
 \begin_layout Subsubsection
-Sporadic task model
+Semi-partitioned protocols
+\end_layout
+
+\begin_layout Subsubsection
+Global scheduling protocols
 \end_layout
 
 \begin_layout Subsection
@@ -394,19 +477,23 @@ Results and evaluation
 \end_layout
 
 \begin_layout Subsection
+Tools
+\end_layout
+
+\begin_layout Subsubsection
 QEMU
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Kernelshark and trace-cmd
 \end_layout
 
 \begin_layout Subsection
-Test Cases
+Hardware
 \end_layout
 
-\begin_layout Subsubsection
-Overhead
+\begin_layout Subsection
+Test Cases
 \end_layout
 
 \begin_layout Section
@@ -431,6 +518,24 @@ Implications
 
 \begin_layout Subsection
 Recommendation for further research
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "cite"
+options "plain"
+
+\end_inset
+
+
 \end_layout
 
 \end_body
