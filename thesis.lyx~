@@ -297,6 +297,8 @@ key "young1982real"
 \end_layout
 
 \begin_layout Quote
+
+\shape italic
 Any information processing activity or system which has to respond to externally
  generated input stimuli within a finite and specified period.
 \end_layout
@@ -350,7 +352,13 @@ Real-time multiprocessor scheduling
 \end_layout
 
 \begin_layout Standard
-Real-time multiprocessor scheduling protocols are divided among two classes
+Operating systems implement schedulers to efficiently allocate processor
+ resource time to tasks.
+ Schedulers are inherent to multitasking.
+\end_layout
+
+\begin_layout Standard
+Real-time multiprocessor scheduling protocols are divided among three classes
  : 
 \shape italic
 partitioned scheduling, semi-partitioned scheduling 
@@ -360,20 +368,67 @@ and
  global scheduling
 \end_layout
 
-\begin_layout Subsubsection
-Partitioned scheduling protocols
+\begin_layout Standard
+Each above class can be implemented with either 
+\shape italic
+fixed-priority (FP) 
+\shape default
+or
+\shape italic
+ earliest-deadline-first
+\shape default
+ (EDF) policies.
 \end_layout
 
 \begin_layout Subsubsection
-Semi-partitioned protocols
+Scheduling Policies
 \end_layout
 
 \begin_layout Subsubsection
+Scheduling protocols
+\end_layout
+
+\begin_layout Paragraph
 Global scheduling protocols
 \end_layout
 
-\begin_layout Subsubsection
-Sporadic task model
+\begin_layout Standard
+In global scheduling, a single queue of tasks is dispatched among the processors.
+ Global scheduling protocols traditionally have an EDF policy.
+\end_layout
+
+\begin_layout Paragraph
+Partitioned scheduling protocols
+\end_layout
+
+\begin_layout Standard
+In partitioned scheduling each task is statically assigned a processor e.g.
+ migrations between processors are not allowed.
+ Each processor is scheduled independently.
+ In other words partitioning reduces the multiprocessor scheduling problem
+ to a set of uniprocessor
+\begin_inset CommandInset citation
+LatexCommand cite
+key "carpenter2004categorization"
+
+\end_inset
+
+.
+ This form of scheduling is the most used because it reuses well-known concepts
+ of uniprocessor scheduling.
+\end_layout
+
+\begin_layout Paragraph
+Semi-partitioned protocols
+\end_layout
+
+\begin_layout Standard
+Semi-partitioned protocols are a compromise between global and partitioned
+ protocols.
+ Processors are grouped into subsets.
+ A task is statically assigned to a set of processors.
+ Each subset is then scheduled globally.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -394,6 +449,45 @@ Multiprocessor Stack Resource Policy
 
 \begin_layout Subsubsection
 Nested resources
+\end_layout
+
+\begin_layout Subsubsection
+A migration approach
+\end_layout
+
+\begin_layout Standard
+Migration-based classification 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "carpenter2004categorization"
+
+\end_inset
+
+.
+ Interprocessor migration has traditionally been forbidden in real-time
+ systems for the following reasons: • In many systems, the cost associated
+ with each migration — i.e.
+ , the cost of transferring a job’s context from one processor to another
+ — can be prohibitive.
+ • Until recently, traditional real-time scheduling theory lacked the techniques
+, tools, and results to permit a detailed analysis of systems that allow
+ migration.
+ Hence, partitioning has been the preferred approach due largely to the
+ non-existence of viable alternative approaches.
+ Recent developments in computer architecture, including single-chip multiproces
+sors and very fast interconnection networks over small areas, have resulted
+ in the first of these concerns becoming less of an issue.
+ Thus, system designers need no longer rule out interprocessor migration
+ solely due to implementation considerations, especially in tightly-coupled
+ systems.
+ (However, it may still be desirable to strict overhead in order to reduce
+ runtime overhead.) In addition, results of recent experiments demonstrate
+ that scheduling algorithms that allow migration are competitive in terms
+ of schedulability with those that do not migrate, even after incorporating
+ migration overheads [26].
+ This is due to the fact that systems exist that can be successfully scheduled
+ only if interprocessor 5 migration is allowed (refer to Lemmas 3 and 4
+ in Section 3)
 \end_layout
 
 \begin_layout Subsubsection
