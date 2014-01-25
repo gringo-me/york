@@ -44,7 +44,7 @@
 \shortcut idx
 \color #008000
 \end_index
-\secnumdepth 3
+\secnumdepth 4
 \tocdepth 3
 \paragraph_separation indent
 \paragraph_indentation default
@@ -230,7 +230,7 @@ Is there an overhead associated to a priority per processor ?
 Introduction
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Overview
 \end_layout
 
@@ -432,7 +432,300 @@ Semi-partitioned protocols are a compromise between global and partitioned
 \end_layout
 
 \begin_layout Subsection
-Real-time resource sharing protocols on multiprocessors
+Real-time resource sharing on multiprocessors
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+The two major problems are : 
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Deadlocks (nested resources)
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Unbounded Priority Inversion
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Local Or Global Resources
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Suspend based or Spin based
+\end_layout
+
+\begin_layout Enumerate
+Schedulability Analysis
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+The performance parameter are:
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Contention of High priority threads
+\end_layout
+
+\begin_layout Standard
+Mutual exclusion to a critical section may be implemented on a uniprocessor
+ (UP) system by simply preventing the thread that accesses the section from
+ being scheduled out (disable preemption).
+ On a symmetric multiprocessor (SMP) system, disabling pre- emption is not
+ enough.
+ A thread on another CPU might access the critical section.
+ [Internal RT paper]
+\end_layout
+
+\begin_layout Standard
+____________________
+\end_layout
+
+\begin_layout Standard
+Spin_locks are relatively fast.
+ The idea behind a spin_lock is to protect critical sections that are very
+ short.
+ A spin_lock is considered fast compared to sleep- ing locks because it
+ avoids the overhead of a schedule.
+ [Internal RT papers]
+\end_layout
+
+\begin_layout Standard
+____________________
+\end_layout
+
+\begin_layout Standard
+If the time to run the code in a critical section is shorter than the time
+ of a context switch, it is reasonable to use a spin_lock, and on contention,
+ spin in a busy loop, while waiting for a thread on another CPU to release
+ the spin_lock.
+ [Internals RT]
+\end_layout
+
+\begin_layout Subsubsection
+Non Preemptive Protocol
+\end_layout
+
+\begin_layout Subsubsection
+Highest Locker Priority
+\end_layout
+
+\begin_layout Subsubsection
+Priority Inheritance Protocol
+\end_layout
+
+\begin_layout Subsubsection
+Stack Resource Policy
+\end_layout
+
+\begin_layout Subsubsection
+The Priority Ceiling Protocol on Uniprocessors
+\end_layout
+
+\begin_layout Standard
+The priority ceiling protocol a well-known uniprocessor protocol is at the
+ root of many multiprocessor resource sharing protocols on partitioned systems
+ because one common strategy in scheduling it to treat each processor independen
+tly.
+ Each resource is associated to a priority which is the maximum priority
+ of all tasks using that resource (ceiling).
+ When trying to acquire that resource, a tasks sees its priority raised
+ to the resource's ceiling.
+ This protocol is designed to avoid priority inversion 
+\series bold
+[DEFINE IT] 
+\series default
+an indesirable scenario in real-time scheduling.
+ PCP makes use of a technique called priority inheritance which consists
+ of dynamically changing a tasks priority to avoid preemption and improve
+ schedulability.
+\end_layout
+
+\begin_layout Subsubsection
+The Multiprocessor Priority Ceiling Protocol (MPCP)
+\end_layout
+
+\begin_layout Paragraph
+Description
+\end_layout
+
+\begin_layout Standard
+Rajkumar designed Multiprocessor Priority Ceiling Protocol (MPCP ) 
+\series bold
+[REF]
+\series default
+ that extends PCP (Priority Ceiling Protocol).
+ Resources are regarded as local or global e.g.
+ shared between tasks on different processors.
+ Local resources locking is managed using PCP.
+ However when acquiring a lock to a global resource, the holding task gets
+ its priority raised to a value higher than all running tasks priorities
+ in the system.
+ If the resource is already held the requesting task is queued to a waiting
+ list and its priority raised to the resource ceiling.
+ As noted by 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "davis2011survey"
+
+\end_inset
+
+ while MPCP allows for lower tasks to execute while a global lock is held
+ by a task on another processor, this can lead to a further priority inversion
+ with a lower task executing taking first a local lock and then a global
+ one.
+ Even if the resource the higher task is waiting on is released it won't
+ be able to execute.
+\end_layout
+
+\begin_layout Paragraph
+Constraints
+\end_layout
+
+\begin_layout Standard
+To prevent unbounded priority inversion, local to global and global to global
+ nested locks are not allowed.
+\end_layout
+
+\begin_layout Paragraph
+Performance
+\end_layout
+
+\begin_layout Paragraph
+Limitations
+\end_layout
+
+\begin_layout Subsubsection
+The Multiprocessor Stack Resource Policy (MSRP)
+\end_layout
+
+\begin_layout Paragraph
+Description
+\end_layout
+
+\begin_layout Standard
+The Multiprocessor Stack Resource Policy (MRSP) is an extension proposed
+ by [REF] of the uniprocessor Stack Resource Policy from [REF] (SRP).
+ SRP is an EDF protocol.
+ The deadline of each task represents a priority level.
+ The earlier the deadline the higher the priority.
+ Each resource is assigned a priority ceiling corresponding to the priority
+ level of the higher task using that resource.
+ A new M parameter is also introduced, M corresponds to the maximum of all
+ the resources ceiling being used at instant T.
+ Any task wanting to execute must have a priority higher than M.
+\end_layout
+
+\begin_layout Standard
+SRP guarantees no blocking when a task is allowed to execute thus enabling
+ stack sharing (each task execution is serialized - no interleaving).
+\end_layout
+
+\begin_layout Standard
+Under MRSP as in MPCP resources are divided into local and global groups.
+ Global resources have one ceiling per processor.
+ A task on a processor is allowed to execute only if it has the processor
+ ceiling priority which preserve the property of non-preemptability once
+ a task starts executing.
+\end_layout
+
+\begin_layout Standard
+Furthermore when a task is blocked on a global resource, it spins non-preemptive
+ly to preserve the stack sharing property.
+\end_layout
+
+\begin_layout Standard
+Tasks accessing nested local and global resources need to be allocated the
+ same processor[CHECK].
+ 
+\end_layout
+
+\begin_layout Paragraph
+Constraints
+\end_layout
+
+\begin_layout Paragraph
+Performance
+\end_layout
+
+\begin_layout Paragraph
+Limitations
+\end_layout
+
+\begin_layout Subsubsection
+The Flexible Multiprocessor Locking Protocol (FMLP) 
+\end_layout
+
+\begin_layout Standard
+FMLP requires the user to divide resources between long and short access
+ times.
+ Access is differentiated in function of the type of the resource : short
+ resources benefit from busy-waiting (reduces context-switching), long resources
+ are handled through suspend-waiting in a FIFO manner.
+ A task holding a short resource is not allowed to require access to a long
+ resource to avoid deadlock.
+ 
+\end_layout
+
+\begin_layout Paragraph
+Description
+\end_layout
+
+\begin_layout Paragraph
+Constraints
+\end_layout
+
+\begin_layout Paragraph
+Performance
+\end_layout
+
+\begin_layout Standard
+FMLP has better performance than MSRP.
+ This advantage is at least partly due to the fact that FMLP removes the
+ restriction on task allocation required by MSRP 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "davis2011survey"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Paragraph
+Limitations
+\end_layout
+
+\begin_layout Subsubsection
+Parallel PCP (P-PCP) 
+\end_layout
+
+\begin_layout Subsubsection
+O(m) Locking Protocol (OMLP) 
+\end_layout
+
+\begin_layout Subsubsection
+Multiprocessor Synchronization Protocol for Real-Time Open Systems (MSOS)
+ 
+\end_layout
+
+\begin_layout Subsubsection
+M-BWI 
 \end_layout
 
 \begin_layout Subsection
@@ -440,19 +733,71 @@ The Multiprocessor Resource Sharing Protocol
 \end_layout
 
 \begin_layout Subsubsection
-A variant of the MSRP Protocol
+Description
 \end_layout
 
 \begin_layout Standard
-Multiprocessor Stack Resource Policy
+Taken from Andy Wellings
+\begin_inset CommandInset citation
+LatexCommand cite
+key "burns2013schedulability"
+
+\end_inset
+
+
 \end_layout
 
-\begin_layout Subsubsection
-Nested resources
+\begin_layout Standard
+We assume a fully partitioned system.
+ That is, each thread can only execute on one processor.
+ 
+\end_layout
+
+\begin_layout Enumerate
+All mutex are assigned a set of ceiling priorities, one per processor (for
+ those processors that have threads that use the mutex); for processor Pk
+ it is the maximum priority of all Threads allocated to Pk that use the
+ mutex.
+ 
+\end_layout
+
+\begin_layout Enumerate
+A lock request on any mutex results in the priority of the thread being
+ immediately raised to the local ceiling for the mutex.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Accesses to a mutex are dealt with in a FIFO order.
+ 
+\end_layout
+
+\begin_layout Enumerate
+While waiting to gain access to the mutex, and while actually holding the
+ mutex, the thread continues to be active and executes (possible spinning)
+ with priority equal to the local ceiling of the mutex.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Any thread waiting to gain access to a mutex must be capable of undertaking
+ the associated computation on behalf of any other waiting thread.
+ 
+\end_layout
+
+\begin_layout Enumerate
+This cooperating thread must undertake the outstanding requests in the original
+ FIFO order.
+ 
 \end_layout
 
 \begin_layout Subsubsection
 A migration approach
+\end_layout
+
+\begin_layout Standard
+While the protocol developed is intended for partitioned systems, thread
+ migration between processors is common in SMP operating systems.
 \end_layout
 
 \begin_layout Standard
@@ -465,12 +810,19 @@ key "carpenter2004categorization"
 
 .
  Interprocessor migration has traditionally been forbidden in real-time
- systems for the following reasons: • In many systems, the cost associated
- with each migration — i.e.
+ systems for the following reasons: 
+\end_layout
+
+\begin_layout Standard
+• In many systems, the cost associated with each migration — i.e.
  , the cost of transferring a job’s context from one processor to another
  — can be prohibitive.
- • Until recently, traditional real-time scheduling theory lacked the techniques
-, tools, and results to permit a detailed analysis of systems that allow
+ 
+\end_layout
+
+\begin_layout Standard
+• Until recently, traditional real-time scheduling theory lacked the techniques,
+ tools, and results to permit a detailed analysis of systems that allow
  migration.
  Hence, partitioning has been the preferred approach due largely to the
  non-existence of viable alternative approaches.
@@ -488,6 +840,12 @@ sors and very fast interconnection networks over small areas, have resulted
  This is due to the fact that systems exist that can be successfully scheduled
  only if interprocessor 5 migration is allowed (refer to Lemmas 3 and 4
  in Section 3)
+\end_layout
+
+\begin_layout Standard
+Migration addresses points 5 and 6 of the protocol : A thread that is spinning
+ for a lock already held on another processor must be able to give way to
+ the preempted holder locally.
 \end_layout
 
 \begin_layout Subsubsection
@@ -538,24 +896,123 @@ The Linux real-time scheduling algorithm
 Key Data Structures
 \end_layout
 
+\begin_layout Paragraph
+task_struct
+\end_layout
+
+\begin_layout Standard
+This data structure represents a task in the system.
+ It contains useful information for the scheduler such as the real-time
+ priority of a task, its current state (running, sleeping, etc..) and the
+ policy under which it is being scheduled.
+ 
+\end_layout
+
+\begin_layout Paragraph
+runqueue
+\end_layout
+
+\begin_layout Standard
+There is two runqueue per processor, one of which is listing the active
+ tasks and the other the expired task.
+ A runqueue is a linked list composed of 140 nodes corresponding to each
+ priority level.
+ Each node is itself a linked list referencing the tasks of the same priority.
+\end_layout
+
+\begin_layout Paragraph
+futex
+\end_layout
+
+\begin_layout Standard
+A futex, 
+\begin_inset Quotes eld
+\end_inset
+
+Fast userspace mutex
+\begin_inset Quotes erd
+\end_inset
+
+, is a locking primitive that is used to build more complex locking algorithms.
+ It is composed of 32 bits integer and a waitqueue referencing the tasks
+ waiting to acquire the lock.
+ It is used in mutexes when there is contention over a lock (a task is waiting
+ for a lock already hold).
+\end_layout
+
+\begin_layout Paragraph
+rt_mutex
+\end_layout
+
+\begin_layout Standard
+Also called Priority inheritance futex, like with futexes, the waiting task
+ is added to a waitqueue.
+ If its priority is higher than the holder's, it rises the holder's priority
+ to its own priority.
+ The priority inheritance is dynamic in the sense that, if the holder is
+ itself waiting on a second futex, its temporarily enhanced priority will
+ diffuse to the holder of the second futex.
+ As soon as a task unlocks a futex its enhanced priority is set back to
+ its initial one.
+\end_layout
+
 \begin_layout Subsubsection
 Real-time scheduler
 \end_layout
 
-\begin_layout Subsection
-Partitioned system implementation of MrsP 
+\begin_layout Standard
+root domains
+\end_layout
+
+\begin_layout Standard
+Pull and Push algorithms
 \end_layout
 
 \begin_layout Subsubsection
 Priority Management in kernel
 \end_layout
 
-\begin_layout Subsubsection
-Locking primitives
+\begin_layout Subsection
+Implementation of MrsP 
+\end_layout
+
+\begin_layout Standard
+We have added a variable in the task_struct definition that can hold one
+ priority per processor
+\end_layout
+
+\begin_layout Standard
+We have added a bitmask in the task_struct definition that holds the inherited
+ processor affinities.
+ Those are added to the task holding the lock and removed when it releases
+ the lock.
+\end_layout
+
+\begin_layout Standard
+We have added a boolean variable to make a task scheduled under our algorithm.
+ TODO to be modified for a new scheduling policy (SCHED_MRSP).
+\end_layout
+
+\begin_layout Standard
+The task is checked when being migrated between two cpus, if a task is spinning
+ on that cpu, it raises its own priority to task_on_other_cpu +1 so that
+ it can preempt it.
+\end_layout
+
+\begin_layout Standard
+We take advantage of the previously implemented PI-futexes.
 \end_layout
 
 \begin_layout Subsubsection
 MRSP API
+\end_layout
+
+\begin_layout Standard
+A system call sys_set_smp_prio allows to set one priority per task.
+\end_layout
+
+\begin_layout Standard
+Task spinning giving up its share -> cooperative scheduling ?
 \end_layout
 
 \begin_layout Subsection
@@ -616,6 +1073,21 @@ Implications
 
 \begin_layout Subsection
 Recommendation for further research
+\end_layout
+
+\begin_layout Standard
+Given the plethora of available resource sharing protocols.
+\end_layout
+
+\begin_layout Standard
+Each resource sharing protocol seems to suit a particular type of programming
+ (slow or quick resources, intensive or sparse sharing, number of tasks,
+ etc..).
+ An approach that might be considered is to build a framework that automatically
+ selects the best resource sharing algorithm for a given program.
+ Why not even think about dynamically changing a policy during runtime,
+ going to the realm of strategy (schedulability) and tactics (different
+ protocols).
 \end_layout
 
 \begin_layout Standard
