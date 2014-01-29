@@ -1063,10 +1063,6 @@ Make waiters spin and be able to get preempted only by holder
 Make waiters add their affinities to holder
 \end_layout
 
-\begin_layout Enumerate
-FIFO Spinlock
-\end_layout
-
 \begin_layout Subsection
 The Linux real-time scheduling algorithm
 \end_layout
@@ -1149,22 +1145,6 @@ Pull and Push algorithms
 
 \begin_layout Subsubsection
 Priority Management in kernel
-\end_layout
-
-\begin_layout Subsection
-FIFO Spinlock
-\end_layout
-
-\begin_layout Standard
-Inspired from the article 
-\begin_inset Quotes eld
-\end_inset
-
-Ticket Spinlocks
-\begin_inset Quotes erd
-\end_inset
-
- http://lwn.net/Articles/267968/
 \end_layout
 
 \begin_layout Subsection

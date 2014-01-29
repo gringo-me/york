@@ -450,7 +450,7 @@ Deadlocks (nested resources)
 \begin_layout Enumerate
 
 \series bold
-Unbounded Priority Inversion
+Unbounded Priority Inversion -> Priority inheritance meant to solve this
 \end_layout
 
 \begin_layout Enumerate
@@ -471,6 +471,12 @@ Suspend based or Spin based
 Schedulability Analysis (Response Time Analysis)
 \end_layout
 
+\begin_layout Enumerate
+
+\series bold
+Resource starvation
+\end_layout
+
 \begin_layout Standard
 
 \series bold
@@ -486,7 +492,7 @@ Contention of High priority threads
 \begin_layout Standard
 Mutual exclusion to a critical section may be implemented on a uniprocessor
  (UP) system by simply preventing the thread that accesses the section from
- being scheduled out (disable preemption).
+ being preempted.
  On a symmetric multiprocessor (SMP) system, disabling pre- emption is not
  enough.
  A thread on another CPU might access the critical section.
@@ -501,8 +507,8 @@ ____________________
 Spin_locks are relatively fast.
  The idea behind a spin_lock is to protect critical sections that are very
  short.
- A spin_lock is considered fast compared to sleep- ing locks because it
- avoids the overhead of a schedule.
+ A spin_lock is considered fast compared to suspend-based locks because
+ it avoids the overhead of a re-schedule.
  [Internal RT papers]
 \end_layout
 
@@ -520,6 +526,15 @@ If the time to run the code in a critical section is shorter than the time
 
 \begin_layout Subsubsection
 Non Preemptive Protocol
+\end_layout
+
+\begin_layout Standard
+The Non Preemptive Protocol is a simple approach to resource sharing.
+ It can be described as follows : when a task enters a mutually exclusive
+ area it can't be preempted.
+ However this protocol allows low priority tasks to block higher priority
+ tasks that are not even requiring access to shared resources.
+ It is a form of priority inversion.
 \end_layout
 
 \begin_layout Subsubsection
@@ -721,6 +736,27 @@ Parallel PCP (P-PCP)
 O(m) Locking Protocol (OMLP) 
 \end_layout
 
+\begin_layout Standard
+OMLP makes use of a two-level priority queue scheme to allow access to a
+ global resource.
+ 
+\end_layout
+
+\begin_layout Standard
+Under partitioned scheduling, tasks requiring access to a global resource
+ are first put on local priority queue and then in a global prioritized
+ queue.
+ The highest priority task on the local queue is selected to be put on the
+ global queue and its priority is raised to the local ceiling (maximum priority
+ being used on the processor) to make it locally non-preemptible, however
+ the task might still be suspended if there is high contention on the global
+ queue.
+\end_layout
+
+\begin_layout Standard
+Under global scheduling, tasks requiring access to a 
+\end_layout
+
 \begin_layout Subsubsection
 Multiprocessor Synchronization Protocol for Real-Time Open Systems (MSOS)
  
@@ -728,6 +764,10 @@ Multiprocessor Synchronization Protocol for Real-Time Open Systems (MSOS)
 
 \begin_layout Subsubsection
 M-BWI 
+\end_layout
+
+\begin_layout Standard
+Many other protocols exist
 \end_layout
 
 \begin_layout Subsection
@@ -739,7 +779,8 @@ Description
 \end_layout
 
 \begin_layout Standard
-Taken from Andy Wellings
+Here we present informally the protocol as it is described in details in
+ 
 \begin_inset CommandInset citation
 LatexCommand cite
 key "burns2013schedulability"
@@ -758,14 +799,14 @@ We assume a fully partitioned system.
 \begin_layout Enumerate
 All mutex are assigned a set of ceiling priorities, one per processor (for
  those processors that have threads that use the mutex); for processor Pk
- it is the maximum priority of all Threads allocated to Pk that use the
+ it is the maximum priority of all threads allocated to Pk that use the
  mutex.
  
 \end_layout
 
 \begin_layout Enumerate
 A lock request on any mutex results in the priority of the thread being
- immediately raised to the local ceiling for the mutex.
+ immediately raised (ICPP) to the local ceiling for the mutex.
  
 \end_layout
 
@@ -783,7 +824,7 @@ While waiting to gain access to the mutex, and while actually holding the
 
 \begin_layout Enumerate
 Any thread waiting to gain access to a mutex must be capable of undertaking
- the associated computation on behalf of any other waiting thread.
+ the associated computation on behalf of any other waiting thread (SPEPP).
  
 \end_layout
 
@@ -874,20 +915,152 @@ Processor affinity
 Processor Caches
 \end_layout
 
+\begin_layout Subsection
+Cost of migration 
+\end_layout
+
+\begin_layout Standard
+The cost of two migrations must be less than the interference of a higher
+ priority thread.
+ Also a migrating thread is likely to suffer from an execution time penalty
+ as its local cache cannot be utilised.
+ However, a preempted thread is also likely to have its data in cache overwritte
+n by the time it executes again.
+ 
+\end_layout
+
 \begin_layout Section
-Overview of Real-time in Linux
+Overview of Real-time in Linux Vs RTOSes
 \end_layout
 
 \begin_layout Subsection
 RT-patch
 \end_layout
 
+\begin_layout Subsubsection
+Kernel Preemption
+\end_layout
+
+\begin_layout Itemize
+Linux, prior to the 2.5 Linux Kernel, was a non-preemptive kernel.
+ That means that whenever a thread was running in 
+\series bold
+kernel context
+\series default
+ (for instance a user application making a system call) that thread would
+ not be preempted unless it volunteered to schedule (calls yield() function)
+ -> basic Non Preemptive Protocol.
+ The 2.6 version of the Linux Kernel introduces preemption and protects critical
+ section through the use of spin-locks e.g.
+ busy-waiting locks 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "rostedt2007internals"
+
+\end_inset
+
+.
+ This was a major improvement however it still allowed lower threads blocking
+ higher threads requesting access to the same shared resource or not.
+ It makes sense for a spinlock to be fully non-preemptible for the following
+ reasons: 
+\end_layout
+
+\begin_layout Itemize
+Busy-waiting blocks a whole processor, we want to access and leave the critical
+ section rapidly.
+ 
+\end_layout
+
+\begin_layout Itemize
+Other tasks might be spinning on different processors for the same lock
+\end_layout
+
+\begin_layout Itemize
+Interrupt kernel threads [
+\series bold
+Define
+\series default
+] are given priority over all other tasks, they can spin on the lock held
+ by the preempted task and thus create a deadlock.
+\end_layout
+
+\begin_layout Standard
+However spinlocks can create large non-deterministic latencies and that
+ is conflicting with the requirements of an RTOS.
+\end_layout
+
+\begin_layout Standard
+To address that issue the RT patch converts most spinlocks into a mutex
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "rostedt2007internals"
+
+\end_inset
+
+, this has the effect to enable preemption in the critical sections as a
+ task trying to lock an already held mutex will be suspended (deadlock avoided).
+\end_layout
+
+\begin_layout Subsubsection
+Priority Inheritance Implementation
+\end_layout
+
+\begin_layout Standard
+Priority inversion, lower tasks blocking higher ones is inherent to scheduling
+ and can not be avoided, however unbounded priority inversion must be prevented.
+ The RT patch chooses priority inheritance to address this issue.
+\end_layout
+
+\begin_layout Standard
+The implementation of a PI mutex introduces a new concept, the priority
+ inheritance chain described in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "rostedt_rt_mutex"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+The PI chain is an ordered series of locks and processes that cause tasks
+ to inherit priorities from a higher process that is blocked on one of its
+ locks.
+ Different chains may be merged as several tasks can wait on a lock, but
+ a chain would never diverge, since a task can't be blocked on more than
+ one lock at a time.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+High Resolution Timers
+\end_layout
+
 \begin_layout Subsection
-Migration thread
+Comparison with other RTOSes
 \end_layout
 
 \begin_layout Section
 Implementation in Linux Kernel
+\end_layout
+
+\begin_layout Subsection
+Requirements of MrsP
+\end_layout
+
+\begin_layout Standard
+Be able to assign one priority per processor to mutexes
+\end_layout
+
+\begin_layout Standard
+Make waiters spin and be able to get preempted only by holder
+\end_layout
+
+\begin_layout Standard
+Make waiters add their affinities to holder
 \end_layout
 
 \begin_layout Subsection
@@ -935,8 +1108,8 @@ Fast userspace mutex
 \begin_inset Quotes erd
 \end_inset
 
-, is a locking primitive that is used to build more complex locking algorithms.
- It is composed of 32 bits integer and a waitqueue referencing the tasks
+, is a locking primitive that is used to build more complex locking structures.
+ It is composed of a 32 bits integer and a waitqueue referencing the tasks
  waiting to acquire the lock.
  It is used in mutexes when there is contention over a lock (a task is waiting
  for a lock already hold).
@@ -996,6 +1169,11 @@ We have added a boolean variable to make a task scheduled under our algorithm.
 \end_layout
 
 \begin_layout Standard
+A call to sys_futex with SCHED_MRSP makes the thread spin at local ceiling
+ for the rt-mutex.
+\end_layout
+
+\begin_layout Standard
 The task is checked when being migrated between two cpus, if a task is spinning
  on that cpu, it raises its own priority to task_on_other_cpu +1 so that
  it can preempt it.
@@ -1043,6 +1221,10 @@ QEMU
 
 \begin_layout Subsubsection
 Kernelshark and trace-cmd
+\end_layout
+
+\begin_layout Subsubsection
+ftrace
 \end_layout
 
 \begin_layout Subsection
