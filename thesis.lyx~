@@ -908,11 +908,54 @@ Characteristics of SMP machines
 \end_layout
 
 \begin_layout Subsection
-Processor affinity
+Processor Caches
+\end_layout
+
+\begin_layout Standard
+A processor cache is a fast memory the processor uses to reduce time to
+ access memory.
+ The cache memory is smaller than the RAM, it is used to stores copies of
+ frequently used locations in the RAM.
+ Most processors have a two-level cache system L1 (fastest) and L2.
+ A processor will typically always check the caches for the data used by
+ a task before looking into the RAM.
+ A cache miss occurs when the data is not available in any of the caches.
+ A process is called 
+\shape italic
+cache-hot 
+\shape default
+when it has the requested data in one of the caches.
+ Now we can see that the operating system task scheduler will always try
+ to have as few cache misses as possible, therefore avoiding task migration
+ between processors.
+ 
 \end_layout
 
 \begin_layout Subsection
-Processor Caches
+Processor affinity
+\end_layout
+
+\begin_layout Standard
+Processor affinity enables the pinning of a process or a thread to a processor
+ or a set of processors, so that the process will only execute on the designated
+ processor set.
+ This is however on Linux only a hint to the scheduler and there is no guarantee
+ that it will be respected.
+ 
+\end_layout
+
+\begin_layout Subsection
+Cost of migration 
+\end_layout
+
+\begin_layout Standard
+The cost of two migrations must be less than the interference of a higher
+ priority thread.
+ Also a migrating thread is likely to suffer from an execution time penalty
+ as its local cache cannot be utilised.
+ However, a preempted thread is also likely to have its data in cache overwritte
+n by the time it executes again.
+ 
 \end_layout
 
 \begin_layout Section
@@ -994,8 +1037,9 @@ Priority Inheritance Implementation
 \end_layout
 
 \begin_layout Standard
-Priority inversion, lower tasks blocking higher ones is inherent to scheduling
- and can not be avoided, however unbounded priority inversion must be prevented.
+Priority inversion, e.g.
+ lower tasks blocking higher ones is inherent to scheduling and can not
+ be avoided, however unbounded priority inversion must be prevented.
  The RT patch chooses priority inheritance to address this issue.
 \end_layout
 
@@ -1118,7 +1162,576 @@ Priority Management in kernel
 \end_layout
 
 \begin_layout Subsection
+Requirements of MrsP
+\end_layout
+
+\begin_layout Enumerate
+Be able to assign one priority per processor to mutexes
+\end_layout
+
+\begin_layout Enumerate
+Make waiters spin and be able to get preempted only by holder
+\end_layout
+
+\begin_layout Enumerate
+Make waiters add their affinities to holder
+\end_layout
+
+\begin_layout Enumerate
+FIFO Spinlock
+\end_layout
+
+\begin_layout Subsection
+FIFO Spinlock
+\end_layout
+
+\begin_layout Standard
+In multithreading, spinlocks are rarely used, most applications favor mutexes
+ which are a more sophisticated solution.
+ However with sophistication comes complexity, and complexity in computing
+ often means slower response times.
+ At kernel level, performance is crucial and often areas protected with
+ busy-waiting locks are very short.
+ Typically the spinlock is implemented a single variable acting as boolean
+ indicating whether the resource is currently being used, tasks enter a
+ loop and check continuously its value.
+ MrsP requires busy-waiting, but not only, it also requires that a FIFO
+ access to the lock is respected.
+ The Pthread implementation for instance doesn't provide such a facility,
+ resulting in threads competing for the lock.
+ The three others requirements for MrsP are affinity inheritance, priority
+ ceiling and the ability to assign one priority per processor to each lock.
+ The following sections will give the details of a custom FIFO spinlock
+ implemented to fulfill the above requirements.
+\end_layout
+
+\begin_layout Subsubsection
+FIFO Spinlock basic algorithm
+\end_layout
+
+\begin_layout Standard
+Inspired from the article 
+\begin_inset Quotes eld
+\end_inset
+
+Ticket Spinlocks
+\begin_inset Quotes erd
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+Our implementation is inspired from 
+\begin_inset Quotes eld
+\end_inset
+
+Tickets Spinlocks
+\begin_inset Quotes erd
+\end_inset
+
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Piggin_ticket_spin"
+
+\end_inset
+
+ and the Lamport Bakery Algorithm.
+ Below is a pseudo-code describing the algorithm.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+LOCK {
+\end_layout
+
+\begin_layout Plain Layout
+
+owner;
+\end_layout
+
+\begin_layout Plain Layout
+
+next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+FIFO_Spin_Lock(LOCK L){
+\end_layout
+
+\begin_layout Plain Layout
+
+ Atomic{
+\end_layout
+
+\begin_layout Plain Layout
+
+ Local Ticket = L.next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+ increment L.next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+ }
+\end_layout
+
+\begin_layout Plain Layout
+
+ WHILE Ticket != L.owner
+\end_layout
+
+\begin_layout Plain Layout
+
+	Spin
+\end_layout
+
+\begin_layout Plain Layout
+
+ ENDWHILE
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+FIFO_Spin_Unlock(LOCK L){
+\end_layout
+
+\begin_layout Plain Layout
+
+ increment L.owner
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The lock variables are initialized to zero at the beginning.
+ The task calling FIFO_Spin_Lock starts by atomically getting a ticket number
+ and increasing it by one.
+ The task then spins in a busy loop waiting for the its ticket number to
+ be equal to the owner variable.
+ The unlocking is done by a simple increase of the owner variable.
+ 
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+owner
+\family default
+ and 
+\family typewriter
+next_ticket
+\family default
+ are defined as unsigned 1 byte variables in our implementation which means
+ there can be up to 255 tasks spinning on the same lock.
+ We can notice that code above always increments the variable and never
+ decrease them, which can lead to ask 
+\begin_inset Quotes eld
+\end_inset
+
+How many accesses/tickets can a 1 byte variable provide
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The algorithm takes advantage of the 
+\family typewriter
+\shape italic
+wrapping
+\family default
+\shape default
+ property of unsigned variables which resets the variable to zero in the
+ case of an overflow.
+ FIFO spinlocks therefore support an infinite number of accesses.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+FIFO Spinlock structure
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+struct fifo_spinlock_chart { 
+\end_layout
+
+\begin_layout Plain Layout
+
+volatile pid_t  taskid; 
+\end_layout
+
+\begin_layout Plain Layout
+
+volatile unsigned char owner; 
+\end_layout
+
+\begin_layout Plain Layout
+
+volatile unsigned char next; 
+\end_layout
+
+\begin_layout Plain Layout
+
+volatile unsigned char prio; 
+\end_layout
+
+\begin_layout Plain Layout
+
+volatile unsigned char task_prio; 
+\end_layout
+
+\begin_layout Plain Layout
+
+cpu_set_t saved_cpumask;
+\end_layout
+
+\begin_layout Plain Layout
+
+} ;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+taskid : This variable stores the task id of the task currently holding
+ the lock (defaults to -1).
+\end_layout
+
+\begin_layout Itemize
+owner : This variable keeps track of the ticket owner.
+\end_layout
+
+\begin_layout Itemize
+next : This variable keeps track of the waiters to allow a FIFO access.
+\end_layout
+
+\begin_layout Itemize
+prio : This variable is the priority ceiling of the lock.
+\end_layout
+
+\begin_layout Itemize
+task_prio : This variable saves the priority the task had before attempting
+ to take the lock.
+\end_layout
+
+\begin_layout Itemize
+saved_cpumask : This variable saves the cpu affinities the task had before
+ attempting to take the lock.
+\end_layout
+
+\begin_layout Paragraph
+Priority ceiling
+\end_layout
+
+\begin_layout Standard
+While POSIX Pthread mutexes specify and implement priority ceiling, Pthread
+ spinlocks are kept very simple, because their rationale is performance
+ and their use cases make them a rarely used feature of multithreading.
+\end_layout
+
+\begin_layout Paragraph
+Affinity inheritance
+\end_layout
+
+\begin_layout Standard
+MrsP requires waiting task to add the current cpu they are spinning on to
+ the list of cpu affinities of the holder in case this one gets preempted.
+\end_layout
+
+\begin_layout Paragraph
+Priority per processor
+\end_layout
+
+\begin_layout Standard
+MrsP requires to have one priority per processor in case a task is preempted
+ and migrated to another cpu.
+ This is further described in TODO
+\end_layout
+
+\begin_layout Subsubsection
+FIFO Spinlock MrsP Algorithm
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset listings
+lstparams "basicstyle={\normalsize\ttfamily},language=C"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+LOCK {
+\end_layout
+
+\begin_layout Plain Layout
+
+  owner;
+\end_layout
+
+\begin_layout Plain Layout
+
+  next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+  taskid;
+\end_layout
+
+\begin_layout Plain Layout
+
+  prio_per_cpu;
+\end_layout
+
+\begin_layout Plain Layout
+
+  save_task_prio;
+\end_layout
+
+\begin_layout Plain Layout
+
+  save_task_affinity;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+FIFO_Spin_Lock(LOCK L){
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ #Declare local variables
+\end_layout
+
+\begin_layout Plain Layout
+
+ Local copy_priority, copy_affinity
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ copy_priority = Current Task.Priority
+\end_layout
+
+\begin_layout Plain Layout
+
+ copy_affinity = Current Task.Affinity
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ #Priority ceiling
+\end_layout
+
+\begin_layout Plain Layout
+
+ Task.Prio_Per_CPU = L.prio_per_cpu
+\end_layout
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+ Atomic{
+\end_layout
+
+\begin_layout Plain Layout
+
+ Local Ticket = L.next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+ increment L.next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+ }
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ #Affinity Inheritance to holder
+\end_layout
+
+\begin_layout Plain Layout
+
+ IF L.taskid != NULL
+\end_layout
+
+\begin_layout Plain Layout
+
+    ADD_Current_CPU(Task(L.taskid));
+\end_layout
+
+\begin_layout Plain Layout
+
+ ENDIF
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ WHILE Ticket != L.owner
+\end_layout
+
+\begin_layout Plain Layout
+
+	Spin
+\end_layout
+
+\begin_layout Plain Layout
+
+ ENDWHILE
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ L.taskid = Current Task.ID
+\end_layout
+
+\begin_layout Plain Layout
+
+ L.save_affinity = copy_affinity;
+\end_layout
+
+\begin_layout Plain Layout
+
+ L.save_priority = copy_priority;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+FIFO_Spin_Unlock(LOCK L){
+\end_layout
+
+\begin_layout Plain Layout
+
+ L.taskid = undef
+\end_layout
+
+\begin_layout Plain Layout
+
+ Task.Affinities = L.save_affinity
+\end_layout
+
+\begin_layout Plain Layout
+
+ Task.Prio = L.save_priority
+\end_layout
+
+\begin_layout Plain Layout
+
+ increment L.owner
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
 Implementation of MrsP 
+\end_layout
+
+\begin_layout Subsubsection
+Modifications to the Linux Kernel
 \end_layout
 
 \begin_layout Standard
