@@ -10,7 +10,6 @@
 #include <limits.h>
 
 #include <list>
-#include <sched.h>
 
 #include "char_fifo_spinlock.h"
 
@@ -24,70 +23,27 @@ fifo_spinlock_chart fifo_lock;
 pthread_spinlock_t spinlock;
 pthread_mutex_t mutex;
 
-pid_t gettid() { return syscall( __NR_gettid ); }
+//pid_t gettid() { return syscall( __NR_gettid ); }
 
 /*When unsigned char reaches MAX_Uchar it wraps up and starts from zero again*/
 
-void fifo_init_lock_char(fifo_spinlock_chart *lock){
-
-	lock->owner = 0;
-	lock->next = 0;
-}
-
-void fifo_set_spinlock_ceiling(fifo_spinlock_chart *lock, unsigned char prio){
-
-	lock->prio = prio;
-}
-
-void fifo_spin_lock_char(fifo_spinlock_chart * lock)
-{
-	unsigned char ticket;
-	int policy;
-	int old_prio;	
-	struct sched_param param;
-	
-	
-	ticket = __sync_fetch_and_add(&lock->next,1);
-	printf("Return getsched %d\n",pthread_getschedparam (pthread_self(), &policy, &param));
-	printf("Ticket: %d prio %d\n",ticket,param.sched_priority);
-	
-	old_prio = param.sched_priority;	
-	param.sched_priority = lock->prio;	
-
-	printf("Prio return %d\n",pthread_setschedprio(pthread_self(),param.sched_priority));
- 	pthread_getschedparam (pthread_self(), &policy, &param);
-        printf("Ticket in loop: %d prio %d\n",ticket,param.sched_priority);
-
-	while (!(__sync_bool_compare_and_swap(&lock->owner, ticket,ticket))){};
-	 
-	lock->task_prio = old_prio;
-	
-}
-
-void fifo_spin_unlock_char(fifo_spinlock_chart * lock)
-{
-	struct sched_param param;
-	int policy;
-
-	param.sched_priority = lock->task_prio;
-
-	//set back normal set prio
-	pthread_setschedprio(pthread_self(),param.sched_priority);
-	pthread_getschedparam (pthread_self(), &policy, &param);
-	printf("Unlocking Ticket: prio %d\n",param.sched_priority);	
-	__sync_fetch_and_add(&lock->owner,1);
-}
 
 /******************************************/
 
-
+int cpu = 0;
 
 void *consumer(void *ptr)
 {
     int i;
-
+    int j = 0;
+     
     printf("Consumer TID %lu\n", (unsigned long)gettid());
 
+    cpu_set_t cpumask;
+    CPU_ZERO(&cpumask);
+    CPU_SET(cpu, &cpumask); cpu++;
+    sched_setaffinity(0, sizeof(cpumask), &cpumask);
+	
     while (1)
     {
 	fifo_spin_lock_char(&fifo_lock);	
@@ -98,6 +54,11 @@ void *consumer(void *ptr)
 	fifo_spin_unlock_char(&fifo_lock);
             break;
         }
+
+	printf("Thread %d currently executing in cpu %d \n", gettid(),sched_getcpu());
+	
+	j = 0;
+	while(j < 1000000) j++;
 
         i = the_list.front();
         the_list.pop_front();
