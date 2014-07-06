@@ -16,8 +16,10 @@
 #include <stdarg.h>
 #include "char_fifo_spinlock.h"
 
-#define LOOPS 100
-#define THREAD_NB 3
+#define LOOPS 10
+#define THREAD_NB 10
+#define HIGH_THREAD 0
+#define HIGH_PRIO 85
 
 fifo_spinlock_chart fifo_lock;
 
@@ -34,7 +36,7 @@ static int mark_fd = -1;
 static __thread char buff[BUFSIZ+1];
 /******************************************/
 
-static char prio_per_cpu[4] = {65,65,65,65};
+static char prio_per_cpu[4] = {10,10,10,10};
 
 static char buffer[BUFSIZ];
 int cpu = 0;
@@ -51,7 +53,7 @@ static void perr(char *fmt, ...)
 	fflush(stderr);
 	exit(-1);
 }
-
+/*
 static void setup_ftrace_marker(void)
 {
 	struct stat st;
@@ -68,11 +70,11 @@ static void setup_ftrace_marker(void)
 		if (ret >= 0)
 			goto found;
 	}
-	/* todo, check mounts system */
 	return;
 found:
 	mark_fd = open(files[i], O_WRONLY);
 }
+*/
 
 static void ftrace_write(const char *fmt, ...)
 {
@@ -104,19 +106,21 @@ void *consumer(void *ptr)
 	int j = 0;
 	long pid;
 	int cpu;
-
 	
 	printf("Consumer TID %lu affinity %d\n", (unsigned long)gettid(), affinity++);
 
+	if(affinity == 2)
+		affinity = 0;
+
 	//we force thread migration by changing cpu affinities
 	cpu_set_t cpumask;
-	CPU_ZERO(&cpumask);
-	CPU_SET(affinity, &cpumask); 
+	//CPU_ZERO(&cpumask);
+	//CPU_SET(affinity, &cpumask); 
 	//sched_setaffinity(0, sizeof(cpumask), &cpumask);
 
 	pid = gettid();
 
-	printf("Thread %d id started \n",pid);
+	printf("Thread %ld id started \n",pid);
 	pthread_barrier_wait(&start_barrier);
 
 	for (i = 0; i < LOOPS; i++){
@@ -133,7 +137,7 @@ void *consumer(void *ptr)
 
 void *high_thread(void *ptr){
 
-	pthread_setschedprio(pthread_self(), 55);
+	pthread_setschedprio(pthread_self(), HIGH_PRIO);
 	int i;
 	for (i = 0; i < LOOPS * 2; i++){
 		
@@ -155,50 +159,52 @@ int main()
     long *thread_pids;
     int ret,nr_tasks = THREAD_NB;
 
-    //setbuf(stdout,NULL);
+    setbuf(stdout,NULL);
     fifo_init_lock_char(&fifo_lock);
     fifo_set_spinlock_smpceiling(&fifo_lock, prio_per_cpu); 
-    param.sched_priority = 10;
+    param.sched_priority = 12;
     sched_setscheduler(0, SCHED_FIFO, &param);
-    
+
     printf("sched_max %d\n",sched_get_priority_max(SCHED_FIFO));
 
     // Measuring time before starting the threads...
     gettimeofday(&tv1, NULL);
-	
-	ret = pthread_barrier_init(&start_barrier, NULL, nr_tasks );
-	if (ret < 0)
-		perr("pthread_barrier_init");
-	ret = pthread_barrier_init(&end_barrier, NULL, nr_tasks );
-	if (ret < 0)
-		perr("pthread_barrier_init");
+
+    ret = pthread_barrier_init(&start_barrier, NULL, nr_tasks );
+    if (ret < 0)
+	    perr("pthread_barrier_init");
+    ret = pthread_barrier_init(&end_barrier, NULL, nr_tasks );
+    if (ret < 0)
+	    perr("pthread_barrier_init");
 
     threads = (pthread_t*) malloc(sizeof(*threads) * nr_tasks);
     thread_pids = (long*) malloc(sizeof(long) * nr_tasks);
-    
+
     for (i=0; i < nr_tasks; i++) {
 	    if (pthread_create(&threads[i], NULL, consumer, NULL))
 		    perr("pthread_create");
     }
-	
+
+    if (HIGH_THREAD){
 	    if (pthread_create(&thr_high, NULL, high_thread, NULL))
 		    perr("pthread_create");
+    }
 
-
-	for (i=0; i < nr_tasks; i++)
-		pthread_join(threads[i], (void**)&thread_pids[i]);
+    for (i=0; i < nr_tasks; i++)
+	    pthread_join(threads[i], (void**)&thread_pids[i]);
     // Measuring time after threads finished...
-		pthread_join(thr_high, NULL);
+    if (HIGH_THREAD)
+	    pthread_join(thr_high, NULL);
     gettimeofday(&tv2, NULL);
 
     if (tv1.tv_usec > tv2.tv_usec)
     {
-        tv2.tv_sec--;
-        tv2.tv_usec += 1000000;
+	    tv2.tv_sec--;
+	    tv2.tv_usec += 1000000;
     }
 
     printf("Result - %ld.%ld\n", tv2.tv_sec - tv1.tv_sec,
-        tv2.tv_usec - tv1.tv_usec);
+		    tv2.tv_usec - tv1.tv_usec);
 
 
     return 0;
