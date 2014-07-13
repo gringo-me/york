@@ -137,6 +137,21 @@ LatexCommand tableofcontents
 
 \end_layout
 
+\begin_layout Standard
+\begin_inset FloatList figure
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
 \begin_layout Abstract
 Multiprocessor real-time resource control algorithms are currently an active
  research topic as more and more real-time systems become multicore.
@@ -294,14 +309,21 @@ Real-time systems
 In the real-time paradigm besides of the usually expected functional correctness
  of a system, the timing e.g.
  the time needed to process an input must comply with a deadline.
- Young
+ Wellings and Burns
+\begin_inset CommandInset citation
+LatexCommand cite
+key "burns2001real"
+
+\end_inset
+
+ cite Young
 \begin_inset CommandInset citation
 LatexCommand cite
 key "young1982real"
 
 \end_inset
 
- gives the following definition : 
+ for the definition of a real-time system: 
 \end_layout
 
 \begin_layout Quote
@@ -823,6 +845,74 @@ Example
 \end_layout
 
 \begin_layout Standard
+Resources : 
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+R1
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resource access :
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ HP\rightarrow none\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ MP\rightarrow none\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ LP\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -1051,6 +1141,13 @@ end{figure}
 
 \end_layout
 
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
 \begin_layout Enumerate
 T1 : Low priority task starts to execute 
 \end_layout
@@ -1165,6 +1262,88 @@ Tasks are set back to original priority upon leaving a critical section.
 
 \begin_layout Subparagraph
 Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resources : 
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+R1
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resource access :
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ HP\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ MP\rightarrow none\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ LP\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2171,7 +2350,7 @@ end{ganttchart}
 
 
 \backslash
-caption{Non-Preemptive Protocol}
+caption{Immediate Priority Ceiling Protocol}
 \end_layout
 
 \begin_layout Plain Layout
@@ -2268,6 +2447,11 @@ Each resource is assigned a preemption ceiling that corresponds to the maximum
 \end_layout
 
 \begin_layout Itemize
+When a task locks a resource its priority get raised to the resource ceiling
+ priority
+\end_layout
+
+\begin_layout Itemize
 The system ceiling is the maximum preemption ceiling among all currently
  locked resource.
 \end_layout
@@ -2278,7 +2462,118 @@ A task is not allowed to run until its priority is highest among the tasks
 \end_layout
 
 \begin_layout Itemize
-Tasks ready to be executed
+Tasks ready to be executed are added to the stack
+\end_layout
+
+\begin_layout Itemize
+Tasks execution is not interleaved
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resources : 
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+R1, R2
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+g
+\end_layout
+
+\begin_layout Standard
+Resource access :
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ HP\rightarrow R1\: then\, R2\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ MP\rightarrow R2\, then\, R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ LP\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Let P be the priority ceiling of a resource or a task we thus have :
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P(R1\text{)}=P(R2)=P(HP)\right\} $
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2345,6 +2640,45 @@ begin{figure}[h]
 
 
 \backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
 begin{ganttchart}[
 \end_layout
 
@@ -2401,14 +2735,28 @@ color{black!50}]{1}{20}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{HP Task}}{4}{8}
+small{HP Task}}{5}{6}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{9}{15}
+ganttbar[bar/.append style={fill=red!75}]{}{7}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=yellow!75}]{}{9}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{12}{12}
 \backslash
 
 \backslash
@@ -2421,14 +2769,35 @@ ganttbar[bar/.append style={fill=green!75}]{}{9}{15}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{MP Task}}{11}{15} 
+small{MP Task}}{3}{12} 
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{16}{17}
+ganttbar[bar/.append style={fill=green!75}]{}{13}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=yellow!75}]{}{14}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{17}{17}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{18}
 \backslash
 
 \backslash
@@ -2441,21 +2810,28 @@ ganttbar[bar/.append style={fill=green!75}]{}{16}{17}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task}}{1}{2}
+small{LP Task}}{1}{1}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=red!75}]{}{3}{8}
+ganttbar[bar/.append style={fill=red!75}]{}{2}{6}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{18}{19}
+ganttbar[bar/.append style={fill=gray!75}]{}{7}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{19}{20}
 \backslash
 
 \backslash
@@ -2502,7 +2878,7 @@ end{ganttchart}
 
 
 \backslash
-caption{Non-Preemptive Protocol}
+caption{Stack Resource Protocol}
 \end_layout
 
 \begin_layout Plain Layout
@@ -2515,6 +2891,49 @@ end{figure}
 \end_inset
 
 
+\end_layout
+
+\begin_layout Enumerate
+T1 : LP starts executing
+\end_layout
+
+\begin_layout Enumerate
+T2 : LP is the only task running, it can then lock R1 and its priority is
+ now equal to P(HP)
+\end_layout
+
+\begin_layout Enumerate
+T3 : MP is ready to execute however P(MP) < P(LP) = P(R1) = P(HP), therefore
+\end_layout
+
+\begin_layout Enumerate
+it cannot preempt LP
+\end_layout
+
+\begin_layout Enumerate
+T5 : HP is ready to execute however P(HP) = P(LP), therefore it cannot preempt
+ LP
+\end_layout
+
+\begin_layout Enumerate
+T6 : LP releases the locks and is reset to its initial priority
+\end_layout
+
+\begin_layout Enumerate
+T7-T11 : P(HP) > P(MP), thus HP is given priority and can lock R1 and R2
+ and release them both
+\end_layout
+
+\begin_layout Enumerate
+T12 : HP continues execution normally as its priority is the highest
+\end_layout
+
+\begin_layout Enumerate
+T13 - T18 : MP is chosen to continue execution because P(MP) > P(LP)
+\end_layout
+
+\begin_layout Enumerate
+T19-T20 : LP can finish its execution
 \end_layout
 
 \begin_layout Subparagraph
