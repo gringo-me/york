@@ -3,6 +3,9 @@
 \begin_document
 \begin_header
 \textclass article
+\begin_preamble
+\usepackage{pgfgantt}
+\end_preamble
 \use_default_options true
 \maintain_unincluded_children false
 \language english
@@ -801,6 +804,290 @@ The Non Preemptive Protocol is a simple approach to resource sharing.
  
 \end_layout
 
+\begin_layout Subparagraph
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task}}{4}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{15}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{MP Task}}{7}{15} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{16}{17}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{3}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{19}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Non-Preemptive Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1 : Low priority task starts to execute 
+\end_layout
+
+\begin_layout Enumerate
+T3 : LP locks shared resource R1 
+\end_layout
+
+\begin_layout Enumerate
+T4 - T8 : High priority task is ready to execute but is blocked by LP because
+ preemption is disabled when any task has entered a critical section.
+\end_layout
+
+\begin_layout Enumerate
+T7 : Medium priority task is ready to execute but is preempted by LP.
+\end_layout
+
+\begin_layout Enumerate
+T8 : LP releases R1
+\end_layout
+
+\begin_layout Enumerate
+T9 : HP preempts LP
+\end_layout
+
+\begin_layout Enumerate
+T15 : HP finishes its execution
+\end_layout
+
+\begin_layout Enumerate
+T16-17 : MP executes and finishes
+\end_layout
+
+\begin_layout Enumerate
+T18-19 : LP task finishes its execution
+\end_layout
+
 \begin_layout Standard
 
 \series bold
@@ -869,6 +1156,310 @@ Transitive propagation of inheritance : If task C blocks task B which is
 Tasks are set back to original priority upon leaving a critical section.
 \end_layout
 
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{HP Task}}{4}{4}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{5}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{8}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{12}{14}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{MP Task}}{6}{16} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{15}{17}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{3}{3}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{5}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{20}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Priority Inheritance Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1-T2 : LP starts executing 
+\end_layout
+
+\begin_layout Enumerate
+T3 : LP locks shared resource R1
+\end_layout
+
+\begin_layout Enumerate
+T4 : HP requires access to R1, LP is preempted by HP, however HP can't lock
+ R1
+\end_layout
+
+\begin_layout Enumerate
+as it is already held by LP.
+ LP inherits the priority of HP.
+\end_layout
+
+\begin_layout Enumerate
+T5 : LP resumes executing in critical section
+\end_layout
+
+\begin_layout Enumerate
+T6 : MP is spawned and ready to execute, however it can't preempt LP that
+ is
+\end_layout
+
+\begin_layout Enumerate
+running with HP priority
+\end_layout
+
+\begin_layout Enumerate
+T7 : LP releases R1 and is set back to its original low priority
+\end_layout
+
+\begin_layout Enumerate
+T8-T11 : HP locks R1 and executes.
+\end_layout
+
+\begin_layout Enumerate
+T12-T14 : HP releases R1 in T12 and continues executing until T14
+\end_layout
+
+\begin_layout Enumerate
+T15-T17 : MP runs as it has higher priority than LP
+\end_layout
+
+\begin_layout Enumerate
+T18-T20 : LP can run again and finishes its execution in T20
+\end_layout
+
 \begin_layout Subparagraph
 Advantages
 \end_layout
@@ -927,8 +1518,372 @@ Each resource has a ceiling value defined as the maximum priority of all
 \end_layout
 
 \begin_layout Itemize
+A task resource usage is known offline (before the tasks's execution).
+\end_layout
+
+\begin_layout Itemize
 A task is allowed to enter a critical section only if its priority is higher
- than all of resources ceilings held by other tasks
+ than all of resources ceilings held by other tasks (thus avoiding chained
+ blocking)
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{HP Task}}{7}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{8}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=yellow!75}]{}{10}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{12}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{13}{14}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{15}{15}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{MP Task}}{3}{3} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{4}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{17}{18}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{18}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{2}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{3}{3}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{4}{4}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{5}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{7}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{8}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{16}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{19}{20}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Priority Ceiling Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subparagraph
@@ -961,8 +1916,8 @@ Introduces a new type of blocking : priority ceiling blocking [Explain]
 \end_layout
 
 \begin_layout Itemize
-Increases the number of context switches (it is expensive to switch and
- load a different context)
+Increases the number of context switches (it is time consuming to switch
+ and load a different context)
 \end_layout
 
 \begin_layout Itemize
@@ -993,6 +1948,242 @@ Each task has a default original priority.
 \begin_layout Itemize
 A task's priority is raised to the resource ceiling immediately upon ownership
  acquisition.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task}}{4}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{15}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{MP Task}}{11}{15} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{16}{17}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{3}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{19}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Non-Preemptive Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subparagraph
@@ -1044,7 +2235,6 @@ Stack Resource Policy
 \begin_layout Standard
 The Stack Resource Policy intends to reduce the number of context switches
  introduced by PCP by anticipating the execution order of tasks.
- Notably this protocol is equally suited for EDF and FP systems.
  It generalises the concept of task priority by defining a 
 \shape italic
 preemption level 
@@ -1078,8 +2268,253 @@ Each resource is assigned a preemption ceiling that corresponds to the maximum
 \end_layout
 
 \begin_layout Itemize
+The system ceiling is the maximum preemption ceiling among all currently
+ locked resource.
+\end_layout
+
+\begin_layout Itemize
 A task is not allowed to run until its priority is highest among the tasks
  ready to run and its preemption level is higher than the system ceiling.
+\end_layout
+
+\begin_layout Itemize
+Tasks ready to be executed
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task}}{4}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{15}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{MP Task}}{11}{15} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{16}{17}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{3}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{19}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Non-Preemptive Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subparagraph
@@ -1087,14 +2522,26 @@ Advantages
 \end_layout
 
 \begin_layout Itemize
-Limits blocking to the beginning of the task
+Limits blocking to only once like PCP, thus reducing context switching.
+ 
 \end_layout
 
 \begin_layout Itemize
-Prevents deadlock
+Prevents deadlocks.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Itemize
+Considering the two previous statements, the maximum blocking time for task
+ equals to at most the length of one critical section.
+\end_layout
+
+\begin_layout Itemize
+Easier to implement (than PCP) as no need for inheritance, no need to block
+ tasks in waiting queues, all tasks share the same stack thus optimising
+ execution times
+\end_layout
+
+\begin_layout Subparagraph
 
 \series bold
 Performance
