@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
+#define SET_SMP_PRIO 351 
 
 pid_t gettid() { return syscall( __NR_gettid ); }
 
@@ -26,6 +27,11 @@ void fifo_init_lock_char(fifo_spinlock_chart *lock){
 
 	lock->owner = 0;
 	lock->next = 0;
+}
+
+void fifo_set_spinlock_smpceiling(fifo_spinlock_chart *lock, char *smp_prio){
+
+	lock->prio = smp_prio;
 }
 
 void fifo_spin_lock_char(fifo_spinlock_chart * lock)
@@ -49,10 +55,10 @@ void fifo_spin_lock_char(fifo_spinlock_chart * lock)
 
 	//param.sched_priority = lock->prio;
 	// Raising priority to lock level	
-	if(0 != pthread_setschedprio(pthread_self(),lock->prio[cpu]))
+	if(0 != pthread_setschedprio(pthread_self(),lock->prio[cpu] -10))
 		printf("Thread %d sched_schedprio, error %d %s \n",gettid(),r,strerror(errno));
 	 // Setting one priority per processor
-	//syscall(SET_SMP_PRIO,pid,lock->prio);	
+	syscall(SET_SMP_PRIO,pid,lock->prio);	
 	
 	// sched_getparam (0,&param);
 	 
@@ -72,10 +78,6 @@ void fifo_spin_lock_char(fifo_spinlock_chart * lock)
 	lock->task_prio = old_prio;
 }
 
-void fifo_set_spinlock_smpceiling(fifo_spinlock_chart *lock, char *smp_prio){
-
-	lock->prio = smp_prio;
-}
 void fifo_spin_unlock_char(fifo_spinlock_chart * lock)
 {
 	struct sched_param param;
