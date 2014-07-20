@@ -502,76 +502,30 @@ To prevent race condition, mutual exclusion techniques have been introduced.
  Semaphores are the generic construct that enables task suspension when
  an access request to a resource currently used therefore providing a mutual
  exclusion service to protect resources state.
- While semaphores are perfectly suited for traditional systems, real-time
- systems have deadline constraints and predictability of task execution
- is crucial (response time).
- While solving the race condition situation, simple semaphores used in real-time
- systems are not sufficient to fulfill the requirements and they introduce
- new problems, priority inversion and unbounded priority inversion.
- Real time resource sharing protocols are designed to mitigate or address
- these issues.
+ However other problems remain to be solved when doing multitasking.
 \end_layout
 
 \begin_layout Subparagraph
 
 \series bold
-Priority Inversion 
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-Mars Path Finder famous priority inversion
-\end_layout
-
-\begin_layout Standard
-Priority inversion is a situation where a higher priority task gets preempted
- or has its execution delayed by a lower priority task.
- For instance given H and L respectively tasks of high and low priority,
- consider : L accesses a resource R, H is released and wants to access R,
- it has to wait until L is finished with it (Priority Inversion).
- Priority inversion is normal and unavoidable in scheduling because predicting
- when two tasks of different priorities will access the same mutually exclusive
- area or resource is hard [EXAMPLE] or impossible.
- It is however possible to minimize its effects and thus increase predictability.
-\end_layout
-
-\begin_layout Subparagraph
-Unbounded priority inversion
-\end_layout
-
-\begin_layout Standard
-Extending the previous priority inversion example, let's introduce another
- task M of intermediate priority between H and L.
- While H is waiting, M gets released and preempts L, H has now to wait for
- M + L execution time, moreover M could itself be preempted by a second
- task M2 slightly higher than M but lower than H.
- 
-\end_layout
-
-\begin_layout Standard
-Unbounded priority inversion can and must be avoided because they severely
- impede predictability Priority inheritance described further is one method
- to minimize the effects of priority inversion.
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-The major problems these protocols intend to solve are : 
+Deadlocks 
 \end_layout
 
 \begin_layout Subparagraph
 
 \series bold
-Deadlocks (nested resources)
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
 Deadlock is a task and resource configuration where two tasks or more are
- holding a resource and each is respectively waiting on the other to release
- its resource.
- The result is that each task waits forever and cannot continue its execution.
+ holding a different resource and each is respectively waiting on the other
+ to release its resource.
+ The result is that each task waits forever and cannot make progress in
+ its execution.
  Resource sharing protocols will sometimes try to prevent that situation,
  however it is often the user's duty to ensure it doesn't happen by following
  good programming practices.
@@ -586,16 +540,17 @@ Resource starvation
 \end_layout
 
 \begin_layout Standard
+\begin_inset space ~
+\end_inset
 
-\series bold
-[Round-Robin ?]
+
 \end_layout
 
 \begin_layout Standard
 In a system where tasks are competing for resources access, resource starvation
  occurs when a task's request to access to a resource is never satisfied
  by the scheduler.
- Therefore that task cannot make progress and blocks forever.
+ Therefore that task cannot make progress in its execution and blocks forever.
  Resource starvation appears when for instance the scheduler schedules the
  execution of tasks without ensuring fairness between threads.
  
@@ -636,33 +591,124 @@ While writers requesting access have to do it by turn and wait for each
 
 \end_deeper
 \begin_layout Standard
+Deadlocks and resource starvation are the cause of blocking that reduces
+ response time of tasks.
+\end_layout
+
+\begin_layout Standard
+While semaphores are suited for traditional systems, real-time systems have
+ deadline constraints and predictability of task execution is crucial (response
+ time).
+ Simple semaphores, if used in real-time systems are not sufficient to fulfill
+ the requirements and they introduce new problems, priority inversion and
+ unbounded priority inversion.
+ Real time resource sharing protocols are designed to mitigate or address
+ these issues.
+\end_layout
+
+\begin_layout Subparagraph
 
 \series bold
-Deadline Inversion
+Priority Inversion
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Priority inversion is a situation where a higher priority task gets preempted
+ or has its execution delayed by a lower priority task.
+ For instance given H and L respectively tasks of high and low priority,
+ consider : L accesses a resource R, H is released and wants to access R,
+ it has to wait until L is finished with it (Priority Inversion).
+ Priority inversion is normal and unavoidable in scheduling because predicting
+ when two tasks of different priorities will access the same mutually exclusive
+ area or resource is hard [EXAMPLE] or impossible.
+ It is however possible to minimize its effects and thus increase predictability
+ and relative response time of high priority tasks.
 \end_layout
 
 \begin_layout Standard
 
 \series bold
-A task with short deadline is blocked by a task with longer deadline for
- an unbounded interval of time.
+Mars Path Finder famous priority inversion
+\end_layout
+
+\begin_layout Subparagraph
+Unbounded priority inversion
+\end_layout
+
+\begin_layout Subparagraph
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Extending the previous priority inversion example, let's introduce another
+ task M of intermediate priority between H and L.
+ While H is waiting, M gets released and preempts L, H has now to wait for
+ M + L execution time, moreover M could itself be preempted by a second
+ task M2 slightly higher than M but lower than H.
  
 \end_layout
 
 \begin_layout Standard
-==================
+Unbounded priority inversion can and must be avoided because it severely
+ impedes predictability and response-time.
+ Priority inheritance described further is one method to minimize the effects
+ of priority inversion.
 \end_layout
 
 \begin_layout Standard
+\begin_inset space ~
+\end_inset
 
-\series bold
-Concepts
+
+\end_layout
+
+\begin_layout Subparagraph
+Concepts in real-time multiprocessor resource sharing protocols
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Different protocols have been designed to address the issues described above.
+ They use a range of strategies and presentation of different concepts is
+ required in order to understand them.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subparagraph
 
 \series bold
 Local Or Global Resources
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -699,6 +745,13 @@ Suspend based or Spin based waiting
 \end_layout
 
 \begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Scheduling protocols can be suspend-based or spin-based when wanting to
  acquire a resource.
  Suspend-based means that task relinquish the processor and become idle
@@ -718,6 +771,13 @@ Schedulability Analysis (Response Time Analysis)
 \end_layout
 
 \begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Real-time systems have response time and timings that must be guaranteed,
  schedulability analysis is a mathematical method designed to prove the
  scheduler correctness for a configuration of tasks and resources given
@@ -731,7 +791,7 @@ Real-time systems have response time and timings that must be guaranteed,
 ine-first (EDF) systems.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Subparagraph
 
 \series bold
 Transitive blocking
@@ -740,50 +800,17 @@ Transitive blocking
 \end_layout
 
 \begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 By not-directly involved semaphores which are accessed in a nested form
  by blocking jobs.
  Transitive blocking is said to occur if a job J is blocked by J1 which,
  in turn, is blocked by another job J2 
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-Fixed Priority (FP)
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-Earliest Deadline First (EDF)
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
@@ -905,9 +932,9 @@ Resources :
 \end_layout
 
 \begin_layout Standard
-
-\series bold
 R1
+\series bold
+
 \begin_inset space ~
 \end_inset
 
@@ -1870,7 +1897,7 @@ Resource priority ceilings :
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $\left\{ PR(R1)\right\} =PR(HP)$
+\begin_inset Formula $\left\{ PR(R1)=PR(HP)\right\} $
 \end_inset
 
 
@@ -2566,7 +2593,23 @@ Each task has a default original priority.
 
 \begin_layout Itemize
 A task's priority is raised to the resource ceiling immediately upon ownership
- acquisition.
+ acquisition (we do not wait to be preempted and then inherit priority from
+ a higher task).
+\end_layout
+
+\begin_layout Subparagraph
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Same resource and task configuration as the PCP example.
 \end_layout
 
 \begin_layout Standard
@@ -2689,14 +2732,44 @@ color{black!50}]{1}{20}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{HP Task}}{4}{8}
+small{HP Task}}{6}{8}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{9}{15}
+ganttbar[bar/.append style={fill=green!75}]{}{9}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=yellow!75}]{}{10}{10}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{11}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{12}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
 \backslash
 
 \backslash
@@ -2709,14 +2782,40 @@ ganttbar[bar/.append style={fill=green!75}]{}{9}{15}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{MP Task}}{11}{15} 
+small{MP Task}}{4}{12}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{16}{17}
+ganttbar[bar/.append style={fill=green!75}]{}{13}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{14}{14}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{15}{15}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{16}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
 \backslash
 
 \backslash
@@ -2736,14 +2835,47 @@ small{LP Task}}{1}{2}
 
 
 \backslash
-ganttbar[bar/.append style={fill=red!75}]{}{3}{8}
+ganttbar[bar/.append style={fill=red!75}]{}{3}{4}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{18}{19}
+ganttbar[bar/.append style={fill=orange!75}]{}{5}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{9}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{14}{14}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{15}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{17}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+
 \backslash
 
 \backslash
