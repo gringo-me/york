@@ -5093,6 +5093,88 @@ color{black!50}]{1}{20}
 
 \begin_layout Plain Layout
 
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task - P1}}{3}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{6}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{7}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task - P1}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{2}{5} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{6}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{10}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
 \end_layout
 
 \begin_layout Plain Layout
@@ -5101,14 +5183,14 @@ color{black!50}]{1}{20}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{HP Task - P1}}{4}{6}
+small{HP Task - P2}}{4}{6}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{7}{7} 
+ganttbar[bar/.append style={fill=green!75}]{}{7}{7}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5136,22 +5218,12 @@ ganttbar[bar/.append style={fill=green!75}]{}{10}{12}
 
 
 \backslash
-ganttbar[bar/.append style={fill=orange!75}]{}{13}{13}
+
+\backslash
+
 \end_layout
 
 \begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=green!75}]{}{14}{14}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-
-\backslash
 
 \end_layout
 
@@ -5161,7 +5233,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{14}{14}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task - P1}}{1}{2}
+small{LP Task - P2}}{1}{2}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5182,107 +5254,14 @@ ganttbar[bar/.append style={fill=red!75}]{}{6}{6}
 
 
 \backslash
-ganttbar[bar/.append style={fill=gray!75}]{}{7}{14}
+ganttbar[bar/.append style={fill=gray!75}]{}{7}{12}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{15}{15}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-
-\backslash
-
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=gray!75}]{
-\backslash
-small{HP Task - P2}}{3}{5}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=green!75}]{}{6}{6}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=red!75}]{}{7}{8}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=green!75}]{}{9}{10}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-
-\backslash
-
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=green!75}]{
-\backslash
-small{LP Task - P2}}{1}{1}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=red!75}]{}{2}{5}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=gray!75}]{}{6}{10}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=orange!75}]{}{11}{11}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=green!75}]{}{12}{12}
+ganttbar[bar/.append style={fill=green!75}]{}{13}{13}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5338,7 +5317,7 @@ end{ganttchart}
 
 
 \backslash
-caption{Multiprocessor Stack Resource Protocol}
+caption{Flexible Multiprocessor Locking Protocol}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5353,19 +5332,66 @@ end{figure}
 
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Subparagraph
 Description
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Enumerate
+T1 : LP1 and LP2 are spawned and start executing.
+\end_layout
+
+\begin_layout Enumerate
+T2 : LP1 takes short resource R1
+\end_layout
+
+\begin_layout Enumerate
+T3 : LP2 requests access to R1, it is unavailable to it spins non-preemptively
+ and adds itself to the FIFO queue of waiting tasks.
+ HP1 becomes ready to execute, but it can't preempt LP1
+\end_layout
+
+\begin_layout Enumerate
+T4 : HP2 becomes ready to execute, but it can't preempt LP2
+\end_layout
+
+\begin_layout Enumerate
+T5 : LP1 releases R1.
+\end_layout
+
+\begin_layout Enumerate
+T6 : LP1 gets preempted, HP1 executes, LP2 takes R1.
+\end_layout
+
+\begin_layout Enumerate
+T7 : LP2 releases R1,HP1 takes the lock, HP2 preempts LP2
+\end_layout
+
+\begin_layout Enumerate
+T8 : HP2 requests access to R1, it is unavailable, it spins.
+\end_layout
+
+\begin_layout Enumerate
+T9 : HP1 releases R1, HP2 takes R1.
+ HP1 finishes its execution
+\end_layout
+
+\begin_layout Enumerate
+T10-12 : HP2 executes and finishes.
+\end_layout
+
+\begin_layout Enumerate
+T13 : LP2 can execute again.
+\end_layout
+
+\begin_layout Subparagraph
 Constraints
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Subparagraph
 Performance
 \end_layout
 
-\begin_layout Standard
+\begin_layout Subparagraph
 FMLP has better performance than MSRP.
  This advantage is at least partly due to the fact that FMLP removes the
  restriction on task allocation required by MSRP 
