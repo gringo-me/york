@@ -3,6 +3,9 @@
 \begin_document
 \begin_header
 \textclass article
+\begin_preamble
+\usepackage{pgfgantt}
+\end_preamble
 \use_default_options true
 \maintain_unincluded_children false
 \language english
@@ -26,7 +29,16 @@
 \index_command default
 \paperfontsize default
 \spacing single
-\use_hyperref false
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks false
+\pdf_backref false
+\pdf_pdfusetitle true
 \papersize default
 \use_geometry false
 \use_amsmath 1
@@ -72,7 +84,7 @@ A Schedulability Compatible Multiprocessor Resource Sharing Protocol
 \align center
 
 \size largest
-Msc Computing Dissertation
+Msc Software Engineering Dissertation
 \end_layout
 
 \begin_layout Standard
@@ -112,6 +124,21 @@ fill}
 
 \begin_inset CommandInset toc
 LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FloatList figure
 
 \end_inset
 
@@ -230,10 +257,6 @@ Is there an overhead associated to a priority per processor ?
 Introduction
 \end_layout
 
-\begin_layout Section
-Overview
-\end_layout
-
 \begin_layout Standard
 This section will briefly describe the reasons for undertaking this project.
  It will introduce the technical requirements involved, as well as present
@@ -245,8 +268,8 @@ Motivation
 \end_layout
 
 \begin_layout Standard
-The Real-Time System Group at York have recently proposed a new resource
- sharing algorithm
+The Real-Time System Group at York have recently proposed a new multiprocessor
+ resource sharing algorithm
 \begin_inset CommandInset citation
 LatexCommand cite
 key "burns2013schedulability"
@@ -275,7 +298,7 @@ Report structure
 \end_layout
 
 \begin_layout Section
-Background
+Background and Literature Review
 \end_layout
 
 \begin_layout Subsection
@@ -286,14 +309,21 @@ Real-time systems
 In the real-time paradigm besides of the usually expected functional correctness
  of a system, the timing e.g.
  the time needed to process an input must comply with a deadline.
- Young
+ Wellings and Burns
+\begin_inset CommandInset citation
+LatexCommand cite
+key "burns2001real"
+
+\end_inset
+
+ cite Young
 \begin_inset CommandInset citation
 LatexCommand cite
 key "young1982real"
 
 \end_inset
 
- gives the following definition : 
+ for the definition of a real-time system: 
 \end_layout
 
 \begin_layout Quote
@@ -307,7 +337,7 @@ Any information processing activity or system which has to respond to externally
 A real-time system is ordinarily composed of concurrent tasks sharing common
  resources.
  Tasks execute a sequence of operations in parallel, they have a deadline
- representing the maximum acceptable execution time.
+ representing the maximum acceptable response time.
  Tasks can be classified as periodic meaning they are triggered at regular
  intervals or aperiodic meaning they can be triggered at any time.
  A subset of aperiodic tasks are sporadic tasks, these can be triggered
@@ -325,6 +355,7 @@ give the impression
 \shape default
 of concurrency by allocating short execution time to each task according
  to a policy implemented in the task scheduler.
+ In real time systems, the scheduling is performed using task priorities.
 \end_layout
 
 \begin_layout Standard
@@ -380,6 +411,10 @@ or
  (EDF) policies.
 \end_layout
 
+\begin_layout Subparagraph
+Real time systems desirable properties /requirements
+\end_layout
+
 \begin_layout Subsubsection
 Scheduling Policies
 \end_layout
@@ -432,49 +467,392 @@ Semi-partitioned protocols are a compromise between global and partitioned
 \end_layout
 
 \begin_layout Subsection
-Real-time resource sharing on multiprocessors
+Problems and Concepts in Real-time Resource Sharing Protocols 
+\end_layout
+
+\begin_layout Standard
+Computing programs (tasks) are composed of sequences of actions to execute
+ to perform a task or provide a service.
+\end_layout
+
+\begin_layout Standard
+The actions are computer instructions executed by the processor in a sequential
+ fashion.
+ Only one action of one task can be executed at a time.
+ Tasks execution can be safely interleaved as long as a switching and preempting
+ between different tasks is done between any two atomic instructions.
+ Tasks are assigned a priority level to enable prioritised scheduling where
+ higher tasks are given more processor time with less waiting time.
+\end_layout
+
+\begin_layout Standard
+Programs necessarily share resources because resources are available in
+ limited amount and/or they are used as a communication channel to communicate
+ with other programs.
+ Resource access is therefore a crucial part of task scheduling.
+ Often resources can not be accessed by two tasks at the same time.
+ Two different tasks might both be trying to update a resource at the same
+ time, this is called a race condition and if not prevented, there is a
+ risk of leaving the resource in a corrupted state and source of computing
+ errors.
+\end_layout
+
+\begin_layout Standard
+To prevent race condition, mutual exclusion techniques have been introduced.
+ Semaphores are the generic construct that enables task suspension when
+ an access request to a resource currently used therefore providing a mutual
+ exclusion service to protect resources state.
+ However other problems remain to be solved when doing multitasking.
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Deadlocks 
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Deadlock is a task and resource configuration where two tasks or more are
+ holding a different resource and each is respectively waiting on the other
+ to release its resource.
+ The result is that each task waits forever and cannot make progress in
+ its execution.
+ Resource sharing protocols will sometimes try to prevent that situation,
+ however it is often the user's duty to ensure it doesn't happen by following
+ good programming practices.
+ Often deadlock situations are created when locks are not taken in the same
+ order.
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Resource starvation
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In a system where tasks are competing for resources access, resource starvation
+ occurs when a task's request to access to a resource is never satisfied
+ by the scheduler.
+ Therefore that task cannot make progress in its execution and blocks forever.
+ Resource starvation appears when for instance the scheduler schedules the
+ execution of tasks without ensuring fairness between threads.
+ 
+\end_layout
+
+\begin_layout Standard
+The readers-writers problem illustrates well that situation, the terms of
+ the problem are as follows : 
+\end_layout
+
+\begin_layout Itemize
+There is a resource R which many writer tasks are allowed to use, as well
+ as many reader tasks.
+ 
+\end_layout
+
+\begin_layout Itemize
+Readers and writers are not allowed access at the same time.
+ 
+\end_layout
+
+\begin_layout Itemize
+Two or more readers can access R at the same time.
+\end_layout
+
+\begin_layout Itemize
+Writers can only access R individually
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+While writers requesting access have to do it by turn and wait for each
+ other to release the resource, readers don't have to wait.
+ Naive attempts to solve this problem such as letting readers access the
+ resource without taking into account waiting writers can result in resource
+ starvation for writers.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+Deadlocks and resource starvation are the cause of blocking that reduces
+ response time of tasks.
+\end_layout
+
+\begin_layout Standard
+While semaphores are suited for traditional systems, real-time systems have
+ deadline constraints and predictability of task execution is crucial (response
+ time).
+ Simple semaphores, if used in real-time systems are not sufficient to fulfill
+ the requirements and they introduce new problems, priority inversion and
+ unbounded priority inversion.
+ Real time resource sharing protocols are designed to mitigate or address
+ these issues.
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Priority Inversion
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Priority inversion is a situation where a higher priority task gets preempted
+ or has its execution delayed by a lower priority task.
+ For instance given H and L respectively tasks of high and low priority,
+ consider : L accesses a resource R, H is released and wants to access R,
+ it has to wait until L is finished with it (Priority Inversion).
+ Priority inversion is normal and unavoidable in scheduling because predicting
+ when two tasks of different priorities will access the same mutually exclusive
+ area or resource is hard [EXAMPLE] or impossible.
+ It is however possible to minimize its effects and thus increase predictability
+ and relative response time of high priority tasks.
 \end_layout
 
 \begin_layout Standard
 
 \series bold
-The major problems are : 
+Mars Path Finder famous priority inversion
 \end_layout
 
-\begin_layout Enumerate
-
-\series bold
-Deadlocks (nested resources)
+\begin_layout Subparagraph
+Unbounded priority inversion
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Subparagraph
+\begin_inset space ~
+\end_inset
 
-\series bold
-Unbounded Priority Inversion -> Priority inheritance meant to solve this
+
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Standard
+Extending the previous priority inversion example, let's introduce another
+ task M of intermediate priority between H and L.
+ While H is waiting, M gets released and preempts L, H has now to wait for
+ M + L execution time, moreover M could itself be preempted by a second
+ task M2 slightly higher than M but lower than H.
+ 
+\end_layout
+
+\begin_layout Standard
+Unbounded priority inversion can and must be avoided because it severely
+ impedes predictability and response-time.
+ Priority inheritance described further is one method to minimize the effects
+ of priority inversion.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+Concepts in real-time multiprocessor resource sharing protocols
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Different protocols have been designed to address the issues described above.
+ They use a range of strategies and presentation of different concepts is
+ required in order to understand them.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
 
 \series bold
 Local Or Global Resources
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
 
-\series bold
-Suspend based or Spin based
+
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Some scheduling protocols classify resources as being global or local.
+ Global resources can be accessed by all the tasks while local resources
+ can only be accessed on specific processors to whom they are assigned.
+ 
+\end_layout
+
+\begin_layout Standard
+Example of resources :
+\end_layout
+
+\begin_layout Itemize
+Variables in memory (RAM, hard-disk, processor cache )
+\end_layout
+
+\begin_layout Itemize
+Hardware device or appliance (fax, printer) 
+\end_layout
+
+\begin_layout Itemize
+Connection channel 
+\end_layout
+
+\begin_layout Itemize
+Database
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Suspend based or Spin based waiting
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Scheduling protocols can be suspend-based or spin-based when wanting to
+ acquire a resource.
+ Suspend-based means that task relinquish the processor and become idle
+ until the resource becomes free.
+ Spin-based means that task continue their execution, continuously checking
+ if the resource has become free.
+ Suspend-based is the most encountered model in the userspace however spinning
+ is widely used at kernel level.
+ The typical suspend based structure is the mutex, the typical spin based
+ structure is the spinlock.
+\end_layout
+
+\begin_layout Subparagraph
 
 \series bold
 Schedulability Analysis (Response Time Analysis)
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Real-time systems have response time and timings that must be guaranteed,
+ schedulability analysis is a mathematical method designed to prove the
+ scheduler correctness for a configuration of tasks and resources given
+ their priority and deadlines.
+ Such configuration can be proven to be schedulable, which means that all
+ tasks in that configuration are guaranteeed to meet their deadlines.
+ While an analysis can be sufficient to prove a set of task and resources
+ to be schedulable, not all configuration of tasks and resources can be
+ proved.
+ Schedulability analysis can be applied to fixed-priority (FP) or earliest-deadl
+ine-first (EDF) systems.
+\end_layout
+
+\begin_layout Subparagraph
 
 \series bold
-Resource starvation
+Transitive blocking
+\series default
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+By not-directly involved semaphores which are accessed in a nested form
+ by blocking jobs.
+ Transitive blocking is said to occur if a job J is blocked by J1 which,
+ in turn, is blocked by another job J2 
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -524,76 +902,3178 @@ If the time to run the code in a critical section is shorter than the time
  [Internals RT]
 \end_layout
 
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+
+\series bold
+Real-time Resource Sharing Uniprocessor Protocols
+\end_layout
+
 \begin_layout Subsubsection
 Non Preemptive Protocol
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Description
 \end_layout
 
 \begin_layout Standard
 The Non Preemptive Protocol is a simple approach to resource sharing.
  It can be described as follows : when a task enters a mutually exclusive
- area it can't be preempted.
- However this protocol allows low priority tasks to block higher priority
- tasks that are not even requiring access to shared resources.
- It is a form of priority inversion.
+ area it can't be preempted by any other task.
+ We can define it as being an absolute non-preemption scheme when a any
+ lock is held by any task.
 \end_layout
 
-\begin_layout Subsubsection
-Highest Locker Priority
+\begin_layout Subparagraph
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resources : 
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+R1
+\series bold
+
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resource access :
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ HP\rightarrow none\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ MP\rightarrow none\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ LP\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task}}{4}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{15}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{MP Task}}{7}{15} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{16}{17}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{3}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{19}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Non-Preemptive Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1 : Low priority task starts to execute 
+\end_layout
+
+\begin_layout Enumerate
+T3 : LP locks shared resource R1 
+\end_layout
+
+\begin_layout Enumerate
+T4 - T8 : High priority task is ready to execute but is blocked by LP because
+ preemption is disabled when any task has entered a critical section.
+\end_layout
+
+\begin_layout Enumerate
+T7 : Medium priority task is ready to execute but is preempted by LP.
+\end_layout
+
+\begin_layout Enumerate
+T8 : LP releases R1
+\end_layout
+
+\begin_layout Enumerate
+T9 : HP preempts LP
+\end_layout
+
+\begin_layout Enumerate
+T15 : HP finishes its execution
+\end_layout
+
+\begin_layout Enumerate
+T16-17 : MP executes and finishes
+\end_layout
+
+\begin_layout Enumerate
+T18-19 : LP task finishes its execution
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Advantages
+\end_layout
+
+\begin_layout Itemize
+The implementation of the non-preemptive protocol is very simple.
+ 
+\end_layout
+
+\begin_layout Itemize
+Good when access to resources are (very) short.
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Limitations
+\end_layout
+
+\begin_layout Itemize
+This protocol allows low priority tasks to block higher priority tasks that
+ are not even requiring access to shared resources which is a form of priority
+ inversion.
+ 
 \end_layout
 
 \begin_layout Subsubsection
 Priority Inheritance Protocol
 \end_layout
 
+\begin_layout Standard
+In the Non-Preemptive Protocol deadline misses can occur frequently since
+ all tasks are blocked when a critical section is entered.
+ The Priority Inheritance Protocol (PIP) intends to correct that by introducing
+ priority inheritance.
+ The aim is to reduce blocking time for high priority tasks.
+ PIP can be defined as a relative non-preemption scheme : a lower task holding
+ a lock becomes non-preemptable relatively to the higher task it blocks,
+ an unrelated even higher task won't be blocked.
+ 
+\end_layout
+
+\begin_layout Subparagraph
+Description
+\end_layout
+
+\begin_layout Itemize
+Tasks have an original priority.
+\end_layout
+
+\begin_layout Itemize
+Propagation of priority (e.g priority inheritance) : when a lower priority
+ task C holds a resource needed by a higher priority task A, C inherits
+ the priority of A.
+\end_layout
+
+\begin_layout Itemize
+Transitive propagation of inheritance : If task C blocks task B which is
+ itself blocking task A then C inherits the priority of A.
+\end_layout
+
+\begin_layout Itemize
+Tasks are set back to original priority upon leaving a critical section.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resources : 
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+R1
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resource access :
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ HP\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ MP\rightarrow none\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ LP\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{HP Task}}{4}{4}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{5}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{8}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{12}{14}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{MP Task}}{6}{16} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{15}{17}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{3}{3}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{5}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{20}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Priority Inheritance Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1-T2 : LP starts executing 
+\end_layout
+
+\begin_layout Enumerate
+T3 : LP locks shared resource R1
+\end_layout
+
+\begin_layout Enumerate
+T4 : HP requires access to R1, LP is preempted by HP, however HP can't lock
+ R1
+\end_layout
+
+\begin_layout Enumerate
+as it is already held by LP.
+ LP inherits the priority of HP.
+\end_layout
+
+\begin_layout Enumerate
+T5 : LP resumes executing in critical section
+\end_layout
+
+\begin_layout Enumerate
+T6 : MP is spawned and ready to execute, however it can't preempt LP that
+ is
+\end_layout
+
+\begin_layout Enumerate
+running with HP priority
+\end_layout
+
+\begin_layout Enumerate
+T7 : LP releases R1 and is set back to its original low priority
+\end_layout
+
+\begin_layout Enumerate
+T8-T11 : HP locks R1 and executes.
+\end_layout
+
+\begin_layout Enumerate
+T12-T14 : HP releases R1 in T12 and continues executing until T14
+\end_layout
+
+\begin_layout Enumerate
+T15-T17 : MP runs as it has higher priority than LP
+\end_layout
+
+\begin_layout Enumerate
+T18-T20 : LP can run again and finishes its execution in T20
+\end_layout
+
+\begin_layout Subparagraph
+Advantages
+\end_layout
+
+\begin_layout Itemize
+Bounded Priority Inversion
+\end_layout
+
+\begin_layout Subparagraph
+Limitations
+\end_layout
+
+\begin_layout Itemize
+Does not prevent deadlocks when locks are not taken in the same order (see
+ Figure [NUMBER])
+\end_layout
+
+\begin_layout Itemize
+Does not prevent chained blocking : High task needs resources R1 then R2
+ which are held by two different lower tasks, the higher task has to wait
+ for both lower priority tasks.
+\end_layout
+
+\begin_layout Standard
+Two types of blocking are distinguished in this protocol :
+\end_layout
+
+\begin_layout Enumerate
+Direct blocking : a lower task holding a resource blocks a higher task requestin
+g access to that resource.
+\end_layout
+
+\begin_layout Enumerate
+Priority Inheritance blocking : a medium task is blocked by a lower task
+ that temporarily inherited a higher priority.
+\end_layout
+
+\begin_layout Subsubsection
+The Priority Ceiling Protocol
+\end_layout
+
+\begin_layout Standard
+The Priority Inheritance protocol solves the problem of unbounded priority
+ inversion, however deadlocks and chained blocking are no prevented.
+ The intent of the Priority Ceiling Protocol is to mitigate the limitations
+ of the Priority Inheritance Protocol.
+ It does so by having an 
+\shape italic
+ungreedy 
+\shape default
+approach to resources lock request that prevents the apparition of certain
+ tasks and resources configuration that leads to unnecessary blocking or
+ deadlocks.
+\end_layout
+
+\begin_layout Subparagraph
+Description
+\end_layout
+
+\begin_layout Itemize
+Each resource has a ceiling value defined as the maximum priority of all
+ tasks that use it defined as PR.
+\end_layout
+
+\begin_layout Itemize
+A new parameter is introduced : the highest ceiling of all locked resources
+ at a given time defined as C.
+\end_layout
+
+\begin_layout Itemize
+A task resource usage is known offline (before the tasks's execution).
+\end_layout
+
+\begin_layout Itemize
+A task is allowed to enter a critical section only if its priority is strictly
+ higher than C (thus avoiding chained blocking)
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resources :
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+R1, R2 and R3
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resource Access :
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ HP\rightarrow R1\, then\, R2\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ MP\rightarrow R3\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ LP\rightarrow R3\, then\, R2\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resource priority ceilings :
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ PR(R1)=PR(HP)\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ PR(R2)=PR(HP)\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ PR(R3)=PR(MP)\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+tiny
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[]{
+\backslash
+small{System ceiling}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{MP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{MP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{MP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{MP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{MP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{MP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{HP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{HP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{HP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{HP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{HP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{HP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{HP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{HP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{HP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{MP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{MP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{MP}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{nil}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitle[title label font=
+\backslash
+scriptsize]{nil}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{HP Task}}{7}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{8}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=yellow!75}]{}{10}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{12}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{13}{14}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{15}{15}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{MP Task}}{3}{3} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{4}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{17}{18}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{18}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{2}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{3}{3}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{4}{4}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{5}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{7}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{8}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{16}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{19}{20}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Priority Ceiling Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1 : LP starts executing and locks R3, system ceiling is nil.
+\end_layout
+
+\begin_layout Enumerate
+T2 : System ceiling is set to PR(R3) = PR(MP), LP locks R3.
+\end_layout
+
+\begin_layout Enumerate
+T3 : MP preempts LP as it has higher priority.
+\end_layout
+
+\begin_layout Enumerate
+T4 : MP needs to lock R3 but PR(MP) is not strictly higher than C (system
+ ceiling) LP therefore it relinquishes the CPU and LP inherits PR(MP).
+ 
+\end_layout
+
+\begin_layout Enumerate
+T5-T6 : LP locks R2, C is set to PR(HP) and makes progress in its execution.
+\end_layout
+
+\begin_layout Enumerate
+T7 : HP preempts LP as is has higher priority.
+\end_layout
+
+\begin_layout Enumerate
+T8-T9 : HP needs to lock R2 but PR(HP) is not strictly higher than C, it
+ therefore relinquishes the CPU and PR(LP) becomes PR(HP).
+ LP continues its execution.
+\end_layout
+
+\begin_layout Enumerate
+T10-T11 : LP releases R2 and its priority is set to PR(MP).
+ HP preempts LP, locks R1 and makes progress.
+\end_layout
+
+\begin_layout Enumerate
+T12 : HP releases R1 and continues executing.
+\end_layout
+
+\begin_layout Enumerate
+T13-T14 : HP locks R2 and progresses.
+\end_layout
+
+\begin_layout Enumerate
+T15 : HP releases R2 and resumes.
+ C is set to PR(MP)
+\end_layout
+
+\begin_layout Enumerate
+T16 : LP executes and releases R3, its priority is set back to its original
+ level.
+ C is set to nil.
+\end_layout
+
+\begin_layout Enumerate
+T17 : MP preempts LP and locks R3.
+\end_layout
+
+\begin_layout Enumerate
+T18 : MP unlocks R3 and resumes.
+\end_layout
+
+\begin_layout Enumerate
+T19-T20 : LP executes and resumes.
+ 
+\end_layout
+
+\begin_layout Subparagraph
+Advantages
+\end_layout
+
+\begin_layout Itemize
+Prevents deadlocks.
+\end_layout
+
+\begin_layout Itemize
+Prevents transitive blocking.
+\end_layout
+
+\begin_layout Itemize
+Prevents chained blocking.
+\end_layout
+
+\begin_layout Itemize
+The maximum blocking delay for a task is bounded by the duration of the
+ longest critical section among those of lower priority tasks.
+\end_layout
+
+\begin_layout Subparagraph
+Limitations
+\end_layout
+
+\begin_layout Itemize
+Introduces a new type of blocking : priority ceiling blocking that happens
+ for instance at T10, the higher priority task is blocked by lower priority
+ task even though its resource request is for R1.
+\end_layout
+
+\begin_layout Itemize
+Increases the number of context switches (it is time consuming to switch
+ and load a different context)
+\end_layout
+
+\begin_layout Itemize
+Implementation is complex
+\end_layout
+
+\begin_layout Subsubsection
+Immediate Priority Ceiling Protocol
+\end_layout
+
+\begin_layout Standard
+The Immediate Priority Ceiling Protocol is a simplified version of the Priority
+ Ceiling Protocol.
+ While keeping all the advantages of PCP, it aims to decrease the number
+ of context switches.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Description
+\end_layout
+
+\begin_layout Itemize
+Each task has a default original priority.
+\end_layout
+
+\begin_layout Itemize
+A task's priority is raised to the resource ceiling immediately upon ownership
+ acquisition (we do not wait to be preempted and then inherit priority from
+ a higher task).
+\end_layout
+
+\begin_layout Subparagraph
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Same resource and task configuration as the PCP example.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task}}{6}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=yellow!75}]{}{10}{10}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{11}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{12}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{MP Task}}{4}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{13}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{14}{14}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{15}{15}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{16}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{3}{4}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{5}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{9}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{14}{14}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{15}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{17}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Immediate Priority Ceiling Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+T1-T2 : LP is released and executes.
+\end_layout
+
+\begin_layout Itemize
+T3 : LP locks R3 and executes, C and PR(LP) are set to PR(MP).
+\end_layout
+
+\begin_layout Itemize
+T4 : MP is ready to execute but can't preempt LP because PR(LP) = PR(MP)
+\end_layout
+
+\begin_layout Itemize
+T5 : LP locks resource R2, C and PR(LP) are set to PR(HP)
+\end_layout
+
+\begin_layout Itemize
+T6 : HP is ready to execute but can't preempt LP because PR(LP) = PR(HP)
+\end_layout
+
+\begin_layout Itemize
+T8 : LP releases R2 and its priority is set to PR(MP).
+\end_layout
+
+\begin_layout Itemize
+T9-T12 : HP preempts LP, C is set to PR(HP), HP locks and unlocks R1 then
+ R2 and finishes its execution.
+ C is set to PR(MP)
+\end_layout
+
+\begin_layout Itemize
+T13 : As MP and LP have the same priority, they can can both execute at
+ this point.
+ The scheduler arbitrarily chooses MP.
+ MP wants access to R3, held by LP : it relinquishes the processor.
+\end_layout
+
+\begin_layout Itemize
+T14 : LP executes and unlocks R3.
+ Its priority is set back to its original priority level.
+\end_layout
+
+\begin_layout Itemize
+T15 : MP locks R3, executes and unlocks R3.
+\end_layout
+
+\begin_layout Itemize
+T16 : MP finishes its execution
+\end_layout
+
+\begin_layout Itemize
+T17-T19 : LP finishes its execution
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Advantages
+\end_layout
+
+\begin_layout Itemize
+Same advantages as PCP
+\end_layout
+
+\begin_layout Itemize
+Additional advantage of less context switches
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Performance
+\end_layout
+
+\begin_layout Standard
+Same worst case performance as the Priority Ceiling Protocol
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Limitations
+\end_layout
+
+\begin_layout Itemize
+A higher number of tasks priority changes is traded for less context switches,
+ in most computer and operating systems architecture this is beneficial.
+\end_layout
+
+\begin_layout Itemize
+Tasks accessing critical sections get their priority raised regardless of
+ contention on the resource.
+ This can be seen as an unnecessary overhead.
+\end_layout
+
 \begin_layout Subsubsection
 Stack Resource Policy
 \end_layout
 
-\begin_layout Subsubsection
-The Priority Ceiling Protocol on Uniprocessors
+\begin_layout Standard
+The Stack Resource Policy intends to reduce the number of context switches
+ introduced by PCP by anticipating the execution order of tasks.
+ It generalises the concept of task priority by defining a 
+\shape italic
+preemption level 
+\shape default
+corresponding to the task priority in FP systems and to the inversely proportion
+al task deadline (the closer the deadline the higher the preemption level).
 \end_layout
 
 \begin_layout Standard
-The priority ceiling protocol a well-known uniprocessor protocol is at the
- root of many multiprocessor resource sharing protocols on partitioned systems
- because one common strategy in scheduling it to treat each processor independen
-tly.
- Each resource is associated to a priority which is the maximum priority
- of all tasks using that resource (ceiling).
- When trying to acquire that resource, a tasks sees its priority raised
- to the resource's ceiling.
- This protocol is designed to avoid priority inversion 
+In this protocol, a task is not allowed to execute until the resources it
+ needs are available.
+ Traditionally in scheduling protocols, each task has a private stack where
+ subroutines calls are pushed and popped to keep track of its current progress.
+ On the SRP tasks can share their stack.
+ Each resource is assigned a maximum ceiling (maximum priority of all tasks
+ using it).
+ 
+\end_layout
+
+\begin_layout Subparagraph
+Description
+\end_layout
+
+\begin_layout Itemize
+Each task is assigned a fixed preemption level
+\end_layout
+
+\begin_layout Itemize
+Each resource is assigned a preemption ceiling that corresponds to the maximum
+ preemption level of all tasks using that resource
+\end_layout
+
+\begin_layout Itemize
+When a task locks a resource its priority get raised to the resource ceiling
+ priority
+\end_layout
+
+\begin_layout Itemize
+The system ceiling is the maximum preemption ceiling among all currently
+ locked resource.
+\end_layout
+
+\begin_layout Itemize
+A task is not allowed to run until its priority is highest among the tasks
+ ready to run and its preemption level is higher than the system ceiling.
+\end_layout
+
+\begin_layout Itemize
+Tasks ready to be executed are added to the stack
+\end_layout
+
+\begin_layout Itemize
+Tasks execution is not interleaved
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resources : 
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
 \series bold
-[DEFINE IT] 
-\series default
-an indesirable scenario in real-time scheduling.
- PCP makes use of a technique called priority inheritance which consists
- of dynamically changing a tasks priority to avoid preemption and improve
- schedulability.
+R1, R2
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Resource access :
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ HP\rightarrow R1\: then\, R2\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ MP\rightarrow R2\, then\, R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ LP\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Let P be the priority ceiling of a resource or a task we thus have :
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P(R1\text{)}=P(R2)=P(HP)\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task}}{5}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{7}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=yellow!75}]{}{9}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{12}{12}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{MP Task}}{3}{12} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{13}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=yellow!75}]{}{14}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{17}{17}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{18}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{2}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{7}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{19}{20}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Stack Resource Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1 : LP starts executing
+\end_layout
+
+\begin_layout Enumerate
+T2 : LP is the only task running, it can then lock R1 and its priority is
+ now equal to P(HP)
+\end_layout
+
+\begin_layout Enumerate
+T3 : MP is ready to execute however P(MP) < P(LP) = P(R1) = P(HP), therefore
+\end_layout
+
+\begin_layout Enumerate
+it cannot preempt LP
+\end_layout
+
+\begin_layout Enumerate
+T5 : HP is ready to execute however P(HP) = P(LP), therefore it cannot preempt
+ LP
+\end_layout
+
+\begin_layout Enumerate
+T6 : LP releases the locks and is reset to its initial priority
+\end_layout
+
+\begin_layout Enumerate
+T7-T11 : P(HP) > P(MP), thus HP is given priority and can lock R1 and R2
+ and release them both
+\end_layout
+
+\begin_layout Enumerate
+T12 : HP continues execution normally as its priority is the highest
+\end_layout
+
+\begin_layout Enumerate
+T13 - T18 : MP is chosen to continue execution because P(MP) > P(LP)
+\end_layout
+
+\begin_layout Enumerate
+T19-T20 : LP can finish its execution
+\end_layout
+
+\begin_layout Subparagraph
+Advantages
+\end_layout
+
+\begin_layout Itemize
+Limits blocking to only once like PCP, thus reducing context switching.
+ 
+\end_layout
+
+\begin_layout Itemize
+Prevents deadlocks.
+\end_layout
+
+\begin_layout Itemize
+Considering the two previous statements, the maximum blocking time for task
+ equals to at most the length of one critical section.
+\end_layout
+
+\begin_layout Itemize
+Easier to implement (than PCP) as no need for inheritance, no need to block
+ tasks in waiting queues, all tasks share the same stack thus optimising
+ execution times
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Performance
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Limitations
+\end_layout
+
+\begin_layout Subsection
+Real-time Resource Sharing Multiprocessor Protocols
+\end_layout
+
+\begin_layout Standard
+Local resources can be managed by uniprocessor protocols such as SRP or
+ PCP on partitionned systems.
+ However when tasks try to access resources shared between many processors
+ remote blocking can happen.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+Remote blocking
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Remote blocking is the unnecessary blocking of a task while it tries to
+ access a global resource.
+\end_layout
+
+\begin_layout Standard
+Consider a system configuration where two processors P1 and P2 are available
+ and four tasks are running.
+ P1 has only one task assigned, P2 is assigned three task of different prioritie
+s, one high, one medium and one low.
+\end_layout
+
+\begin_layout Subparagraph
+Resource usage
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A task on P1 accesses resource R1, the low priority task on P2 accesses
+ also R1.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{(HP) T1 - P1}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{3}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{13}{14}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{15}{18}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{(HP) HP2 - P2}}{7}{10} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{(MP) MP2 - P2}}{3}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{7}{10}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{11}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{(LP) LP3 - P2}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{2}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{3}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{12}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{13}{15}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Remote blocking situation}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1 : HP1 and LP2 become runnable on P1 and P2 respectively.
+\end_layout
+
+\begin_layout Enumerate
+T2 : LP2 locks resource R1.
+\end_layout
+
+\begin_layout Enumerate
+T3-T6 : MP2 becomes ready to execute and preempts LP2 as it not requesting
+ any resource and has higher priority.
+ 
+\end_layout
+
+\begin_layout Enumerate
+We need protocols able to reduce such blocking and increase predictability.
+\end_layout
+
+\begin_layout Enumerate
+T7-T10 : HP2 becomes ready to execute and preempts T3 as it has a higher
+ priority.
+ At time T10, HP2 finishes its execution.
+\end_layout
+
+\begin_layout Enumerate
+T11: MP2 is scheduled to run, it finishes its execution.
+\end_layout
+
+\begin_layout Enumerate
+T12 : LP2 can execute again, it unlocks R1 and continues its execution on
+ P1
+\end_layout
+
+\begin_layout Enumerate
+T13-T18 : HP1 can now lock R1 and continue to make progress in its execution
+ until it finishes.
+\end_layout
+
+\begin_layout Standard
+From this situation we can see that task HP1 is being blocked because the
+ resource holder has low priority and the other tasks running on the second
+ processor do not require access to the resource, therefore no priority
+ inheritance nor priority ceiling construct can solve the situation.
+ It is interesting to note that even if HP1 as a higher absolute priority
+ than the tasks running on P2 it is still blocked, this is a form of unbounded
+ priority inversion.
 \end_layout
 
 \begin_layout Subsubsection
 The Multiprocessor Priority Ceiling Protocol (MPCP)
 \end_layout
 
-\begin_layout Paragraph
-Description
-\end_layout
-
 \begin_layout Standard
-Rajkumar designed Multiprocessor Priority Ceiling Protocol (MPCP ) 
+Rajkumar designed the Multiprocessor Priority Ceiling Protocol (MPCP ) 
 \series bold
 [REF]
 \series default
- that extends PCP (Priority Ceiling Protocol).
- Resources are regarded as local or global e.g.
- shared between tasks on different processors.
- Local resources locking is managed using PCP.
- However when acquiring a lock to a global resource, the holding task gets
+ that extends PCP (Priority Ceiling Protocol) to solve the remote blocking
+ problem which is a consequence of shared global resources.
+ MPCP distinguishes and treats differently local and global resources.
+ Local resources access is managed using the uniprocessor PCP.
+ However upon acquiring a lock to a global resource, the holding task gets
  its priority raised to a value higher than all running tasks priorities
- in the system.
- If the resource is already held the requesting task is queued to a waiting
- list and its priority raised to the resource ceiling.
+ in the system, in other terms, it is given absolute higher priority.
+ In the case that global resource is already held the requesting task is
+ queued to a global waiting list and its priority raised to the resource
+ ceiling.
  As noted by 
 \begin_inset CommandInset citation
 LatexCommand cite
@@ -606,28 +4086,419 @@ key "davis2011survey"
  with a lower task executing taking first a local lock and then a global
  one.
  Even if the resource the higher task is waiting on is released it won't
- be able to execute.
+ be able to execute [GRAPHIC].
 \end_layout
 
-\begin_layout Paragraph
-Constraints
+\begin_layout Itemize
+A task holding a local resource increases its priority only if it blocks
+ other tasks.
+\end_layout
+
+\begin_layout Itemize
+A task holding a local resource inherits the priority of the highest task
+ it blocks
+\end_layout
+
+\begin_layout Itemize
+A task holding a global resource receives maximal absolute priority immediately
+ to reduce remote blocking
+\end_layout
+
+\begin_layout Itemize
+Resources can be accessed by any processor (shared memory model as opposed
+ to distributed memory model)
+\end_layout
+
+\begin_layout Itemize
+Global resources are assigned a ceiling higher than any other task
 \end_layout
 
 \begin_layout Standard
-To prevent unbounded priority inversion, local to global and global to global
- nested locks are not allowed.
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task - P1}}{3}{4}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{5}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{6}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{8}{8}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task - P1}}{1}{1} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{2}{4}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{5}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{10}{10}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{11}{11}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{HP Task - P2}}{3}{3}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{4}{4}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{5}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{6}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{8}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{10}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{11}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{12}{13}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task - P2}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{3}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{8}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{9}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{14}{14}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Multiprocessor Priority Ceiling Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+Constraints
+\end_layout
+
+\begin_layout Itemize
+To prevent deadlocks, local to global and global to global nested locks
+ are not allowed.
+\end_layout
+
+\begin_layout Itemize
+A high priority task blocked on a global resource can be also locally blocked
+ by local tasks accessing local resources.
+\end_layout
+
+\begin_layout Subparagraph
 Performance
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Subparagraph
 Limitations
 \end_layout
 
+\begin_layout Standard
+Subject to priority inheritance blocking
+\end_layout
+
 \begin_layout Subsubsection
-The Multiprocessor Stack Resource Policy (MSRP)
+The Multiprocessor Stack Resource Protocol (MSRP)
 \end_layout
 
 \begin_layout Paragraph
@@ -637,32 +4508,15 @@ Description
 \begin_layout Standard
 The Multiprocessor Stack Resource Policy (MRSP) is an extension proposed
  by [REF] of the uniprocessor Stack Resource Policy from [REF] (SRP).
- SRP is an EDF protocol.
- The deadline of each task represents a priority level.
- The earlier the deadline the higher the priority.
- Each resource is assigned a priority ceiling corresponding to the priority
- level of the higher task using that resource.
- A new M parameter is also introduced, M corresponds to the maximum of all
- the resources ceiling being used at instant T.
- Any task wanting to execute must have a priority higher than M.
-\end_layout
-
-\begin_layout Standard
-SRP guarantees no blocking when a task is allowed to execute thus enabling
- stack sharing (each task execution is serialized - no interleaving).
-\end_layout
-
-\begin_layout Standard
-Under MRSP as in MPCP resources are divided into local and global groups.
- Global resources have one ceiling per processor.
- A task on a processor is allowed to execute only if it has the processor
- ceiling priority which preserve the property of non-preemptability once
- a task starts executing.
-\end_layout
-
-\begin_layout Standard
-Furthermore when a task is blocked on a global resource, it spins non-preemptive
-ly to preserve the stack sharing property.
+ Tasks requests on local resources are arbitrated using SRP.
+ Global resources are not managed by SRP.
+ Instead, the solution provided to arbitrate global resource access is a
+ FIFO spinlock.
+ Upon global resource access request, tasks are immediately granted absolute
+ maximum priority (becoming effectively non-preemptable) until they succeed
+ accessing the critical section and release it.
+ If the resource is not available it does busy-waiting until the resource
+ is released
 \end_layout
 
 \begin_layout Standard
@@ -671,15 +4525,447 @@ Tasks accessing nested local and global resources need to be allocated the
  
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task - P1}}{4}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{7}{7} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={draw=none, inner color=red}]{}{8}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{9}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{10}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{13}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{14}{14}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task - P1}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={draw=none, inner color=red}]{}{3}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{6}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{7}{14}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{15}{15}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task - P2}}{3}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{6}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{7}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{10}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task - P2}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{2}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{6}{10}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{11}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{12}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Multiprocessor Stack Resource Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1 : LP2 and LP1 are ready for execution and are scheduled
+\end_layout
+
+\begin_layout Enumerate
+T2 : LP2 locks R1
+\end_layout
+
+\begin_layout Enumerate
+T3- : LP1 attempts to lock R1, but it's already locked, its priority is
+ raised to max and it spins non-preemptively on processor 1.
+\end_layout
+
+\begin_layout Enumerate
+T4-T6 : HP1 is ready to execute but it can't preempt LP1 because it is spinning
+ at maximum priority (priority inheritance blocking).
+\end_layout
+
+\begin_layout Enumerate
+T5 : LP2 releases R1 and is set back to its original priority.
+\end_layout
+
+\begin_layout Enumerate
+T6 : LP1 locks R1 executes and releases it.
+ HP2 preempts LP2 and executes.
+\end_layout
+
+\begin_layout Enumerate
+T7-T8 : HP2 locks R1
+\end_layout
+
+\begin_layout Enumerate
+T8 : HP1 wants to lock R1 which is being used, it spins non-preemptively.
+\end_layout
+
+\begin_layout Enumerate
+T9 : HP2 releases R1, HP1 locks R1
+\end_layout
+
+\begin_layout Enumerate
+T10 : HP1 releases R1 and continues its execution as it is the highest task
+ on P1.
+\end_layout
+
+\begin_layout Enumerate
+T11: LP2 locks R2, uses it and unlocks it
+\end_layout
+
+\begin_layout Enumerate
+T13 : HP1 locks R2, uses it and unlocks it
+\end_layout
+
+\begin_layout Enumerate
+T14 : HP1 terminates its execution
+\end_layout
+
+\begin_layout Enumerate
+T15 : LP1 can execute again.
+\end_layout
+
+\begin_layout Subparagraph
 Constraints
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Global resources do not support nesting.
+\end_layout
+
+\begin_layout Subparagraph
 Performance
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Standard
+MSRP performs better than MPCP when global critical sections are short and
+ access to local resources dominates access to global resources, (which
+ is probably the result of good programming practices) [MRSP VS MPCP paper].
+ 
+\end_layout
+
+\begin_layout Subparagraph
 Limitations
 \end_layout
 
@@ -688,29 +4974,424 @@ The Flexible Multiprocessor Locking Protocol (FMLP)
 \end_layout
 
 \begin_layout Standard
-FMLP requires the user to divide resources between long and short access
+FMLP requires the user to define if resources have long or short access
  times.
- Access is differentiated in function of the type of the resource : short
- resources benefit from busy-waiting (reduces context-switching), long resources
- are handled through suspend-waiting in a FIFO manner.
- A task holding a short resource is not allowed to require access to a long
+ 
+\end_layout
+
+\begin_layout Standard
+Access is differentiated in function of the type of the resource : 
+\end_layout
+
+\begin_layout Standard
+Short resources benefit from busy-waiting (reduces context-switching) and
+ become non-preemptable.
+\end_layout
+
+\begin_layout Standard
+Long resources are handled through suspend-waiting in a FIFO manner.
+ 
+\end_layout
+
+\begin_layout Standard
+A task holding a short resource is not allowed to require access to a long
  resource to avoid deadlock.
  
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task - P1}}{3}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{6}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{7}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{9}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task - P1}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{2}{5} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{6}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{10}{11}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task - P2}}{4}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{7}{7}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={draw=none, inner color=red}]{}{8}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{9}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{10}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task - P2}}{1}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={draw=none, inner color=red}]{}{3}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{6}{6}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{}{7}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{13}{13}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Flexible Multiprocessor Locking Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
 Description
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Enumerate
+T1 : LP1 and LP2 are spawned and start executing.
+\end_layout
+
+\begin_layout Enumerate
+T2 : LP1 takes short resource R1
+\end_layout
+
+\begin_layout Enumerate
+T3 : LP2 requests access to R1, it is unavailable to it spins non-preemptively
+ and adds itself to the FIFO queue of waiting tasks.
+ HP1 becomes ready to execute, but it can't preempt LP1
+\end_layout
+
+\begin_layout Enumerate
+T4 : HP2 becomes ready to execute, but it can't preempt LP2
+\end_layout
+
+\begin_layout Enumerate
+T5 : LP1 releases R1.
+\end_layout
+
+\begin_layout Enumerate
+T6 : LP1 gets preempted, HP1 executes, LP2 takes R1.
+\end_layout
+
+\begin_layout Enumerate
+T7 : LP2 releases R1,HP1 takes the lock, HP2 preempts LP2
+\end_layout
+
+\begin_layout Enumerate
+T8 : HP2 requests access to R1, it is unavailable, it spins.
+\end_layout
+
+\begin_layout Enumerate
+T9 : HP1 releases R1, HP2 takes R1.
+ HP1 finishes its execution
+\end_layout
+
+\begin_layout Enumerate
+T10-12 : HP2 executes and finishes.
+\end_layout
+
+\begin_layout Enumerate
+T13 : LP2 can execute again.
+\end_layout
+
+\begin_layout Subparagraph
 Constraints
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Subparagraph
 Performance
 \end_layout
 
-\begin_layout Standard
+\begin_layout Subparagraph
 FMLP has better performance than MSRP.
  This advantage is at least partly due to the fact that FMLP removes the
  restriction on task allocation required by MSRP 
@@ -758,11 +5439,6 @@ Under global scheduling, tasks requiring access to a
 \end_layout
 
 \begin_layout Subsubsection
-Multiprocessor Synchronization Protocol for Real-Time Open Systems (MSOS)
- 
-\end_layout
-
-\begin_layout Subsubsection
 M-BWI 
 \end_layout
 
@@ -771,10 +5447,72 @@ Many other protocols exist
 \end_layout
 
 \begin_layout Subsection
-The Multiprocessor Resource Sharing Protocol
+Real-time multiprocessor operating systems
 \end_layout
 
 \begin_layout Subsubsection
+Characteristics of SMP machines
+\end_layout
+
+\begin_layout Subsubsection
+Processor Caches
+\end_layout
+
+\begin_layout Standard
+A processor cache is a fast memory the processor uses to reduce time to
+ access memory.
+ The cache memory is smaller than the RAM, it is used to stores copies of
+ frequently used locations in the RAM.
+ Most processors have a two-level cache system L1 (fastest) and L2.
+ A processor will typically always check the caches for the data used by
+ a task before looking into the RAM.
+ A cache miss occurs when the data is not available in any of the caches.
+ A process is called 
+\shape italic
+cache-hot 
+\shape default
+when it has the requested data in one of the caches.
+ Now we can see that the operating system task scheduler will always try
+ to have as few cache misses as possible, therefore avoiding slower RAM
+ lookups.
+\end_layout
+
+\begin_layout Subsubsection
+Processor affinity
+\end_layout
+
+\begin_layout Standard
+Processor affinity enables the pinning of a process or a thread to a processor
+ or a set of processors, so that the process will only execute on the designated
+ processor set.
+ This is however on Linux only a hint to the scheduler and there is no guarantee
+ that it will be respected.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+Cost of migration 
+\end_layout
+
+\begin_layout Standard
+The cost of two migrations must be less than the interference of a higher
+ priority thread.
+ Also a migrating thread is likely to suffer from an execution time penalty
+ as its local cache cannot be utilised.
+ However, a preempted thread is also likely to have its data in cache overwritte
+n by the time it executes again.
+ 
+\end_layout
+
+\begin_layout Subsection
+Summary
+\end_layout
+
+\begin_layout Section
+The Multiprocessor Resource Sharing Protocol
+\end_layout
+
+\begin_layout Subsection
 Description
 \end_layout
 
@@ -797,17 +5535,17 @@ We assume a fully partitioned system.
 \end_layout
 
 \begin_layout Enumerate
-All mutex are assigned a set of ceiling priorities, one per processor (for
- those processors that have threads that use the mutex); for processor Pk
- it is the maximum priority of all threads allocated to Pk that use the
- mutex.
+All mutexes are assigned a set of ceiling priorities, one per processor
+ (for those processors that have threads that use the mutex); for processor
+ Pk the mutex's priority is the maximum priority of all threads allocated
+ to Pk that use the mutex.
  
 \end_layout
 
 \begin_layout Enumerate
 A lock request on any mutex results in the priority of the thread being
- immediately raised (ICPP) to the local ceiling for the mutex.
- 
+ immediately raised (ICPP) to the local ceiling for the mutex i.e the mutex's
+ priority for the processor executing the thread.
 \end_layout
 
 \begin_layout Enumerate
@@ -834,7 +5572,7 @@ This cooperating thread must undertake the outstanding requests in the original
  
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 A migration approach
 \end_layout
 
@@ -891,79 +5629,28 @@ Migration addresses points 5 and 6 of the protocol : A thread that is spinning
  the preempted holder locally.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Schedulability Analysis
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Runtime Overhead in SMP computers
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Limitations
 \end_layout
 
-\begin_layout Section
-Characteristics of SMP machines
-\end_layout
-
 \begin_layout Subsection
-Processor Caches
-\end_layout
-
-\begin_layout Standard
-A processor cache is a fast memory the processor uses to reduce time to
- access memory.
- The cache memory is smaller than the RAM, it is used to stores copies of
- frequently used locations in the RAM.
- Most processors have a two-level cache system L1 (fastest) and L2.
- A processor will typically always check the caches for the data used by
- a task before looking into the RAM.
- A cache miss occurs when the data is not available in any of the caches.
- A process is called 
-\shape italic
-cache-hot 
-\shape default
-when it has the requested data in one of the caches.
- Now we can see that the operating system task scheduler will always try
- to have as few cache misses as possible, therefore avoiding task migration
- between processors.
- 
-\end_layout
-
-\begin_layout Subsection
-Processor affinity
-\end_layout
-
-\begin_layout Standard
-Processor affinity enables the pinning of a process or a thread to a processor
- or a set of processors, so that the process will only execute on the designated
- processor set.
- This is however on Linux only a hint to the scheduler and there is no guarantee
- that it will be respected.
- 
-\end_layout
-
-\begin_layout Subsection
-Cost of migration 
-\end_layout
-
-\begin_layout Standard
-The cost of two migrations must be less than the interference of a higher
- priority thread.
- Also a migrating thread is likely to suffer from an execution time penalty
- as its local cache cannot be utilised.
- However, a preempted thread is also likely to have its data in cache overwritte
-n by the time it executes again.
- 
+Project Goals Revisited and Project Requirements
 \end_layout
 
 \begin_layout Section
-Overview of Real-time in Linux Vs RTOSes
+MrsP : Design and Implementation
 \end_layout
 
 \begin_layout Subsection
-RT-patch
+Linux real-time scheduling algorithm
 \end_layout
 
 \begin_layout Subsubsection
@@ -1069,15 +5756,15 @@ The PI chain is an ordered series of locks and processes that cause tasks
 High Resolution Timers
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Comparison with other RTOSes
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsubsection
 Implementation in Linux Kernel
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 The Linux real-time scheduling algorithm
 \end_layout
 
@@ -1103,7 +5790,7 @@ runqueue
 
 \begin_layout Standard
 There is two runqueue per processor, one of which is listing the active
- tasks and the other the expired task.
+ tasks and the other the expired tasks.
  A runqueue is a linked list composed of 140 nodes corresponding to each
  priority level.
  Each node is itself a linked list referencing the tasks of the same priority.
@@ -1157,6 +5844,10 @@ root domains
 Pull and Push algorithms
 \end_layout
 
+\begin_layout Standard
+[INCLUDE CHART]
+\end_layout
+
 \begin_layout Subsubsection
 Priority Management in kernel
 \end_layout
@@ -1166,7 +5857,7 @@ Requirements of MrsP
 \end_layout
 
 \begin_layout Enumerate
-Be able to assign one priority per processor to mutexes
+Be able to assign one priority per processor to spinlocks
 \end_layout
 
 \begin_layout Enumerate
@@ -1186,13 +5877,13 @@ FIFO Spinlock
 \end_layout
 
 \begin_layout Standard
-In multithreading, spinlocks are rarely used, most applications favor mutexes
- which are a more sophisticated solution.
+In multithreading, spinlocks are rarely used, most applications favor the
+ more sophisticated solution of mutexes.
  However with sophistication comes complexity, and complexity in computing
  often means slower response times.
- At kernel level, performance is crucial and often areas protected with
- busy-waiting locks are very short.
- Typically the spinlock is implemented a single variable acting as boolean
+ At kernel level, performance is crucial and areas are often protected with
+ very short busy-waiting locks.
+ Typically the spinlock is implemented as single variable acting as boolean
  indicating whether the resource is currently being used, tasks enter a
  loop and check continuously its value.
  MrsP requires busy-waiting, but not only, it also requires that a FIFO
@@ -1207,18 +5898,6 @@ In multithreading, spinlocks are rarely used, most applications favor mutexes
 
 \begin_layout Subsubsection
 FIFO Spinlock basic algorithm
-\end_layout
-
-\begin_layout Standard
-Inspired from the article 
-\begin_inset Quotes eld
-\end_inset
-
-Ticket Spinlocks
-\begin_inset Quotes erd
-\end_inset
-
- 
 \end_layout
 
 \begin_layout Standard
@@ -1238,7 +5917,11 @@ key "Piggin_ticket_spin"
 \end_inset
 
  and the Lamport Bakery Algorithm.
- Below is a pseudo-code describing the algorithm.
+ Below 
+\series bold
+[EXPLAIN]
+\series default
+ is a pseudo-code describing the algorithm.
 \end_layout
 
 \begin_layout Standard
@@ -1344,9 +6027,9 @@ FIFO_Spin_Unlock(LOCK L){
 The lock variables are initialized to zero at the beginning.
  The task calling FIFO_Spin_Lock starts by atomically getting a ticket number
  and increasing it by one.
- The task then spins in a busy loop waiting for the its ticket number to
- be equal to the owner variable.
- The unlocking is done by a simple increase of the owner variable.
+ The task then spins in a busy loop waiting for its ticket number to be
+ equal to the owner variable.
+ The unlocking is done by a simple (atomic?) increase of the owner variable.
  
 \end_layout
 
@@ -1470,8 +6153,9 @@ Priority ceiling
 
 \begin_layout Standard
 While POSIX Pthread mutexes specify and implement priority ceiling, Pthread
- spinlocks are kept very simple, because their rationale is performance
- and their use cases make them a rarely used feature of multithreading.
+ spinlocks are kept very simple and do not benefit of such feature, because
+ their rationale is performance and their use cases make them a rarely used
+ feature of multithreading.
 \end_layout
 
 \begin_layout Paragraph
@@ -1479,8 +6163,20 @@ Affinity inheritance
 \end_layout
 
 \begin_layout Standard
-MrsP requires waiting task to add the current cpu they are spinning on to
- the list of cpu affinities of the holder in case this one gets preempted.
+MrsP requires waiting tasks to add the current cpu they are spinning on
+ to the list of cpu affinities of the holder in case it gets preempted.
+ This can be defined as 
+\shape italic
+affinity inheritance
+\shape default
+.
+ The mechanism is very similar to the mechanism priority inheritance uses.
+ When a task is waiting on a contended spinlock, it adds the cpu it is currently
+ executing on to the holding task.
+ This way in case of a forced migration e.g due to preemption, the holder
+ task can migrate to processor where the task is currently waiting on the
+ spinlock and preempt it.
+ 
 \end_layout
 
 \begin_layout Paragraph
@@ -1732,6 +6428,39 @@ Implementation of MrsP
 \end_layout
 
 \begin_layout Subsubsection
+System calls
+\end_layout
+
+\begin_layout Standard
+A system call (also called kernel call) is a request to a service typically
+ made from userspace.
+ The service needed is usually only accessible by the kernel because of
+ its possible misuse that could damage the system integrity.
+ System calls act as an Application Programming Interface for the kernel
+ functions and enable to abstract hardware in a safe fashion from the user.
+ As stated in the book Linux Kernel Development 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "love2010linux"
+
+\end_inset
+
+ : 
+\shape italic
+if tasks were free to access system and hardware resources without the kernel's
+ knowledge, it would be nearly impossible to implement multitasking and
+ virtual memory, and certainly impossible to do so with stability and security.
+\end_layout
+
+\begin_layout Paragraph
+System call handler
+\end_layout
+
+\begin_layout Paragraph
+System call overhead
+\end_layout
+
+\begin_layout Subsubsection
 Modifications to the Linux Kernel
 \end_layout
 
@@ -1817,7 +6546,7 @@ Kernelshark and trace-cmd
 \end_layout
 
 \begin_layout Subsubsection
-ftrace
+ftrace & profiling
 \end_layout
 
 \begin_layout Subsection
@@ -1829,7 +6558,15 @@ Test Cases
 \end_layout
 
 \begin_layout Section
-Conclusion
+Conclusion and Further Work
+\end_layout
+
+\begin_layout Subsection
+Project Review
+\end_layout
+
+\begin_layout Subsection
+Overview of the project
 \end_layout
 
 \begin_layout Subsection
@@ -1842,10 +6579,6 @@ Weaknesses
 
 \begin_layout Subsection
 Limitations
-\end_layout
-
-\begin_layout Subsection
-Implications
 \end_layout
 
 \begin_layout Subsection
@@ -1865,6 +6598,10 @@ Each resource sharing protocol seems to suit a particular type of programming
  Why not even think about dynamically changing a policy during runtime,
  going to the realm of strategy (schedulability) and tactics (different
  protocols).
+\end_layout
+
+\begin_layout Subsection
+Final Words
 \end_layout
 
 \begin_layout Standard
