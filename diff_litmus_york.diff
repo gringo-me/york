@@ -1,0 +1,394 @@
+diff -uNr linux-3.10.41/include/litmus/fdso.h litmus-rt/include/litmus/fdso.h
+--- linux-3.10.41/include/litmus/fdso.h	2014-08-08 17:52:59.000000000 +0200
++++ litmus-rt/include/litmus/fdso.h	2014-08-03 18:51:49.000000000 +0200
+@@ -26,8 +26,9 @@
+ 	PCP_SEM         = 5,
+ 
+ 	DFLP_SEM	= 6,
++	MRSP_SEM	= 7,
+ 
+-	MAX_OBJ_TYPE	= 6
++	MAX_OBJ_TYPE	= 7
+ } obj_type_t;
+ 
+ struct inode_obj_id {
+diff -uNr linux-3.10.41/include/litmus/locking.h litmus-rt/include/litmus/locking.h
+--- linux-3.10.41/include/litmus/locking.h	2014-08-08 17:52:59.000000000 +0200
++++ litmus-rt/include/litmus/locking.h	2014-08-07 01:17:06.000000000 +0200
+@@ -25,4 +25,26 @@
+ 	void (*deallocate)(struct litmus_lock*);
+ };
+ 
++struct mrsp_semaphore {
++	struct litmus_lock litmus_lock;
++
++	/* current resource holder */
++	struct task_struct *owner;
++
++	/* priority queue of waiting tasks */
++	wait_queue_head_t wait;
++
++	/* priority ceiling per cpu */
++	unsigned int prio_ceiling[NR_CPUS];
++
++	/* should jobs spin "virtually" for this resource? */
++	int vspin;
++	 
++	volatile pid_t taskid;
++	atomic_t owner_ticket;
++	atomic_t next;
++	int *prio_per_cpu;
++	volatile unsigned char task_prio;
++	struct cpumask saved_cpumask;
++};
+ #endif
+diff -uNr linux-3.10.41/include/litmus/rt_param.h litmus-rt/include/litmus/rt_param.h
+--- linux-3.10.41/include/litmus/rt_param.h	2014-08-08 17:53:00.000000000 +0200
++++ litmus-rt/include/litmus/rt_param.h	2014-08-07 01:19:26.000000000 +0200
+@@ -71,6 +71,8 @@
+ 	((p) >= LITMUS_HIGHEST_PRIORITY &&	\
+ 	 (p) <= LITMUS_LOWEST_PRIORITY)
+ 
++struct mrsp_semaphore;
++
+ struct rt_task {
+ 	lt_t 		exec_cost;
+ 	lt_t 		period;
+@@ -81,6 +83,8 @@
+ 	task_class_t	cls;
+ 	budget_policy_t  budget_policy;  /* ignored by pfair */
+ 	release_policy_t release_policy;
++	struct mrsp_semaphore* mrsp_lock;
++	unsigned int 	saved_priority;
+ };
+ 
+ union np_flag {
+diff -uNr linux-3.10.41/litmus/fdso.c litmus-rt/litmus/fdso.c
+--- linux-3.10.41/litmus/fdso.c	2014-08-08 17:53:00.000000000 +0200
++++ litmus-rt/litmus/fdso.c	2014-08-03 13:25:43.000000000 +0200
+@@ -28,6 +28,7 @@
+ 	&generic_lock_ops, /* DPCP_SEM */
+ 	&generic_lock_ops, /* PCP_SEM */
+ 	&generic_lock_ops, /* DFLP_SEM */
++	&generic_lock_ops, /* MRSP_SEM */
+ };
+ 
+ static int fdso_create(void** obj_ref, obj_type_t type, void* __user config)
+diff -uNr linux-3.10.41/litmus/sched_pfp.c litmus-rt/litmus/sched_pfp.c
+--- linux-3.10.41/litmus/sched_pfp.c	2014-08-08 17:53:01.000000000 +0200
++++ litmus-rt/litmus/sched_pfp.c	2014-08-07 22:47:43.000000000 +0200
+@@ -10,6 +10,7 @@
+ #include <linux/list.h>
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
++#include <linux/cpuset.h>
+ 
+ #include <litmus/litmus.h>
+ #include <litmus/wait.h>
+@@ -251,6 +252,7 @@
+ static void pfp_finish_switch(struct task_struct *prev)
+ {
+ 	pfp_domain_t *to;
++	int old_prio, new_prio ;
+ 
+ 	if (is_realtime(prev) &&
+ 	    is_running(prev) &&
+@@ -262,6 +264,12 @@
+ 
+ 		raw_spin_lock(&to->slock);
+ 
++		if(prev->rt_param.task_params.mrsp_lock != NULL){
++			old_prio = prev->rt_param.task_params.priority;
++			new_prio = prev->rt_param.task_params.mrsp_lock->prio_per_cpu[to->cpu];
++			TRACE_TASK(prev, "modifying prio from %d to %d \n", old_prio,new_prio);
++			prev->rt_param.task_params.priority =  prev->rt_param.task_params.mrsp_lock->prio_per_cpu[to->cpu];
++		}		
+ 		TRACE_TASK(prev, "adding to queue on P%d\n", to->cpu);
+ 		requeue(prev, to);
+ 		if (fp_preemption_needed(&to->ready_queue, to->scheduled))
+@@ -767,6 +775,11 @@
+ 	return container_of(lock, struct mpcp_semaphore, litmus_lock);
+ }
+ 
++static inline struct mrsp_semaphore* mrsp_from_lock(struct litmus_lock* lock)
++{
++	return container_of(lock, struct mrsp_semaphore, litmus_lock);
++}
++
+ int pfp_mpcp_lock(struct litmus_lock* l)
+ {
+ 	struct task_struct* t = current;
+@@ -879,6 +892,113 @@
+ 	return err;
+ }
+ 
++int pfp_mrsp_lock(struct litmus_lock* l)
++{
++	struct task_struct* t = current;
++	struct mrsp_semaphore *sem = mrsp_from_lock(l);
++	prio_wait_queue_t wait;
++	unsigned long flags;
++	unsigned char ticket;
++	struct cpumask holder_mask; 
++
++	if (!is_realtime(t))
++		return -EPERM;
++
++	/* prevent nested lock acquisition */
++	if (tsk_rt(t)->num_locks_held ||
++	    tsk_rt(t)->num_local_locks_held)
++		return -EBUSY;
++
++	ticket = atomic_xchg(&sem->next, sem->next.counter +1);
++	preempt_disable();
++
++	/* Priority-boost ourself. Use the priority
++	 * ceiling for the local partition. */
++	t->rt_param.task_params.saved_priority = t->rt_param.task_params.priority;	
++	boost_priority(t, sem->prio_ceiling[get_partition(t)]);
++
++//	spin_lock_irqsave(&sem->wait.lock, flags);
++
++	preempt_enable_no_resched();
++
++	if (sem->owner) {
++//	   set_task_state(t, TASK_UNINTERRUPTIBLE);
++	   TRACE_CUR("On cpu %d lock has owner %d on cpu %d\n",
++		get_partition(t),
++		sem->owner->pid ,
++		get_partition(sem->owner));
++	   sched_getaffinity(sem->owner->pid, &holder_mask);
++	   TRACE_CUR("Affinity before owner %d cpu[0] %d\n",sem->owner->pid,cpumask_test_cpu(0,&holder_mask));
++	   TRACE_CUR("Affinity before owner %d cpu[1] %d\n",sem->owner->pid,cpumask_test_cpu(1,&holder_mask));
++	   TRACE_CUR("Affinity before owner %d cpu[2] %d\n",sem->owner->pid,cpumask_test_cpu(2,&holder_mask));
++	   TRACE_CUR("Affinity before owner %d cpu[3] %d\n",sem->owner->pid,cpumask_test_cpu(3,&holder_mask));
++	   
++	   cpumask_set_cpu(get_partition(t), &holder_mask);
++           do_set_cpus_allowed(sem->owner, &holder_mask);
++	   
++	   TRACE_CUR("Affinity after owner %d cpu[0] %d\n",sem->owner->pid,cpumask_test_cpu(0,&holder_mask));
++	   TRACE_CUR("Affinity after owner %d cpu[1] %d\n",sem->owner->pid,cpumask_test_cpu(1,&holder_mask));
++	   TRACE_CUR("Affinity after owner %d cpu[2] %d\n",sem->owner->pid,cpumask_test_cpu(2,&holder_mask));
++	   TRACE_CUR("Affinity after owner %d cpu[3] %d\n",sem->owner->pid,cpumask_test_cpu(3,&holder_mask));
++	}
++	TRACE_CUR("About to spin owner_ticket: %d | ticket: %d \n",sem->owner_ticket.counter,ticket);	
++	while (1){
++		TRACE_CUR("Iteration waiting for lock\n");
++		smp_wmb();
++		atomic_cmpxchg(&sem->owner_ticket,ticket,ticket);
++
++		TRACE_CUR("Atomic xchg owner_ticket: %d | ticket: %d\n",sem->owner_ticket.counter,ticket);
++		if (sem->owner_ticket.counter == ticket){
++			sem->owner = t ;
++			break;		
++		}
++	}
++	BUG_ON(sem->owner != t);
++	TRACE_CUR("Increased ticket sem->owner is %d and current is %d\n",sem->owner,t);
++	tsk_rt(t)->num_locks_held++;
++	t->rt_param.task_params.mrsp_lock = sem;
++	t->rt_param.task_params.cpu++;
++	
++	sched_getaffinity(t->pid, &sem->saved_cpumask);		 
++	schedule();
++	return 0;
++}
++int pfp_mrsp_unlock(struct litmus_lock* l)
++{
++	struct task_struct *t = current, *next = NULL;
++	struct mrsp_semaphore *sem = mrsp_from_lock(l);
++	unsigned long flags;
++	int err = 0;
++
++	preempt_disable();
++
++//	spin_lock_irqsave(&sem->wait.lock, flags);
++
++	if (sem->owner != t) {
++		err = -EINVAL;
++		goto out;
++	}
++	sem->owner = NULL;
++	t->rt_param.task_params.mrsp_lock = NULL;
++	t->rt_param.task_params.priority = t->rt_param.task_params.saved_priority;
++	tsk_rt(t)->num_locks_held--;
++
++	do_set_cpus_allowed(t, &sem->saved_cpumask);
++	/* we lose the benefit of priority boosting */
++	//unboost_priority(t);
++
++	/* update the fifo spinlock */
++	TRACE_CUR("MRSP  unlock owner_ticket: %d\n",sem->owner_ticket.counter);
++	smp_wmb();
++	atomic_inc(&sem->owner_ticket);
++	TRACE_CUR("MRSP AFTER unlock owner_ticket: %d\n",sem->owner_ticket.counter);
++out:
++//	spin_unlock_irqrestore(&sem->wait.lock, flags);
++
++	preempt_enable();
++
++	return err;
++}
+ int pfp_mpcp_open(struct litmus_lock* l, void* config)
+ {
+ 	struct task_struct *t = current;
+@@ -906,6 +1026,34 @@
+ 	return 0;
+ }
+ 
++int pfp_mrsp_open(struct litmus_lock* l, int *config)
++{
++	struct task_struct *t = current;
++	int cpu, local_cpu;
++	struct mrsp_semaphore *sem = mrsp_from_lock(l);
++	unsigned long flags;
++
++	if (!is_realtime(t))
++		/* we need to know the real-time priority */
++		return -EPERM;
++
++	local_cpu = get_partition(t);
++	
++	sem->prio_per_cpu = config;
++
++	spin_lock_irqsave(&sem->wait.lock, flags);
++	for (cpu = 0; cpu < NR_CPUS; cpu++) {
++		if (cpu != local_cpu) {
++			sem->prio_ceiling[cpu] = min(sem->prio_ceiling[cpu],
++						     get_priority(t));
++			TRACE_CUR("priority ceiling for sem %p is now %d on cpu %d\n",
++				  sem, sem->prio_ceiling[cpu], cpu);
++		}
++	}
++	spin_unlock_irqrestore(&sem->wait.lock, flags);
++
++	return 0;
++}
+ int pfp_mpcp_close(struct litmus_lock* l)
+ {
+ 	struct task_struct *t = current;
+@@ -926,11 +1074,34 @@
+ 	return 0;
+ }
+ 
++int pfp_mrsp_close(struct litmus_lock* l)
++{
++	struct task_struct *t = current;
++	struct mrsp_semaphore *sem = mrsp_from_lock(l);
++	unsigned long flags;
++
++	int owner;
++
++	spin_lock_irqsave(&sem->wait.lock, flags);
++
++	owner = sem->owner == t;
++
++	spin_unlock_irqrestore(&sem->wait.lock, flags);
++
++	if (owner)
++		pfp_mrsp_unlock(l);
++
++	return 0;
++}
+ void pfp_mpcp_free(struct litmus_lock* lock)
+ {
+ 	kfree(mpcp_from_lock(lock));
+ }
+ 
++void pfp_mrsp_free(struct litmus_lock* lock)
++{
++	kfree(mrsp_from_lock(lock));
++}
+ static struct litmus_lock_ops pfp_mpcp_lock_ops = {
+ 	.close  = pfp_mpcp_close,
+ 	.lock   = pfp_mpcp_lock,
+@@ -939,6 +1110,13 @@
+ 	.deallocate = pfp_mpcp_free,
+ };
+ 
++static struct litmus_lock_ops pfp_mrsp_lock_ops = {
++	.close  = pfp_mrsp_close,
++	.lock   = pfp_mrsp_lock,
++	.open	= pfp_mrsp_open,
++	.unlock = pfp_mrsp_unlock,
++	.deallocate = pfp_mrsp_free,
++};
+ static struct litmus_lock* pfp_new_mpcp(int vspin)
+ {
+ 	struct mpcp_semaphore* sem;
+@@ -961,6 +1139,27 @@
+ 	return &sem->litmus_lock;
+ }
+ 
++static struct litmus_lock* pfp_new_mrsp(int *prio_per_cpu)
++{
++	struct mrsp_semaphore* sem;
++	int cpu;
++
++	sem = kmalloc(sizeof(*sem), GFP_KERNEL);
++	if (!sem)
++		return NULL;
++
++	sem->owner   = NULL;
++	sem->owner_ticket.counter = 0;
++	sem->next.counter = 0;
++	sem->prio_per_cpu = prio_per_cpu; 
++	init_waitqueue_head(&sem->wait);
++	sem->litmus_lock.ops = &pfp_mrsp_lock_ops;
++
++	for (cpu = 0; cpu < NR_CPUS; cpu++)
++		sem->prio_ceiling[cpu] = OMEGA_CEILING;
++
++	return &sem->litmus_lock;
++}
+ 
+ /* ******************** PCP support ********************** */
+ 
+@@ -1793,7 +1992,7 @@
+ static long pfp_allocate_lock(struct litmus_lock **lock, int type,
+ 				 void* __user config)
+ {
+-	int err = -ENXIO, cpu;
++	int err = -ENXIO, cpu, *prio_per_cpu;
+ 	struct srp_semaphore* srp;
+ 
+ 	/* P-FP currently supports the SRP for local resources and the FMLP
+@@ -1880,6 +2079,16 @@
+ 		if (*lock)
+ 			err = 0;
+ 		else
++			err = -ENOMEM;
++		break;
++	case MRSP_SEM:
++		/* Multiprocesor Priority Ceiling Protocol */
++		if (get_user(prio_per_cpu, (int*) config))
++			return -EFAULT;
++		*lock = pfp_new_mrsp(prio_per_cpu);
++		if (*lock)
++			err = 0;
++		else
+ 			err = -ENOMEM;
+ 		break;
+ 	};
+diff -uNr linux-3.10.41/security/tomoyo/builtin-policy.h litmus-rt/security/tomoyo/builtin-policy.h
+--- linux-3.10.41/security/tomoyo/builtin-policy.h	1970-01-01 01:00:00.000000000 +0100
++++ litmus-rt/security/tomoyo/builtin-policy.h	2014-07-26 21:12:58.000000000 +0200
+@@ -0,0 +1,12 @@
++static char tomoyo_builtin_profile[] __initdata =
++"";
++static char tomoyo_builtin_exception_policy[] __initdata =
++"initialize_domain /sbin/modprobe from any\n"
++"initialize_domain /sbin/hotplug from any\n"
++"";
++static char tomoyo_builtin_domain_policy[] __initdata =
++"";
++static char tomoyo_builtin_manager[] __initdata =
++"";
++static char tomoyo_builtin_stat[] __initdata =
++"";
+diff -uNr linux-3.10.41/security/tomoyo/policy/exception_policy.conf litmus-rt/security/tomoyo/policy/exception_policy.conf
+--- linux-3.10.41/security/tomoyo/policy/exception_policy.conf	1970-01-01 01:00:00.000000000 +0100
++++ litmus-rt/security/tomoyo/policy/exception_policy.conf	2014-07-26 21:12:55.000000000 +0200
+@@ -0,0 +1,2 @@
++initialize_domain /sbin/modprobe from any
++initialize_domain /sbin/hotplug from any
