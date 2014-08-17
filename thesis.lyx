@@ -285,6 +285,88 @@ key "burns2013schedulability"
 Project Goals
 \end_layout
 
+\begin_layout Standard
+The project goal is to implement a practical version of the MrsP protocol
+ in the Linux Kernel.
+ In order to achieve that, specific sub-goals have to be fulfilled : 
+\end_layout
+
+\begin_layout Itemize
+Become familiar with Linux kernel development and source code.
+\end_layout
+
+\begin_layout Itemize
+Become familiar with virtualisation tools.
+\end_layout
+
+\begin_layout Itemize
+Understand how real-time scheduling is done in the Linux kernel.
+\end_layout
+
+\begin_layout Itemize
+Understand the specification of the MrsP protocol in the context of multiprocess
+or resource sharing protocols.
+\end_layout
+
+\begin_layout Itemize
+Implement a priority-per-processor for each task.
+\end_layout
+
+\begin_layout Itemize
+Implement affinity inheritance.
+\end_layout
+
+\begin_layout Standard
+These goals will be discussed in greater details throughout this report.
+\end_layout
+
+\begin_layout Subsubsection
+Requirements
+\end_layout
+
+\begin_layout Subsubsection
+Technical challenges
+\end_layout
+
+\begin_layout Subsection
+Development Lifecycle
+\end_layout
+
+\begin_layout Standard
+In this project, the requirements are well-defined and known in advance.
+ However the project involves working with a complex and large legacy system
+ and the feasibility was uncertain : the most critical requirement is the
+ ability to assign one priority per processor for a given task.
+ In order to determine whether that was possible and what would the effort
+ required, an analysis of the current standard Linux kernel scheduling design
+ with the real-time patch was done.
+ Later on, the project was moved to the LITMUS kernel.
+ We have used two different development lifecyle : at first the exploratory
+ prototyping model and then an incremental model.
+\end_layout
+
+\begin_layout Itemize
+Exploratory prototyping : After studying the linux scheduler, hypotesis
+ have been made as to were modifications are necessary to comply with the
+ requirements.
+ The fondamental task structure, the scheduler and the migration routine
+ have been identified as places to be amended.
+ An early prototype have been completed that allowed simple testing.
+ When expected behaviour was obtained and the uncertainty reduced by ensuring
+ feasibility of the most critical constraints, the prototype could be evolved
+ to include some of the complementary features.
+ The development cycle consisted of design, small improvements and regression
+ testing.
+\end_layout
+
+\begin_layout Itemize
+Incremental model : After the experience gained on the Linux kernel with
+ the early prototypes and the feasibility of the system demonstrated and
+ risks mitigated, an incremental development lifecycle was chosen.
+ The features were planified in a serie of phases that included design,
+ implementation, deployment and testing.
+\end_layout
+
 \begin_layout Subsection
 Deliverables
 \end_layout
@@ -299,6 +381,17 @@ Report structure
 
 \begin_layout Section
 Background and Literature Review
+\end_layout
+
+\begin_layout Standard
+In this chapter we proceed to first define concepts of real-time scheduling
+ that will be useful for understanding the context and the relevant background
+ of the field.
+ It is then pertinent to present traditional resource sharing uniprocessor
+ protocols because many multiprocessor protocols are a direct adaptation
+ of these, with the difference that they have the handle the case of a resource
+ shared between tasks on different processors.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -417,6 +510,93 @@ Real time systems desirable properties /requirements
 
 \begin_layout Subsubsection
 Scheduling Policies
+\end_layout
+
+\begin_layout Standard
+Three major families of scheduling policies exist :
+\end_layout
+
+\begin_layout Itemize
+Rate Monotonic : In this policy, tasks are assigned a static priority offline,
+ in function of their period.
+ The shorter the period, the higher the priority.
+ Thus all tasks have to be periodic.
+ Tasks can be preempted at any moment of their execution.
+\end_layout
+
+\begin_layout Itemize
+Fixed-Priority : Tasks are manually assigned a static offline priority.
+ The highest priority task ready to be scheduled at a given time is always
+ scheduled.
+ This policy is the most widely encountered in the real-world.
+ 
+\end_layout
+
+\begin_layout Itemize
+Earliest Deadline First : Tasks are dynamically assigned a priority.
+ The task with the closest deadline at a given time is always scheduled.
+ EDF is said to be optimal because if a configuration of tasks and resource
+ is schedulable then EDF can guarantee all tasks will meet their deadline.
+ If EDF can't schedule a configuration then no other scheduling policy can
+ schedule it.
+ (
+\series bold
+REF
+\series default
+) 
+\end_layout
+
+\begin_layout Subsubsection
+Schedulability Analysis
+\end_layout
+
+\begin_layout Standard
+Real-time systems have response time and timings that must be guaranteed,
+ schedulability analysis is a mathematical method designed to prove the
+ scheduler correctness for a configuration of tasks and resources given
+ their priority and deadlines.
+ Such configuration can be proven to be schedulable, which means that all
+ tasks in that configuration are guaranteeed to meet their deadlines.
+ While an analysis can be sufficient to prove a set of task and resources
+ to be schedulable, not all configuration of tasks and resources can be
+ proved.
+ Schedulability analysis can be applied to fixed-priority (FP) or earliest-deadl
+ine-first (EDF) systems.
+ 
+\series bold
+[MORE]
+\end_layout
+
+\begin_layout Standard
+There are different types of tasks : 
+\end_layout
+
+\begin_layout Itemize
+Periodic : tasks are released at regular intervals of time.
+ They have a deadline constraint.
+\end_layout
+
+\begin_layout Itemize
+Sporadic : tasks are not executed a determined intervals but are released
+ irregularly, typically in response to and event in the system.
+ Because sporadic tasks releases are not predictable, they are assigned
+ a 
+\shape italic
+Minimum Interarrival Time
+\shape default
+ (partly to avoid overloading the scheduler with an unexpected large amount
+ of tasks), that is, a minimum interval of time between two successive releases.
+ They have a deadline constraint.
+\end_layout
+
+\begin_layout Itemize
+Aperiodic : tasks are released irregularly and without MIT.
+ They have a deadline constraint.
+\end_layout
+
+\begin_layout Standard
+A configuration of tasks can be composed of all three types of real-time
+ tasks described above.
 \end_layout
 
 \begin_layout Subsubsection
@@ -803,20 +983,6 @@ Schedulability Analysis (Response Time Analysis)
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-Real-time systems have response time and timings that must be guaranteed,
- schedulability analysis is a mathematical method designed to prove the
- scheduler correctness for a configuration of tasks and resources given
- their priority and deadlines.
- Such configuration can be proven to be schedulable, which means that all
- tasks in that configuration are guaranteeed to meet their deadlines.
- While an analysis can be sufficient to prove a set of task and resources
- to be schedulable, not all configuration of tasks and resources can be
- proved.
- Schedulability analysis can be applied to fixed-priority (FP) or earliest-deadl
-ine-first (EDF) systems.
 \end_layout
 
 \begin_layout Subparagraph
@@ -3049,6 +3215,13 @@ Performance
 \end_layout
 
 \begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Same worst case performance as the Priority Ceiling Protocol
 \end_layout
 
@@ -3688,6 +3861,34 @@ Consider a system configuration where two processors P1 and P2 are available
  and four tasks are running.
  P1 has only one task assigned, P2 is assigned three task of different prioritie
 s, one high, one medium and one low.
+ P1 and P2 have one task each that uses a global resource.
+ When can see that the task on P1 can be blocked if the task on P2 is holding
+ the lock and has been preempted by a higher task on P2.
+ The blocking time is not bounded and could cause a deadline miss for the
+ P1 task.
+ As we proceed to generalise this problem it appears that with global resources
+ a configuration with 
+\shape italic
+n
+\shape default
+ processors can have 
+\shape italic
+n-1 
+\shape default
+processors running tasks that are blocked while waiting access to a global
+ resource.
+ This situation effectively reduces the set of 
+\shape italic
+n
+\shape default
+ processors to only one as the processors are waiting for each other tomake
+ progress.
+ A simple approach could be to allocate all tasks that access global resources
+ to one processor, thus eliminating remote blocking, however this is not
+ sufficient because if too many tasks are assigned to one processor, deadline
+ misses likelihood increases.
+ This calls for more elaborate global resources management which multiprocessor
+ resource sharing protocol aim to fulfill.
 \end_layout
 
 \begin_layout Subparagraph
@@ -4113,6 +4314,10 @@ Resources can be accessed by any processor (shared memory model as opposed
 Global resources are assigned a ceiling higher than any other task
 \end_layout
 
+\begin_layout Itemize
+Lock acquisition is satisfied on a priority basis
+\end_layout
+
 \begin_layout Standard
 \begin_inset space ~
 \end_inset
@@ -4129,6 +4334,90 @@ Global resources are assigned a ceiling higher than any other task
 
 \begin_layout Subparagraph
 Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Global Resources
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+R1, R2
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Resource Access
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\begin_inset Formula $\left\{ P1(HP)\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P1(LP)\rightarrow R1\, then\, R2\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P2(HP)\rightarrow R1\, then\, R2\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P2(LP)\rightarrow R1\right\} $
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -4292,14 +4581,7 @@ ganttbar[bar/.append style={fill=gray!75}]{}{5}{8}
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{9}{9}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=orange!75}]{}{10}{10}
+ganttbar[bar/.append style={fill=orange!75}]{}{9}{10}
 \end_layout
 
 \begin_layout Plain Layout
@@ -4319,14 +4601,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{11}{11}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{HP Task - P2}}{3}{3}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=gray!75}]{}{4}{4}
+small{HP Task - P2}}{3}{4}
 \end_layout
 
 \begin_layout Plain Layout
@@ -4340,35 +4615,28 @@ ganttbar[bar/.append style={fill=red!75}]{}{5}{5}
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{6}{7}
+ganttbar[bar/.append style={fill=green!75}]{}{6}{8}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=gray!75}]{}{8}{8}
+ganttbar[bar/.append style={fill=gray!75}]{}{9}{11}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{9}{10}
+ganttbar[bar/.append style={fill=orange!75}]{}{12}{13}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=orange!75}]{}{11}{11}
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-ganttbar[bar/.append style={fill=green!75}]{}{12}{13}
+ganttbar[bar/.append style={fill=green!75}]{}{14}{15}
 \backslash
 
 \backslash
@@ -4388,28 +4656,28 @@ small{LP Task - P2}}{1}{2}
 
 
 \backslash
-ganttbar[bar/.append style={fill=gray!75}]{}{3}{7}
+ganttbar[bar/.append style={fill=gray!75}]{}{3}{8}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=red!75}]{}{8}{8}
+ganttbar[bar/.append style={fill=red!75}]{}{9}{11}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=gray!75}]{}{9}{13}
+ganttbar[bar/.append style={fill=gray!75}]{}{12}{15}
 \end_layout
 
 \begin_layout Plain Layout
 
 
 \backslash
-ganttbar[bar/.append style={fill=green!75}]{}{14}{14}
+ganttbar[bar/.append style={fill=green!75}]{}{16}{16}
 \backslash
 
 \backslash
@@ -4471,6 +4739,84 @@ end{figure}
 
 \end_layout
 
+\begin_layout Standard
+
+\series bold
+Description
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1 : LP2 and LP1 are released and start to execute 
+\end_layout
+
+\begin_layout Enumerate
+T2 : LP1 takes the lock, its priority gets raised to the maximum priority
+ of the system
+\end_layout
+
+\begin_layout Enumerate
+T3 : HP1 is ready to execute, but is blocked because LP1 is non-preemptable.
+ HP2 is ready to execute and preempts LP2.
+\end_layout
+
+\begin_layout Enumerate
+T4 : LP1 releases the lock and gets back its original priority.
+ 
+\end_layout
+
+\begin_layout Enumerate
+T5 : HP1 preempts LP1 and executes.
+ HP2 takes the locks and releases it
+\end_layout
+
+\begin_layout Enumerate
+T6 : HP1 takes the lock.
+ HP2 continues its execution
+\end_layout
+
+\begin_layout Enumerate
+T7 : HP1 releases the lock.
+\end_layout
+
+\begin_layout Enumerate
+T8 : HP1 finishes its execution.
+\end_layout
+
+\begin_layout Enumerate
+T9 : LP1 takes R2's lock and gets its priority set to the maximum priority
+ .
+ HP2 requests access to R2, it suspends.
+ LP2 can now take R1's lock.
+\end_layout
+
+\begin_layout Enumerate
+T10 : LP1 releases R2.
+ HP2 can't preempt LP2.
+\end_layout
+
+\begin_layout Enumerate
+T11 : LP2 releases R1 and gets back its original priority.
+\end_layout
+
+\begin_layout Enumerate
+T12 : HP2 preempts LP2 and takes R2.
+\end_layout
+
+\begin_layout Enumerate
+T15 : HP2 finishes its execution
+\end_layout
+
+\begin_layout Enumerate
+T16 : LP2 finishes its execution
+\end_layout
+
 \begin_layout Subparagraph
 Constraints
 \end_layout
@@ -4523,6 +4869,96 @@ The Multiprocessor Stack Resource Policy (MRSP) is an extension proposed
 Tasks accessing nested local and global resources need to be allocated the
  same processor[CHECK].
  
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Global Resources
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+R1, R2
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Resource Access
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\begin_inset Formula $\left\{ P1(HP)\rightarrow R1\, then\, R2\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P1(LP)\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P2(HP)\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P2(LP)\rightarrow R1\, then\, R2\right\} $
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -5478,6 +5914,30 @@ when it has the requested data in one of the caches.
 \end_layout
 
 \begin_layout Subsubsection
+Interrupts
+\end_layout
+
+\begin_layout Standard
+An interrupt request (IRQ) is an asynchronous signal to the processor sent
+ by a hardware device or a program.
+ An interrupt alerts the operating system that an event as occured that
+ might require immediate attention, thus requiring the preemption of the
+ currently executed task and the scheduling of high priority specialised
+ tasks : interrupt handlers, that undertake the necessary processing for
+ that particular event.
+ When the interrupt handler finishes, the operating system reschedules the
+ previous task for execution.
+ Interrupt handlers are given a priority higher than any other task.
+ In a real-time system an interrupt is a factor that increases the probability
+ for deadline miss.
+ In Linux, the majority of resources are protected by spinlocks for performance
+ reasons, if the kernel is currently holding a spinlock, an IRQs can be
+ ignored because if it request access to a resource already held, preempting
+ the task holding the lock and making the interrupt handler spin for it
+ leads to a deadlock (interrupt handlers have highest priority).
+\end_layout
+
+\begin_layout Subsubsection
 Processor affinity
 \end_layout
 
@@ -5485,8 +5945,6 @@ Processor affinity
 Processor affinity enables the pinning of a process or a thread to a processor
  or a set of processors, so that the process will only execute on the designated
  processor set.
- This is however on Linux only a hint to the scheduler and there is no guarantee
- that it will be respected.
  
 \end_layout
 
@@ -5570,6 +6028,499 @@ Any thread waiting to gain access to a mutex must be capable of undertaking
 This cooperating thread must undertake the outstanding requests in the original
  FIFO order.
  
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Example
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Global Resources
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+R1 with priority ceilings : P1 = 10 and P2 = 20 (the smaller the value the
+ higher the priority) 
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Resource usage
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\begin_inset Formula $\left\{ P1(HP)\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P1(LP)\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P2(HP)\rightarrow None\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ P2(LP)\rightarrow R1\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Task priorities 
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+HP1 = 15, LP1 = 50, HP2 = 5, LP2 = 50
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+hgrid,
+\end_layout
+
+\begin_layout Plain Layout
+
+vgrid={*1{red, dotted}}, 
+\end_layout
+
+\begin_layout Plain Layout
+
+title height=1,
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+%bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{20}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{
+\backslash
+small{HP Task - P1}}{3}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{13}{16}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{17}{17}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task - P1}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={draw=none, inner color=red}]{}{2}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=violet!75}]{}{6}{9}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{10}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{18}{18}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{HP Task - P2}}{6}{8}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{
+\backslash
+small{LP Task - P2}}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{}{2}{5}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{}{10}{12}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem1}{elem0}
+\end_layout
+
+\begin_layout Plain Layout
+
+%
+\backslash
+ganttlink[link type=fin-to-sta]{elem2}{elem1}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+gantttitlelist{1,...,20}{1}//
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Multiprocessor Resource Sharing Protocol}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Description
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+T1 : LP2 and LP1 are released and execute
+\end_layout
+
+\begin_layout Enumerate
+T2 : LP2 takes R1 lock, its priority is set to resource local ceiling which
+ is 20, LP1 requests access to R1, which is already held : its priority
+ is set to the local resource ceiling which is 10, it then spins (busy-waiting)
+ in a FIFO queue.
+ LP1 adds P1 as an allowed processor to execute on if needs be.
+\end_layout
+
+\begin_layout Enumerate
+T3 : HP1 is ready to execute, but its priority is not higher than the boosted
+ priority of LP1, it is then blocked.
+\end_layout
+
+\begin_layout Enumerate
+T6 : HP2 is ready to execute, its priority is higher than the boosted priroity
+ of LP2, it preempts it and executes.
+ LP2 is scheduled for migration to P1 (thanks to LP1 processor affinity
+ inheritance), its priority is further boosted to 1 higher than the local
+ ceiling of R1 (thus its priority is now 9).
+ It can preempt LP1 and execute.
+\end_layout
+
+\begin_layout Enumerate
+T8 : HP2 finishes its execution, P1 has no task to be scheduled.
+\end_layout
+
+\begin_layout Enumerate
+T9 : LP2 releases R1's lock, its priority is set back to 50, and processor
+ P1 is not allowed to be executed on anymore.
+ 
+\end_layout
+
+\begin_layout Enumerate
+T10 : LP2 is migrated back to P1 and executes.
+ LP1 is scheduled for execution and takes the lock.
+\end_layout
+
+\begin_layout Enumerate
+T12 : LP1 releases the lock, its priority is set back to 50.
+ LP2 finishes its execution
+\end_layout
+
+\begin_layout Enumerate
+T13 : HP1 takes the locks, its priority is set to the processor ceiling
+ which is 10.
+\end_layout
+
+\begin_layout Enumerate
+T16 : HP1 releases the lock, its priority is set back to 15
+\end_layout
+
+\begin_layout Enumerate
+T17: HP1 continues executing and finishes.
+\end_layout
+
+\begin_layout Enumerate
+T18: LP1 executes and finishes.
 \end_layout
 
 \begin_layout Subsection
