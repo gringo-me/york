@@ -142,6 +142,7 @@ static void job_completion(struct task_struct* t, int forced)
 static struct task_struct* pfp_schedule(struct task_struct * prev)
 {
 	pfp_domain_t* 	pfp = local_pfp;
+	pfp_domain_t*   r_pfp = NULL;
 	struct task_struct*	next;
 
 	int out_of_time, sleep, preempt, np, exists, blocks, resched, migrate;
@@ -205,7 +206,18 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 		 */
 		if (pfp->scheduled && !blocks  && !migrate)
 			requeue(pfp->scheduled, pfp);
+	
+		if(pfp->scheduled->rt_param.task_params.mrsp_lock != NULL){
+			TRACE_TASK(pfp->scheduled,"You got it right baby !\n");
+			r_pfp =	remote_pfp(3);
+			pfp_migrate_to(2);	
+//			raw_spin_lock(&r_pfp->slock);
+//			requeue(pfp->scheduled,r_pfp);
+//			raw_spin_unlock(&r_pfp->slock);
+	
+		}
 		next = fp_prio_take(&pfp->ready_queue);
+	
 		if (next == prev) {
 			struct task_struct *t = fp_prio_peek(&pfp->ready_queue);
 			TRACE_TASK(next, "next==prev sleep=%d oot=%d np=%d preempt=%d migrate=%d "
@@ -910,8 +922,11 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 	    tsk_rt(t)->num_local_locks_held)
 		return -EBUSY;
 
+	smp_wmb();
 	ticket = atomic_xchg(&sem->next, sem->next.counter +1);
 	//preempt_disable();
+
+	if(ticket == 256) ticket = 0;	
 
 	/* Priority-boost ourself. Use the priority
 	 * ceiling for the local partition. */
@@ -956,13 +971,13 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 		}
 	}
 	BUG_ON(sem->owner != t);
-	TRACE_CUR("Increased ticket sem->owner is %d and current is %d\n",sem->owner,t);
+	TRACE_CUR("Obtained lock sem->owner is %d and current is %d\n",sem->owner,t);
 	tsk_rt(t)->num_locks_held++;
 	t->rt_param.task_params.mrsp_lock = sem;
-	t->rt_param.task_params.cpu++;
+	//t->rt_param.task_params.cpu++;
 	
 	sched_getaffinity(t->pid, &sem->saved_cpumask);		 
-	schedule();
+	//schedule();
 	return 0;
 }
 int pfp_mrsp_unlock(struct litmus_lock* l)
