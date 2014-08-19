@@ -681,83 +681,304 @@ static int *volatile mutex;
 //	SYSCALL( remove(".pcp_locks") );
 //}
 //
-TESTCASE(mrsp_test, P_FP,
-	 "MRSP test")
-{
-	int fd, od = 0;
+//TESTCASE(mrsp_test, P_FP,
+//	 "MRSP test")
+//{
+//	int fd, od = 0;
+//
+//	int child_hi, child_lo, status ;
+//	int prio_per_cpu[4];
+//
+//	struct rt_task params;
+//	init_rt_task_param(&params);
+//	params.cpu        = 0;
+//	params.exec_cost  =  ms2ns(10000);
+//	params.period     = ms2ns(100000);
+//	params.relative_deadline = params.period;
+//	params.phase      = 0;
+//	params.cls        = RT_CLASS_HARD;
+//	params.budget_policy = NO_ENFORCEMENT;
+//	SYSCALL( be_migrate_to_cpu(3) );
+//
+//	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
+//
+//	prio_per_cpu [0] = 15 ;
+//	prio_per_cpu [1] = 16 ;
+//	prio_per_cpu [2] = 17 ;
+//	prio_per_cpu [3] = 18 ;
+//
+//	child_lo = FORK_TASK(
+//		params.priority = LITMUS_LOWEST_PRIORITY;
+//		params.phase    = 0;
+//		SYSCALL( set_rt_task_param(gettid(), &params) );
+//		SYSCALL( be_migrate_to_cpu(params.cpu) );
+//		SYSCALL( task_mode(LITMUS_RT_TASK) );
+//
+//		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+//
+//		printf("\nLP task about to lock task\n");
+//		SYSCALL( litmus_lock(od) );
+//		printf("LP task locked task\n");
+//		usleep(100);
+//		SYSCALL( litmus_unlock(od) );
+//		printf("LP task unlocked task\n");
+//
+//		);
+//
+//	params.cpu = 1;
+//	child_hi = FORK_TASK(
+//		params.priority	= LITMUS_HIGHEST_PRIORITY;
+//
+//		SYSCALL( set_rt_task_param(gettid(), &params) );
+//		SYSCALL( be_migrate_to_cpu(params.cpu) );
+//		SYSCALL( task_mode(LITMUS_RT_TASK) );
+//
+//		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+//
+//		printf("\nHP task about to lock task\n");
+//		SYSCALL( litmus_lock(od) );
+//		printf("HP task locked task\n");
+//		SYSCALL( litmus_unlock(od) );
+//		printf("HP task unlocked task\n");
+//
+//		);
+//
+//
+//	SYSCALL( waitpid(child_hi, &status, 0) );
+//	ASSERT( status == 0 );
+//
+//	SYSCALL( waitpid(child_lo, &status, 0) );
+//	ASSERT( status == 0 );
+//}
+//TESTCASE(mrsp_many, P_FP,
+//	 "MRSP 3 tasks one resource")
+//{
+//	int fd, od = 0;
+//
+//	int child_hi, child_lo, child_mid, status ;
+//	int prio_per_cpu[4];
+//	int i,j,k;
+//
+//	struct rt_task params;
+//	init_rt_task_param(&params);
+//	params.cpu        = 0;
+//	params.exec_cost  =  ms2ns(100000);
+//	params.period     = ms2ns(1000000);
+//	params.relative_deadline = params.period;
+//	//params.phase      = 0;
+//	//params.cls        = RT_CLASS_HARD;
+//	//params.budget_policy = NO_ENFORCEMENT;
+//	SYSCALL( be_migrate_to_cpu(3) );
+//
+//	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
+//
+//	prio_per_cpu [0] = 10 ;
+//	prio_per_cpu [1] = 15 ;
+//	prio_per_cpu [2] = 20 ;
+//	prio_per_cpu [3] = 25 ;
+//
+//	child_lo = FORK_TASK(
+//		params.priority = LITMUS_LOWEST_PRIORITY;
+//		params.phase    = 0;
+//		SYSCALL( set_rt_task_param(gettid(), &params) );
+//		SYSCALL( be_migrate_to_cpu(params.cpu) );
+//		SYSCALL( task_mode(LITMUS_RT_TASK) );
+//
+//		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+//
+//		printf("\nLP task about to lock task\n");
+//		i = 10;
+//		while (i){
+//		i--;
+//		SYSCALL( litmus_lock(od) );
+//		printf("LP task locked task %d\n",i);
+//		usleep(100000);
+//		SYSCALL( litmus_unlock(od) );
+//		printf("LP task unlocked task\n");
+//		}
+//		);
+//
+//	params.cpu = 1;
+//	child_hi = FORK_TASK(
+//		params.priority	= LITMUS_HIGHEST_PRIORITY;
+//
+//		SYSCALL( set_rt_task_param(gettid(), &params) );
+//		SYSCALL( be_migrate_to_cpu(params.cpu) );
+//		SYSCALL( task_mode(LITMUS_RT_TASK) );
+//
+//		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+//
+//		printf("\nHP task about to lock task\n");
+//		j = 10;
+//		while (j--){
+//		SYSCALL( litmus_lock(od) );
+//		printf("HP task locked task %d\n",j);
+//		usleep(30000);
+//		SYSCALL( litmus_unlock(od) );
+//		printf("HP task unlocked task\n");
+//		}
+//		);
+//
+//	params.cpu = 2;
+//	child_mid = FORK_TASK(
+//		params.priority	= LITMUS_LOWEST_PRIORITY;
+//
+//		SYSCALL( set_rt_task_param(gettid(), &params) );
+//		SYSCALL( be_migrate_to_cpu(params.cpu) );
+//		SYSCALL( task_mode(LITMUS_RT_TASK) );
+//
+//		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+//
+//		printf("\nMP task about to lock task\n");
+//		k = 10;
+//		while (k--){
+//		SYSCALL( litmus_lock(od) );
+//		printf("MP task locked task %d\n",k);
+//		usleep(20000);
+//		SYSCALL( litmus_unlock(od) );
+//		printf("MP task unlocked task\n");
+//		}
+//		);
+//
+//	SYSCALL( waitpid(child_hi, &status, 0) );
+//	ASSERT( status == 0 );
+//
+//	SYSCALL( waitpid(child_lo, &status, 0) );
+//	ASSERT( status == 0 );
+//}
+//TESTCASE(mrsp_four_tasks, P_FP,
+//	 "MRSP 4 tasks one resource")
+//{
+//	int fd, od = 0;
+//
+//	int child_hi, child_lo, child_mid, child_fourth, status ;
+//	int prio_per_cpu[4];
+//	int i,j,k,l;
+//
+//	struct rt_task params;
+//	init_rt_task_param(&params);
+//	params.cpu        = 0;
+//	params.exec_cost  =  ms2ns(100000);
+//	params.period     = ms2ns(1000000);
+//	params.relative_deadline = params.period;
+//	//params.phase      = 0;
+//	//params.cls        = RT_CLASS_HARD;
+//	//params.budget_policy = NO_ENFORCEMENT;
+//	SYSCALL( be_migrate_to_cpu(3) );
+//
+//	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
+//
+//	prio_per_cpu [0] = 10 ;
+//	prio_per_cpu [1] = 15 ;
+//	prio_per_cpu [2] = 20 ;
+//	prio_per_cpu [3] = 25 ;
+//
+//	child_lo = FORK_TASK(
+//		params.priority = LITMUS_LOWEST_PRIORITY;
+//		params.phase    = 0;
+//		SYSCALL( set_rt_task_param(gettid(), &params) );
+//		SYSCALL( be_migrate_to_cpu(params.cpu) );
+//		SYSCALL( task_mode(LITMUS_RT_TASK) );
+//
+//		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+//
+//		printf("\nLP task about to lock task\n");
+//		i = 10;
+//		while (i){
+//		i--;
+//		SYSCALL( litmus_lock(od) );
+//		printf("LP task locked task %d\n",i);
+//		usleep(100000);
+//		SYSCALL( litmus_unlock(od) );
+//		printf("LP task unlocked task\n");
+//		}
+//		);
+//
+//	params.cpu = 1;
+//	child_hi = FORK_TASK(
+//		params.priority	= LITMUS_HIGHEST_PRIORITY;
+//
+//		SYSCALL( set_rt_task_param(gettid(), &params) );
+//		SYSCALL( be_migrate_to_cpu(params.cpu) );
+//		SYSCALL( task_mode(LITMUS_RT_TASK) );
+//
+//		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+//
+//		printf("\nHP task about to lock task\n");
+//		j = 10;
+//		while (j--){
+//		SYSCALL( litmus_lock(od) );
+//		printf("HP task locked task %d\n",j);
+//		usleep(30000);
+//		SYSCALL( litmus_unlock(od) );
+//		printf("HP task unlocked task\n");
+//		}
+//		);
+//
+//	params.cpu = 2;
+//	child_mid = FORK_TASK(
+//		params.priority	= LITMUS_LOWEST_PRIORITY;
+//
+//		SYSCALL( set_rt_task_param(gettid(), &params) );
+//		SYSCALL( be_migrate_to_cpu(params.cpu) );
+//		SYSCALL( task_mode(LITMUS_RT_TASK) );
+//
+//		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+//
+//		printf("\nMP task about to lock task\n");
+//		k = 10;
+//		while (k--){
+//		SYSCALL( litmus_lock(od) );
+//		printf("MP task locked task %d\n",k);
+//		usleep(20000);
+//		SYSCALL( litmus_unlock(od) );
+//		printf("MP task unlocked task\n");
+//		}
+//		);
+//
+//	params.cpu = 3;
+//	child_fourth = FORK_TASK(
+//		params.priority	= LITMUS_LOWEST_PRIORITY ;
+//
+//		SYSCALL( set_rt_task_param(gettid(), &params) );
+//		SYSCALL( be_migrate_to_cpu(params.cpu) );
+//		SYSCALL( task_mode(LITMUS_RT_TASK) );
+//
+//		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+//
+//		printf("\nFourth task about to lock task\n");
+//		l = 10;
+//		while (l--){
+//		SYSCALL( litmus_lock(od) );
+//		printf("Fourth task locked task %d\n",l);
+//		usleep(20000);
+//		SYSCALL( litmus_unlock(od) );
+//		printf("Fourth task unlocked task\n");
+//		}
+//		);
+//
+//	SYSCALL( waitpid(child_hi, &status, 0) );
+//	ASSERT( status == 0 );
+//
+//	SYSCALL( waitpid(child_lo, &status, 0) );
+//	ASSERT( status == 0 );
+//	
+//	SYSCALL( waitpid(child_mid, &status, 0) );
+//	ASSERT( status == 0 );
+//	
+//	SYSCALL( waitpid(child_fourth, &status, 0) );
+//	ASSERT( status == 0 );
+//}
 
-	int child_hi, child_lo, status ;
-	int prio_per_cpu[4];
-
-	struct rt_task params;
-	init_rt_task_param(&params);
-	params.cpu        = 0;
-	params.exec_cost  =  ms2ns(10000);
-	params.period     = ms2ns(100000);
-	params.relative_deadline = params.period;
-	params.phase      = 0;
-	params.cls        = RT_CLASS_HARD;
-	params.budget_policy = NO_ENFORCEMENT;
-	SYSCALL( be_migrate_to_cpu(3) );
-
-	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
-
-	prio_per_cpu [0] = 15 ;
-	prio_per_cpu [1] = 16 ;
-	prio_per_cpu [2] = 17 ;
-	prio_per_cpu [3] = 18 ;
-
-	child_lo = FORK_TASK(
-		params.priority = LITMUS_LOWEST_PRIORITY;
-		params.phase    = 0;
-		SYSCALL( set_rt_task_param(gettid(), &params) );
-		SYSCALL( be_migrate_to_cpu(params.cpu) );
-		SYSCALL( task_mode(LITMUS_RT_TASK) );
-
-		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
-
-		printf("\nLP task about to lock task\n");
-		SYSCALL( litmus_lock(od) );
-		printf("LP task locked task\n");
-		usleep(100);
-		SYSCALL( litmus_unlock(od) );
-		printf("LP task unlocked task\n");
-
-		);
-
-	params.cpu = 1;
-	child_hi = FORK_TASK(
-		params.priority	= LITMUS_HIGHEST_PRIORITY;
-
-		SYSCALL( set_rt_task_param(gettid(), &params) );
-		SYSCALL( be_migrate_to_cpu(params.cpu) );
-		SYSCALL( task_mode(LITMUS_RT_TASK) );
-
-		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
-
-		printf("\nHP task about to lock task\n");
-		SYSCALL( litmus_lock(od) );
-		printf("HP task locked task\n");
-		SYSCALL( litmus_unlock(od) );
-		printf("HP task unlocked task\n");
-
-		);
-
-
-	SYSCALL( waitpid(child_hi, &status, 0) );
-	ASSERT( status == 0 );
-
-	SYSCALL( waitpid(child_lo, &status, 0) );
-	ASSERT( status == 0 );
-}
-TESTCASE(mrsp_many, P_FP,
-	 "MRSP 3 tasks one resource")
+TESTCASE(mrsp_paper_simulation, P_FP,
+	 "MRSP 2 low tasks access resource one high")
 {
 	int fd, od = 0;
 
 	int child_hi, child_lo, child_mid, status ;
 	int prio_per_cpu[4];
 	int i,j,k;
+	int ii,jj,kk;
 
 	struct rt_task params;
 	init_rt_task_param(&params);
@@ -778,7 +999,7 @@ TESTCASE(mrsp_many, P_FP,
 	prio_per_cpu [3] = 25 ;
 
 	child_lo = FORK_TASK(
-		params.priority = LITMUS_LOWEST_PRIORITY;
+		params.priority = LITMUS_HIGHEST_PRIORITY;
 		params.phase    = 0;
 		SYSCALL( set_rt_task_param(gettid(), &params) );
 		SYSCALL( be_migrate_to_cpu(params.cpu) );
@@ -787,21 +1008,24 @@ TESTCASE(mrsp_many, P_FP,
 		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
 
 		printf("\nLP task about to lock task\n");
-		i = 10;
+		i = 1000;
 		while (i){
 		i--;
 		SYSCALL( litmus_lock(od) );
 		printf("LP task locked task %d\n",i);
-		usleep(100000);
+		
+		ii = 0;
+
+		while(ii < 10){ ii++; }
 		SYSCALL( litmus_unlock(od) );
 		printf("LP task unlocked task\n");
 		}
 		);
 
-	params.cpu = 1;
+	params.cpu = 0;
 	child_hi = FORK_TASK(
-		params.priority	= LITMUS_HIGHEST_PRIORITY;
-
+		usleep(200);
+		params.priority	= LITMUS_LOWEST_PRIORITY;
 		SYSCALL( set_rt_task_param(gettid(), &params) );
 		SYSCALL( be_migrate_to_cpu(params.cpu) );
 		SYSCALL( task_mode(LITMUS_RT_TASK) );
@@ -811,18 +1035,17 @@ TESTCASE(mrsp_many, P_FP,
 		printf("\nHP task about to lock task\n");
 		j = 10;
 		while (j--){
-		SYSCALL( litmus_lock(od) );
-		printf("HP task locked task %d\n",j);
-		usleep(30000);
-		SYSCALL( litmus_unlock(od) );
-		printf("HP task unlocked task\n");
+		jj = 0;
+
+		while(jj < 10000000){jj++;}
+		printf("HP iterates %d\n",j);
 		}
 		);
 
-	params.cpu = 2;
+	params.cpu = 3;
 	child_mid = FORK_TASK(
-		params.priority	= LITMUS_LOWEST_PRIORITY;
 
+		params.priority	= LITMUS_HIGHEST_PRIORITY;
 		SYSCALL( set_rt_task_param(gettid(), &params) );
 		SYSCALL( be_migrate_to_cpu(params.cpu) );
 		SYSCALL( task_mode(LITMUS_RT_TASK) );
@@ -834,8 +1057,10 @@ TESTCASE(mrsp_many, P_FP,
 		while (k--){
 		SYSCALL( litmus_lock(od) );
 		printf("MP task locked task %d\n",k);
-		usleep(20000);
+		kk = 0;
+		while(kk < 10){kk++;}
 		SYSCALL( litmus_unlock(od) );
+
 		printf("MP task unlocked task\n");
 		}
 		);
@@ -844,5 +1069,8 @@ TESTCASE(mrsp_many, P_FP,
 	ASSERT( status == 0 );
 
 	SYSCALL( waitpid(child_lo, &status, 0) );
+	ASSERT( status == 0 );
+	
+	SYSCALL( waitpid(child_mid, &status, 0) );
 	ASSERT( status == 0 );
 }
