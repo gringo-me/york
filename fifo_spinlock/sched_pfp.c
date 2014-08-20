@@ -139,6 +139,29 @@ static void job_completion(struct task_struct* t, int forced)
 		sched_trace_task_release(t);
 }
 
+int get_nearest_cpu_affinity(struct task_struct *t){
+	struct cpumask holder_mask; 
+	int current_cpu, nb_cpus;
+
+	if (!t) return -1 ;
+
+	if(!sched_getaffinity(t->pid, &holder_mask)) return -1;
+	
+	current_cpu = get_partition(t);
+	nb_cpus = num_online_cpus();
+	int i = current_cpu + 1;
+
+	while(i != nb_cpus){
+
+		if (i > nb_cpus) i = 0;
+
+		if (cpumask_test_cpu(i,&holder_mask) && i != current_cpu)
+			return i;
+		i++;
+	}
+	return -1;	
+}
+
 static struct task_struct* pfp_schedule(struct task_struct * prev)
 {
 	pfp_domain_t* 	pfp = local_pfp;
@@ -184,6 +207,19 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 	if (np && (out_of_time || preempt || sleep))
 		request_exit_np(pfp->scheduled);
 
+	if(prev && preempt && prev->rt_param.task_params.mrsp_lock != NULL){
+		struct cpumask dummy ;
+
+		cpumask_set_cpu(2,&dummy);		
+i		do_set_cpus_allowed(prev, &dummy);
+		int n = get_nearest_cpu_affinity(prev);
+		if(n) {
+			TRACE_TASK(prev,"You got it right baby going to %d!\n",n);
+			prev->rt_param.task_params.cpu = n;	
+			migrate = 1;
+		}
+	}
+
 	/* Any task that is preemptable and either exhausts its execution
 	 * budget or wants to sleep completes. We may have to reschedule after
 	 * this.
@@ -207,15 +243,6 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 		if (pfp->scheduled && !blocks  && !migrate)
 			requeue(pfp->scheduled, pfp);
 	
-		if(pfp->scheduled->rt_param.task_params.mrsp_lock != NULL){
-			TRACE_TASK(pfp->scheduled,"You got it right baby !\n");
-			r_pfp =	remote_pfp(3);
-			pfp_migrate_to(2);	
-//			raw_spin_lock(&r_pfp->slock);
-//			requeue(pfp->scheduled,r_pfp);
-//			raw_spin_unlock(&r_pfp->slock);
-	
-		}
 		next = fp_prio_take(&pfp->ready_queue);
 	
 		if (next == prev) {
@@ -247,9 +274,8 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 
 	if (next) {
 		TRACE_TASK(next, "scheduled at %llu\n", litmus_clock());
-	} else {
-		TRACE("becoming idle at %llu\n", litmus_clock());
-	}
+	} 
+//	else {TRACE("becoming idle at %llu\n", litmus_clock());}
 
 	pfp->scheduled = next;
 	sched_state_task_picked();
@@ -257,6 +283,8 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 
 	return next;
 }
+
+
 
 #ifdef CONFIG_LITMUS_LOCKING
 
@@ -932,7 +960,7 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 	 * ceiling for the local partition. */
 	t->rt_param.task_params.saved_priority = t->rt_param.task_params.priority;	
 	t->rt_param.task_params.priority = sem->prio_per_cpu[get_partition(t)];
-	TRACE_CUR("Priority is now %d\n",t->rt_param.task_params.priority);
+	TRACE_CUR("Priority is now %d, partition %d\n",t->rt_param.task_params.priority,get_partition(t));
 
 //	spin_lock_irqsave(&sem->wait.lock, flags);
 
