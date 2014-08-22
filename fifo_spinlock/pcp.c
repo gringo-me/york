@@ -1097,16 +1097,29 @@ static int *volatile mutex;
 //	
 //	//SYSCALL( waitpid(child_mid, &status, 0) );
 //	//ASSERT( status == 0 );
+
+long long int fibb(int n){
+	int fnow = 0, fnext = 1, tempf;
+	while(--n>0){
+		tempf = fnow + fnext;
+		fnow = fnext;
+		fnext = tempf;
+	}
+	return fnext;
+
+}
+
 TESTCASE(mrsp, P_FP,
 	 "mrsp")
 {
-	int fd, od ;
+	int fd, od, fd2, od2 ;
 
 	int child_hi, child_lo, child_middle, status, waiters;
 	lt_t delay = ms2ns(100);
 	double start, stop;
 
 	int prio_per_cpu[4];
+	int prio_per_cpu2[4];
 	struct rt_task params;
 	init_rt_task_param(&params);
 	params.cpu        = 0;
@@ -1118,12 +1131,18 @@ TESTCASE(mrsp, P_FP,
 	params.budget_policy = NO_ENFORCEMENT;
 
 	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
+	SYSCALL( fd2 = open(".pcp_locks2", O_RDONLY | O_CREAT, S_IRUSR) );
 
 
 	prio_per_cpu [0] = LITMUS_LOWEST_PRIORITY ;
-	prio_per_cpu [1] = LITMUS_LOWEST_PRIORITY ;
-	prio_per_cpu [2] = LITMUS_LOWEST_PRIORITY ;
-	prio_per_cpu [3] = LITMUS_LOWEST_PRIORITY ;
+	prio_per_cpu [1] = 10 ;
+	prio_per_cpu [2] = 20 ;
+	prio_per_cpu [3] = 30 ;
+
+	prio_per_cpu2 [0] = LITMUS_LOWEST_PRIORITY ;
+	prio_per_cpu2 [1] = 20 ;
+	prio_per_cpu2 [2] = 30 ;
+	prio_per_cpu2 [3] = 40 ;
 
 	params.cpu        = 0;
 	child_lo = FORK_TASK(
@@ -1134,21 +1153,20 @@ TESTCASE(mrsp, P_FP,
 		SYSCALL( task_mode(LITMUS_RT_TASK) );
 
 		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+		SYSCALL( od2 = open_mrsp_sem(fd2, 0, prio_per_cpu2) );
 
 		SYSCALL( wait_for_ts_release() );
 
 		SYSCALL( litmus_lock(od) );
 		start = cputime();
-		while (cputime() - start < 0.25)
-			;
+		while (cputime() - start < 0.25);
 		SYSCALL( litmus_unlock(od) );
 
-		//SYSCALL(sleep_next_period() );
 		);
 
-	params.cpu        = 3;
+	params.cpu        = 2;
 	child_middle = FORK_TASK(
-		params.priority	= LITMUS_HIGHEST_PRIORITY + 1;
+		params.priority	= LITMUS_LOWEST_PRIORITY;
 		params.phase    = ms2ns(100);
 
 		SYSCALL( set_rt_task_param(gettid(), &params) );
@@ -1206,10 +1224,10 @@ TESTCASE(mrsp, P_FP,
 	SYSCALL( waitpid(child_hi, &status, 0) );
 	ASSERT( status == 0 );
 
-//	SYSCALL( waitpid(child_lo, &status, 0) );
+	SYSCALL( waitpid(child_lo, &status, 0) );
 //	ASSERT( status ==  SIGUSR2);
 
-//	SYSCALL( waitpid(child_middle, &status, 0) );
+	SYSCALL( waitpid(child_middle, &status, 0) );
 //	ASSERT( status ==  SIGUSR2);
 
 }

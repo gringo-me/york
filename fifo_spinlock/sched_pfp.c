@@ -187,6 +187,7 @@ static void pfp_migrate_to(int target_cpu)
 int get_nearest_cpu_affinity(struct task_struct *t){
 	struct cpumask holder_mask; 
 	int current_cpu, nb_cpus;
+	int i;
 
 	if (!t) return -1 ;
 
@@ -194,13 +195,13 @@ int get_nearest_cpu_affinity(struct task_struct *t){
 	
 	current_cpu = get_partition(t);
 	nb_cpus = num_online_cpus();
-	int i = current_cpu + 1;
+	i = current_cpu + 1;
 
 	while(i != nb_cpus){
 
 		if (i > nb_cpus) i = 0;
 
-		if (cpumask_test_cpu(i,&holder_mask) == -1 && i != current_cpu)
+		if (cpumask_test_cpu(i,tsk_cpus_allowed(t)) && i != current_cpu)
 			return i;
 		i++;
 	}
@@ -210,7 +211,6 @@ int get_nearest_cpu_affinity(struct task_struct *t){
 static struct task_struct* pfp_schedule(struct task_struct * prev)
 {
 	pfp_domain_t* 	pfp = local_pfp;
-	pfp_domain_t*   r_pfp = NULL;
 	struct task_struct*	next;
 
 	int out_of_time, sleep, preempt, np, exists, blocks, resched, migrate;
@@ -253,19 +253,25 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 		request_exit_np(pfp->scheduled);
 
 	if(prev && preempt && prev->rt_param.task_params.mrsp_lock != NULL){
-		struct cpumask dummy ;
-
+		int n;
 		TRACE_TASK(prev,"You got it right baby !\n");
-		prev->rt_param.task_params.cpu = 2;
 		migrate = 1;
-		int n = get_nearest_cpu_affinity(prev);
 		next = fp_prio_take(&pfp->ready_queue);
-		TRACE_TASK(next, "preempts and scheduled at %llu\n", litmus_clock());
+		
+		cpumask_clear_cpu(0,tsk_cpus_allowed(prev));
+		cpumask_set_cpu(3,tsk_cpus_allowed(prev));
+		n = cpumask_next(3, tsk_cpus_allowed(prev));
+
+		if( n > num_online_cpus())
+			n = cpumask_first(tsk_cpus_allowed(prev));
+		
+		TRACE_TASK(next, "preempts and scheduled at %llu nearest=%u\n", litmus_clock(),n);
+		prev->rt_param.task_params.cpu = n;
 
 		pfp->scheduled = next;
 		sched_state_task_picked();
 		raw_spin_unlock(&pfp->slock);
-		pfp_finish_switch(prev);
+		//pfp_finish_switch(prev);
 		return next;
 		//if(n) {
 		//	TRACE_TASK(prev,"You got it right baby going to %d!\n",n);
@@ -990,8 +996,6 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 {
 	struct task_struct* t = current;
 	struct mrsp_semaphore *sem = mrsp_from_lock(l);
-	prio_wait_queue_t wait;
-	unsigned long flags;
 	unsigned char ticket;
 	struct cpumask holder_mask; 
 
@@ -1063,9 +1067,8 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 }
 int pfp_mrsp_unlock(struct litmus_lock* l)
 {
-	struct task_struct *t = current, *next = NULL;
+	struct task_struct *t = current;
 	struct mrsp_semaphore *sem = mrsp_from_lock(l);
-	unsigned long flags;
 	int err = 0;
 
 	preempt_disable();
@@ -1095,6 +1098,8 @@ out:
 
 	preempt_enable();
 
+	t->rt_param.task_params.cpu = 0;
+	schedule();
 	return err;
 }
 int pfp_mpcp_open(struct litmus_lock* l, void* config)
