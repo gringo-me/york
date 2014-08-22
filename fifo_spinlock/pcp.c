@@ -1112,26 +1112,26 @@ long long int fibb(int n){
 TESTCASE(mrsp, P_FP,
 	 "mrsp")
 {
-	int fd, od, fd2, od2 ;
+	int fd, od;
 
 	int child_hi, child_lo, child_middle, status, waiters;
 	lt_t delay = ms2ns(100);
 	double start, stop;
 
+	int times, h, m;
 	int prio_per_cpu[4];
 	int prio_per_cpu2[4];
 	struct rt_task params;
 	init_rt_task_param(&params);
 	params.cpu        = 0;
-	params.exec_cost  =  ms2ns(10000);
-	params.period     = ms2ns(100000);
+	params.exec_cost  =  ms2ns(100);
+	params.period     = ms2ns(100);
 	params.relative_deadline = params.period;
 	params.phase      = 0;
-	params.cls        = RT_CLASS_HARD;
+//	params.cls        = RT_CLASS_HARD;
 	params.budget_policy = NO_ENFORCEMENT;
 
 	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
-	SYSCALL( fd2 = open(".pcp_locks2", O_RDONLY | O_CREAT, S_IRUSR) );
 
 
 	prio_per_cpu [0] = LITMUS_LOWEST_PRIORITY ;
@@ -1153,21 +1153,21 @@ TESTCASE(mrsp, P_FP,
 		SYSCALL( task_mode(LITMUS_RT_TASK) );
 
 		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
-		SYSCALL( od2 = open_mrsp_sem(fd2, 0, prio_per_cpu2) );
 
 		SYSCALL( wait_for_ts_release() );
-
+		times = 4;
+		while(times--){
 		SYSCALL( litmus_lock(od) );
 		start = cputime();
-		while (cputime() - start < 0.25);
+		while(cputime() - start < 0.1);
 		SYSCALL( litmus_unlock(od) );
-
+		}
 		);
 
 	params.cpu        = 2;
 	child_middle = FORK_TASK(
 		params.priority	= LITMUS_LOWEST_PRIORITY;
-		params.phase    = ms2ns(100);
+		params.phase    = ms2ns(500);
 
 		SYSCALL( set_rt_task_param(gettid(), &params) );
 		SYSCALL( be_migrate_to_cpu(params.cpu) );
@@ -1179,25 +1179,25 @@ TESTCASE(mrsp, P_FP,
 
 		start = wctime();
 		/* block on semaphore */
-		SYSCALL( litmus_lock(od) );
-		SYSCALL( litmus_unlock(od) );
+		m = 2;
+		while(m--){
+			SYSCALL( litmus_lock(od) );
+			SYSCALL( litmus_unlock(od) );
+		}
 		stop  = wctime();
 
 		/* Assert we had some blocking. */
-		ASSERT( stop - start > 0.1);
+		//ASSERT( stop - start > 0.1);
 
 		/* Assert we woke up 'soonish' after the sleep. */
-		ASSERT( stop - start < 1 );
-		start = cputime();
-		while (cputime() - start < 5)
-			;
+		//ASSERT( stop - start < 1 );
 		//SYSCALL( sleep_next_period() );
 		);
 
 	params.cpu        = 0;
 	child_hi = FORK_TASK(
 		params.priority	= LITMUS_HIGHEST_PRIORITY;
-		params.phase    = ms2ns(50);
+		params.phase    = ms2ns(10);
 
 		SYSCALL( set_rt_task_param(gettid(), &params) );
 		SYSCALL( be_migrate_to_cpu(params.cpu) );
@@ -1206,7 +1206,12 @@ TESTCASE(mrsp, P_FP,
 
 
 		SYSCALL( wait_for_ts_release() );
-
+		h = 100;
+		while(h--) {
+		
+		fibb(100000000);
+		SYSCALL( sleep_next_period() );
+		};
 
 //		SYSCALL( kill(child_middle, SIGUSR2) );
 //		SYSCALL( kill(child_lo, SIGUSR2) );

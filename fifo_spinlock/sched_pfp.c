@@ -257,21 +257,28 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 		TRACE_TASK(prev,"You got it right baby !\n");
 		
 		cpumask_clear_cpu(pfp->cpu,tsk_cpus_allowed(prev));
-		cpumask_set_cpu(3,tsk_cpus_allowed(prev));
+		cpumask_set_cpu(2,tsk_cpus_allowed(prev));
 		
 		n = cpumask_next(pfp->cpu, tsk_cpus_allowed(prev));
 
 		if( n > num_online_cpus())
 			n = cpumask_first(tsk_cpus_allowed(prev));
-		
-		TRACE_TASK(next, "preempts and scheduled at %llu nearest=%u\n", litmus_clock(),n);
-		prev->rt_param.task_params.cpu = n;
+			
+		if( n <= num_online_cpus() && n != pfp->cpu){
 
-		next = fp_prio_take(&pfp->ready_queue);
-		pfp->scheduled = next;
-		sched_state_task_picked();
-		raw_spin_unlock(&pfp->slock);
-		return next;
+			TRACE_TASK(next, "preempts and scheduled at %llu nearest=%u\n", litmus_clock(),n);
+			prev->rt_param.task_params.cpu = n;
+			next = fp_prio_take(&pfp->ready_queue);
+			pfp->scheduled = next;
+			sched_state_task_picked();
+			raw_spin_unlock(&pfp->slock);
+			return next;
+		}
+		else {
+		
+			TRACE_TASK(prev,"Could not migrate n=%d cpu=%d \n",n,pfp->cpu);
+			resched = 1;
+		}
 	}
 
 	/* Any task that is preemptable and either exhausts its execution
