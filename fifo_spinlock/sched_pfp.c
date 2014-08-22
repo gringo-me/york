@@ -255,12 +255,11 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 	if(prev && preempt && prev->rt_param.task_params.mrsp_lock != NULL){
 		int n;
 		TRACE_TASK(prev,"You got it right baby !\n");
-		migrate = 1;
-		next = fp_prio_take(&pfp->ready_queue);
 		
-		cpumask_clear_cpu(0,tsk_cpus_allowed(prev));
+		cpumask_clear_cpu(pfp->cpu,tsk_cpus_allowed(prev));
 		cpumask_set_cpu(3,tsk_cpus_allowed(prev));
-		n = cpumask_next(3, tsk_cpus_allowed(prev));
+		
+		n = cpumask_next(pfp->cpu, tsk_cpus_allowed(prev));
 
 		if( n > num_online_cpus())
 			n = cpumask_first(tsk_cpus_allowed(prev));
@@ -268,16 +267,11 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 		TRACE_TASK(next, "preempts and scheduled at %llu nearest=%u\n", litmus_clock(),n);
 		prev->rt_param.task_params.cpu = n;
 
+		next = fp_prio_take(&pfp->ready_queue);
 		pfp->scheduled = next;
 		sched_state_task_picked();
 		raw_spin_unlock(&pfp->slock);
-		//pfp_finish_switch(prev);
 		return next;
-		//if(n) {
-		//	TRACE_TASK(prev,"You got it right baby going to %d!\n",n);
-		//	prev->rt_param.task_params.cpu = n;	
-		//	migrate = 1;
-		//}
 	}
 
 	/* Any task that is preemptable and either exhausts its execution
@@ -1009,9 +1003,6 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 
 	smp_wmb();
 	ticket = atomic_xchg(&sem->next, sem->next.counter +1);
-	//preempt_disable();
-
-	if(ticket == 256) ticket = 0;	
 
 	/* Priority-boost ourself. Use the priority
 	 * ceiling for the local partition. */
@@ -1019,12 +1010,8 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 	t->rt_param.task_params.priority = sem->prio_per_cpu[get_partition(t)];
 	TRACE_CUR("Priority is now %d, partition %d\n",t->rt_param.task_params.priority,get_partition(t));
 
-//	spin_lock_irqsave(&sem->wait.lock, flags);
-
-	//preempt_enable_no_resched();
 
 	if (sem->owner) {
-//	   set_task_state(t, TASK_UNINTERRUPTIBLE);
 	   TRACE_CUR("On cpu %d lock has owner %d on cpu %d\n",
 		get_partition(t),
 		sem->owner->pid ,
@@ -1059,10 +1046,7 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 	TRACE_CUR("Obtained lock sem->owner is %d and current is %d\n",sem->owner,t);
 	tsk_rt(t)->num_locks_held++;
 	t->rt_param.task_params.mrsp_lock = sem;
-	//t->rt_param.task_params.cpu++;
-	
 	sched_getaffinity(t->pid, &sem->saved_cpumask);		 
-	//schedule();
 	return 0;
 }
 int pfp_mrsp_unlock(struct litmus_lock* l)
@@ -1072,8 +1056,6 @@ int pfp_mrsp_unlock(struct litmus_lock* l)
 	int err = 0;
 
 	preempt_disable();
-
-//	spin_lock_irqsave(&sem->wait.lock, flags);
 
 	if (sem->owner != t) {
 		err = -EINVAL;
@@ -1085,8 +1067,6 @@ int pfp_mrsp_unlock(struct litmus_lock* l)
 	tsk_rt(t)->num_locks_held--;
 
 	do_set_cpus_allowed(t, &sem->saved_cpumask);
-	/* we lose the benefit of priority boosting */
-	//unboost_priority(t);
 
 	/* update the fifo spinlock */
 	TRACE_CUR("MRSP  unlock owner_ticket: %d\n",sem->owner_ticket.counter);
@@ -1094,11 +1074,9 @@ int pfp_mrsp_unlock(struct litmus_lock* l)
 	atomic_inc(&sem->owner_ticket);
 	TRACE_CUR("MRSP AFTER unlock owner_ticket: %d\n",sem->owner_ticket.counter);
 out:
-//	spin_unlock_irqrestore(&sem->wait.lock, flags);
-
 	preempt_enable();
 
-	t->rt_param.task_params.cpu = 0;
+	t->rt_param.task_params.cpu = cpumask_first(tsk_cpus_allowed(t));
 	schedule();
 	return err;
 }
