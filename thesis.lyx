@@ -4,7 +4,9 @@
 \begin_header
 \textclass article
 \begin_preamble
+\usepackage{tikz}
 \usepackage{pgfgantt}
+\usetikzlibrary{shapes,arrows}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -189,19 +191,6 @@ Ideas
 \end_layout
 
 \begin_layout Standard
-Difference between scheduling and resource sharing
-\end_layout
-
-\begin_layout Standard
-Chart illustrating the protocol (state machine diagram)
-\end_layout
-
-\begin_layout Standard
-Implement prototype in C as a working stand alone state machine (without
- kernel complexities)
-\end_layout
-
-\begin_layout Standard
 Importance of metrics
 \end_layout
 
@@ -296,7 +285,8 @@ Become familiar with Linux kernel development and source code.
 \end_layout
 
 \begin_layout Itemize
-Become familiar with virtualisation tools.
+Become familiar with virtualisation tools that are inherent to kernel programmin
+g.
 \end_layout
 
 \begin_layout Itemize
@@ -346,15 +336,14 @@ In this project, the requirements are well-defined and known in advance.
 \end_layout
 
 \begin_layout Itemize
-Exploratory prototyping : After studying the linux scheduler, hypotesis
- have been made as to were modifications are necessary to comply with the
- requirements.
- The fondamental task structure, the scheduler and the migration routine
- have been identified as places to be amended.
- An early prototype have been completed that allowed simple testing.
- When expected behaviour was obtained and the uncertainty reduced by ensuring
- feasibility of the most critical constraints, the prototype could be evolved
- to include some of the complementary features.
+Exploratory prototyping : After studying the linux scheduler, areas of the
+ code were identified for modifications in order to comply with the requirements.
+ The task data structure, the scheduler and the migration routine have been
+ identified as places to be amended.
+ An early prototype was completed that allowed simple testing.
+ When the expected behaviour was obtained and the uncertainty reduced by
+ ensuring feasibility of the most critical constraints, the prototype could
+ be evolved to include some of the complementary features.
  The development cycle consisted of design, small improvements and regression
  testing.
 \end_layout
@@ -363,8 +352,8 @@ Exploratory prototyping : After studying the linux scheduler, hypotesis
 Incremental model : After the experience gained on the Linux kernel with
  the early prototypes and the feasibility of the system demonstrated and
  risks mitigated, an incremental development lifecycle was chosen.
- The features were planified in a serie of phases that included design,
- implementation, deployment and testing.
+ The features were planified in a phases that included design, implementation,
+ deployment and testing.
 \end_layout
 
 \begin_layout Subsection
@@ -377,6 +366,13 @@ Ethics in the project
 
 \begin_layout Subsection
 Report structure
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -1104,6 +1100,205 @@ The Non Preemptive Protocol is a simple approach to resource sharing.
  area it can't be preempted by any other task.
  We can define it as being an absolute non-preemption scheme when a any
  lock is held by any task.
+\end_layout
+
+\begin_layout Standard
+In this report the following color conventions have been used :
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{sta-to-sta}{s-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-fin}{f-f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+newganttlinktypealias{fin-to-sta}{f-s}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-fin}{f2f}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+setganttlinklabel{fin-to-sta}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{figure}[h]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{ganttchart}[
+\end_layout
+
+\begin_layout Plain Layout
+
+include title in canvas=true,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar/.append style={fill=green!75},
+\end_layout
+
+\begin_layout Plain Layout
+
+bar height=.5,
+\end_layout
+
+\begin_layout Plain Layout
+
+y unit chart = 0.8cm,
+\end_layout
+
+\begin_layout Plain Layout
+
+bar label font=
+\backslash
+normalsize
+\backslash
+color{black!50}]{1}{3}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=gray!75}]{Ready to execute but blocked}{1}{3}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=green!75}]{Executing without lock}{1}{3}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=red!75}]{Executing with lock held}{1}{1}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=yellow!75}]{}{2}{2}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=orange!75}]{}{3}{3}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={draw=none, inner color=red}]{Spinning for the
+ lock}{1}{3}
+\backslash
+
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+ganttbar[bar/.append style={fill=violet!75}]{Preempted to allow execution-on-beha
+lf}{1}{3}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{ganttchart}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+caption{Color legend}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{figure}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subparagraph
@@ -3862,7 +4057,7 @@ Consider a system configuration where two processors P1 and P2 are available
  P1 has only one task assigned, P2 is assigned three task of different prioritie
 s, one high, one medium and one low.
  P1 and P2 have one task each that uses a global resource.
- When can see that the task on P1 can be blocked if the task on P2 is holding
+ We can see that the task on P1 can be blocked if the task on P2 is holding
  the lock and has been preempted by a higher task on P2.
  The blocking time is not bounded and could cause a deadline miss for the
  P1 task.
@@ -3881,14 +4076,14 @@ processors running tasks that are blocked while waiting access to a global
 \shape italic
 n
 \shape default
- processors to only one as the processors are waiting for each other tomake
- progress.
+ processors to only one as the processors are waiting for each other to
+ make progress.
  A simple approach could be to allocate all tasks that access global resources
  to one processor, thus eliminating remote blocking, however this is not
  sufficient because if too many tasks are assigned to one processor, deadline
  misses likelihood increases.
  This calls for more elaborate global resources management which multiprocessor
- resource sharing protocol aim to fulfill.
+ resource sharing aims to fulfill.
 \end_layout
 
 \begin_layout Subparagraph
@@ -4111,7 +4306,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{11}{11}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{(LP) LP3 - P2}}{1}{1}
+small{(LP) LP2 - P2}}{1}{1}
 \end_layout
 
 \begin_layout Plain Layout
@@ -4526,7 +4721,7 @@ color{black!50}]{1}{20}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{HP Task - P1}}{3}{4}
+small{HP1 Task - P1}}{3}{4}
 \end_layout
 
 \begin_layout Plain Layout
@@ -4560,7 +4755,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{8}{8}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task - P1}}{1}{1} 
+small{LP1 Task - P1}}{1}{1} 
 \end_layout
 
 \begin_layout Plain Layout
@@ -4601,7 +4796,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{11}{11}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{HP Task - P2}}{3}{4}
+small{HP2 Task - P2}}{3}{4}
 \end_layout
 
 \begin_layout Plain Layout
@@ -4649,7 +4844,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{14}{15}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task - P2}}{1}{2}
+small{LP2 Task - P2}}{1}{2}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5063,7 +5258,7 @@ color{black!50}]{1}{20}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{HP Task - P1}}{4}{6}
+small{HP1 Task - P1}}{4}{6}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5123,7 +5318,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{14}{14}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task - P1}}{1}{2}
+small{LP1 Task - P1}}{1}{2}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5173,7 +5368,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{15}{15}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{HP Task - P2}}{3}{5}
+small{HP2 Task - P2}}{3}{5}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5216,7 +5411,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{9}{10}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task - P2}}{1}{1}
+small{LP2 Task - P2}}{1}{1}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5533,7 +5728,7 @@ color{black!50}]{1}{20}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{HP Task - P1}}{3}{5}
+small{HP1 Task - P1}}{3}{5}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5576,7 +5771,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{9}{9}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task - P1}}{1}{1}
+small{LP1 Task - P1}}{1}{1}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5619,7 +5814,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{10}{11}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{HP Task - P2}}{4}{6}
+small{HP2 Task - P2}}{4}{6}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5669,7 +5864,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{10}{12}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task - P2}}{1}{2}
+small{LP2 Task - P2}}{1}{2}
 \end_layout
 
 \begin_layout Plain Layout
@@ -5845,49 +6040,36 @@ key "davis2011survey"
 Limitations
 \end_layout
 
-\begin_layout Subsubsection
-Parallel PCP (P-PCP) 
-\end_layout
-
-\begin_layout Subsubsection
-O(m) Locking Protocol (OMLP) 
-\end_layout
-
-\begin_layout Standard
-OMLP makes use of a two-level priority queue scheme to allow access to a
- global resource.
- 
-\end_layout
-
-\begin_layout Standard
-Under partitioned scheduling, tasks requiring access to a global resource
- are first put on local priority queue and then in a global prioritized
- queue.
- The highest priority task on the local queue is selected to be put on the
- global queue and its priority is raised to the local ceiling (maximum priority
- being used on the processor) to make it locally non-preemptible, however
- the task might still be suspended if there is high contention on the global
- queue.
-\end_layout
-
-\begin_layout Standard
-Under global scheduling, tasks requiring access to a 
-\end_layout
-
-\begin_layout Subsubsection
-M-BWI 
-\end_layout
-
-\begin_layout Standard
-Many other protocols exist
-\end_layout
-
 \begin_layout Subsection
 Real-time multiprocessor operating systems
 \end_layout
 
+\begin_layout Standard
+In this chapter we rapidly present a subset of multiprocessor architectures
+ namely 
+\shape italic
+shared memory uniform access symmetric multiprocessors systems
+\shape default
+ that has been used to implement the MrsP protocol.
+ We also describe hardware features that have a considerable impact when
+ implementing RTOSes.
+ We then define the irreducible set of services a RTOS must provide in order
+ to ensure time constraints.
+\end_layout
+
 \begin_layout Subsubsection
 Characteristics of SMP machines
+\end_layout
+
+\begin_layout Standard
+This project is intended to shared-memory architectures, that is architectures
+ composed of several processors sharing access to a common memory.
+ In addition access to the memory is said to be uniform (Uniform Memory
+ Access) meaning that processors always have the same worst case access
+ time for a given memory location.
+ The design MrsP considers symmetric multiprocessor systems, e.g systems
+ where processor have the exact same architecture and performance.
+ 
 \end_layout
 
 \begin_layout Subsubsection
@@ -5896,21 +6078,80 @@ Processor Caches
 
 \begin_layout Standard
 A processor cache is a fast memory the processor uses to reduce time to
- access memory.
- The cache memory is smaller than the RAM, it is used to stores copies of
- frequently used locations in the RAM.
+ access memory or reuse instructions results.
+ The cache memory is smaller but faster than the RAM, it is used to stores
+ copies of frequently used locations in the RAM.
  Most processors have a two-level cache system L1 (fastest) and L2.
  A processor will typically always check the caches for the data used by
  a task before looking into the RAM.
- A cache miss occurs when the data is not available in any of the caches.
- A process is called 
+ Caches can be shared between processors
+\end_layout
+
+\begin_layout Standard
+A cache miss occurs when a reference to a memory address is not available
+ in any of the caches, recovering from a cache miss incurs an additional
+ cost to executing a given task.
+\end_layout
+
+\begin_layout Standard
+A process is called 
 \shape italic
 cache-hot 
 \shape default
-when it has the requested data in one of the caches.
- Now we can see that the operating system task scheduler will always try
+when it has the requested data in one of the caches, avoiding the need to
+ proceed to more costly memory lookups or calculations.
+\end_layout
+
+\begin_layout Standard
+Now we can see that the operating system task scheduler will always try
  to have as few cache misses as possible, therefore avoiding slower RAM
  lookups.
+\end_layout
+
+\begin_layout Standard
+A typical 2-processors cache architecture taken from Intel article 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Intel_processor"
+
+\end_inset
+
+ is described in figure 10.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename processor_cache_shared.gif
+	scale 65
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+A typical 2-processor architecture
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection
@@ -5938,6 +6179,24 @@ An interrupt request (IRQ) is an asynchronous signal to the processor sent
 \end_layout
 
 \begin_layout Subsubsection
+Timers & Clocks
+\end_layout
+
+\begin_layout Standard
+The time factor is essential to any RTOS to guarantee timing constraints.
+ Computer architectures are equipped with clocks, a hardware device that
+ divides the progression of time in regular discrete intervals.
+ Clocks have a resolution, defined as the frequency at which they tick.
+ Clocks are essential to RTOSes to calculate the amount of time used by
+ a task for instance, they give an absolute time.
+ In contrast timers provide a countdown service, creating a hardware event
+ (interrupt request) when the countdown is finished, they are concerned
+ with relative time.
+ Timers can be programmed to be made periodic, issuing IRQ at regular time
+ intervals.
+\end_layout
+
+\begin_layout Subsubsection
 Processor affinity
 \end_layout
 
@@ -5945,7 +6204,8 @@ Processor affinity
 Processor affinity enables the pinning of a process or a thread to a processor
  or a set of processors, so that the process will only execute on the designated
  processor set.
- 
+ Affinities help to define dynamic clusters on which a task is allowed to
+ execute.
 \end_layout
 
 \begin_layout Subsubsection
@@ -5954,16 +6214,21 @@ Cost of migration
 
 \begin_layout Standard
 The cost of two migrations must be less than the interference of a higher
- priority thread.
- Also a migrating thread is likely to suffer from an execution time penalty
- as its local cache cannot be utilised.
- However, a preempted thread is also likely to have its data in cache overwritte
-n by the time it executes again.
- 
+ priority thread MrsP .
+ In shared memory systems the overhead associated with task migration is
+ defined as the time needed to copy its hardware state accross private memory
+ caches.
 \end_layout
 
 \begin_layout Subsection
 Summary
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -6585,7 +6850,7 @@ Schedulability Analysis
 \end_layout
 
 \begin_layout Subsection
-Runtime Overhead in SMP computers
+Runtime Overhead Calculation in LITMUS-RT
 \end_layout
 
 \begin_layout Subsection
@@ -6596,12 +6861,19 @@ Limitations
 Project Goals Revisited and Project Requirements
 \end_layout
 
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 MrsP : Design and Implementation
 \end_layout
 
 \begin_layout Subsection
-Linux real-time scheduling algorithm
+Linux Kernel with RT patch
 \end_layout
 
 \begin_layout Subsubsection
@@ -6671,55 +6943,6 @@ key "rostedt2007internals"
 \end_layout
 
 \begin_layout Subsubsection
-Priority Inheritance Implementation
-\end_layout
-
-\begin_layout Standard
-Priority inversion, e.g.
- lower tasks blocking higher ones is inherent to scheduling and can not
- be avoided, however unbounded priority inversion must be prevented.
- The RT patch chooses priority inheritance to address this issue.
-\end_layout
-
-\begin_layout Standard
-The implementation of a PI mutex introduces a new concept, the priority
- inheritance chain described in 
-\begin_inset CommandInset citation
-LatexCommand cite
-key "rostedt_rt_mutex"
-
-\end_inset
-
-.
-\end_layout
-
-\begin_layout Standard
-The PI chain is an ordered series of locks and processes that cause tasks
- to inherit priorities from a higher process that is blocked on one of its
- locks.
- Different chains may be merged as several tasks can wait on a lock, but
- a chain would never diverge, since a task can't be blocked on more than
- one lock at a time.
- 
-\end_layout
-
-\begin_layout Subsubsection
-High Resolution Timers
-\end_layout
-
-\begin_layout Subsubsection
-Comparison with other RTOSes
-\end_layout
-
-\begin_layout Subsubsection
-Implementation in Linux Kernel
-\end_layout
-
-\begin_layout Subsubsection
-The Linux real-time scheduling algorithm
-\end_layout
-
-\begin_layout Subsubsection
 Key Data Structures
 \end_layout
 
@@ -6744,63 +6967,416 @@ There is two runqueue per processor, one of which is listing the active
  tasks and the other the expired tasks.
  A runqueue is a linked list composed of 140 nodes corresponding to each
  priority level.
- Each node is itself a linked list referencing the tasks of the same priority.
+ Each node is itself a linked list referencing the tasks of the same priority
 \end_layout
 
-\begin_layout Paragraph
-futex
+\begin_layout Subsection
+LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
-A futex, 
-\begin_inset Quotes eld
-\end_inset
+LITMUS
+\begin_inset script superscript
 
-Fast userspace mutex
-\begin_inset Quotes erd
-\end_inset
-
-, is a locking primitive that is used to build more complex locking structures.
- It is composed of a 32 bits integer and a waitqueue referencing the tasks
- waiting to acquire the lock.
- It is used in mutexes when there is contention over a lock (a task is waiting
- for a lock already hold).
+\begin_layout Plain Layout
+RT
 \end_layout
 
-\begin_layout Paragraph
-rt_mutex
+\end_inset
+
+ stands for Linux Testbed for Multiprocessor Scheduling in Real-Time Systems
+ and is a real-time patch for the Linux operating system.
+ Linux is a popular UNIX-based open-source kernel.
+ It was developed by Brandenburg et al [REF] with the intent to facilitate
+ implementation and comparison of scheduling and locking algorithms.
+ It supports partitioned, semi-partitioned, global and clustered scheduling
+ policies.
+ The main contributions of LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ are :
+\end_layout
+
+\begin_layout Itemize
+An implementation of the sporadic task model for Linux.
+\end_layout
+
+\begin_layout Itemize
+Providing a plugin interface that allows for custom scheduling and locking
+ protocols to be implemented.
+\end_layout
+
+\begin_layout Itemize
+Provides an API composed of system calls to manipulate real time tasks from
+ userspace.
 \end_layout
 
 \begin_layout Standard
-Also called Priority inheritance futex, like with futexes, the waiting task
- is added to a waitqueue.
- If its priority is higher than the holder's, it rises the holder's priority
- to its own priority.
- The priority inheritance is dynamic in the sense that, if the holder is
- itself waiting on a second futex, its temporarily enhanced priority will
- diffuse to the holder of the second futex.
- As soon as a task unlocks a futex its enhanced priority is set back to
- its initial one.
+The implementation of the MrsP Protocol was performed on version 2014.2 based
+ on Linux kernel 3.10.41.
 \end_layout
 
 \begin_layout Subsubsection
-Real-time scheduler
+Architecture overview
 \end_layout
 
 \begin_layout Standard
-root domains
+LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ is composed of four logical components as shown in figure [REF] taken from
+ [REF] :
+\end_layout
+
+\begin_layout Itemize
+A core infrastructure that hooks into the Linux Kernel scheduling decision
+ algorithm and provides a level of indirection that allows dynamically choosing
+ a scheduling protocol at runtime.
+ This is possible by the addition of a LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ scheduling class in the standard scheduling mechanism that takes precedence
+ over all other scheduling decisions.
+ The core essentially provides a mean to forward scheduling requests to
+ the selected scheduling protocol thus implementing the Decorator design
+ pattern.
+\end_layout
+
+\begin_layout Itemize
+Scheduler plugins which are the implementation of different scheduling policies
+ (such as preemptive-fixed priority, global earliest-deadline-first, ...) are
+ implemented in a modular fashion (one source file per protocol).
+ Plugins are requested to be statically compiled with the Linux kernel itself
+ 
+\emph on
+e.g.
+
+\emph default
+ they are not loadable modules (that are a way of adding functionality to
+ the base kernel).
+ Plugins can be dynamically changed at runtime, however not while real-time
+ tasks are running, only before or after a task set execution.
+ Plugins have to implement mandatory functions such as 
+\family typewriter
+schedule() 
+\family default
+that returns the next task to be scheduled for execution.
+ A flowchart depicts the LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ wrapper scheduler in figure [REF].
+\end_layout
+
+\begin_layout Itemize
+User-space API
+\end_layout
+
+\begin_layout Itemize
+User-space library and tools
 \end_layout
 
 \begin_layout Standard
-Pull and Push algorithms
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename litmus.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ Architecture
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
-[INCLUDE CHART]
+Scheduling decision flowchart :
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{decision} = [diamond, draw, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{block} = [rectangle, draw, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=5em, text centered, rounded corners, minimum height=4em]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{line} = [draw, -latex']
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{cloud} = [draw, ellipse, node distance=3cm,
+\end_layout
+
+\begin_layout Plain Layout
+
+    minimum height=2em]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[node distance = 2cm, auto]
+\end_layout
+
+\begin_layout Plain Layout
+
+    % Place nodes
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block] (schedule) {schedule};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, below of=schedule] (plugin) {forward scheduling request to
+ plugin};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [decision, below of=plugin] (migration) {is task migration needed ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, right of=migration, node distance=5cm] (migrate) {migration
+ process};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, below of=migration,node distance=3cm] (update) {update task
+ structure};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, below of=update, node distance=3cm] (clock) {update clock};
+\end_layout
+
+\begin_layout Plain Layout
+
+    % Draw edges
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (schedule) -- (plugin);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (plugin) -- (migration);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (migration) -- node {yes} (migrate);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (migration) -- (update);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (migrate) |- (update);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (update) -- (clock);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tikzpicture}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\align right
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Schedule decision flowchart
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection
-Priority Management in kernel
+Limitations
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\emph on
+T
+\series default
+he focus of LITMUSRT is algorithmic changes; it does not improve the Linux
+ kernel’s real-time capabilities in terms of interrupt latencies and does
+ not force split interrupt handling.
+ LITMUSRT is thus complimentary in goals to the PREEMPT RT patch, which
+ targets these areas but does not change or augment the implemented scheduling
+ algorithms (see page 156).
+ However, this also implies that LITMUSRT is not applicable to workloads
+ with very short relative deadlines, like mainline Linux itself.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -6821,6 +7397,11 @@ Make waiters add their affinities to holder
 
 \begin_layout Enumerate
 FIFO Spinlock
+\end_layout
+
+\begin_layout Enumerate
+A migrated task re-migrates back to its original partition when releasing
+ the resource
 \end_layout
 
 \begin_layout Subsection
@@ -7137,7 +7718,11 @@ Priority per processor
 \begin_layout Standard
 MrsP requires to have one priority per processor in case a task is preempted
  and migrated to another cpu.
- This is further described in TODO
+ 
+\end_layout
+
+\begin_layout Standard
+This is further described in TODO
 \end_layout
 
 \begin_layout Subsubsection
@@ -7412,7 +7997,7 @@ System call overhead
 \end_layout
 
 \begin_layout Subsubsection
-Modifications to the Linux Kernel
+Modifications to Litmus-RT
 \end_layout
 
 \begin_layout Standard
@@ -7457,7 +8042,7 @@ When the task is being migrated by the scheduler, we detect it and modify
 \end_layout
 
 \begin_layout Subsubsection
-MRSP API
+MrsP API
 \end_layout
 
 \begin_layout Standard
@@ -7478,6 +8063,13 @@ Globally partitioned systems considerations
 
 \begin_layout Subsection
 Limitations
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -7501,11 +8093,18 @@ ftrace & profiling
 \end_layout
 
 \begin_layout Subsection
-Hardware
+Hardware used
 \end_layout
 
 \begin_layout Subsection
 Test Cases
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
