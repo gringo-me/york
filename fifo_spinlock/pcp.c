@@ -1119,6 +1119,7 @@ TESTCASE(mrsp, P_FP,
 	double start, stop;
 
 	int times, h, m;
+	double exec_start, exec_end;
 	int prio_per_cpu[4];
 	int prio_per_cpu2[4];
 	struct rt_task params;
@@ -1130,11 +1131,12 @@ TESTCASE(mrsp, P_FP,
 	params.phase      = 0;
 //	params.cls        = RT_CLASS_HARD;
 	params.budget_policy = NO_ENFORCEMENT;
+	params.migration_bool = 1;
 
 	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
 
 
-	prio_per_cpu [0] = LITMUS_LOWEST_PRIORITY ;
+	prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY +1 ;
 	prio_per_cpu [1] = 10 ;
 	prio_per_cpu [2] = 20 ;
 	prio_per_cpu [3] = 30 ;
@@ -1157,11 +1159,14 @@ TESTCASE(mrsp, P_FP,
 		SYSCALL( wait_for_ts_release() );
 		times = 4;
 		while(times--){
+		exec_start = wctime();
 		SYSCALL( litmus_lock(od) );
 		start = cputime();
 		while(cputime() - start < 0.1);
 		SYSCALL( litmus_unlock(od) );
-		}
+		exec_end = wctime();
+		printf("%f\n", exec_end - exec_start);
+	}
 		);
 
 	params.cpu        = 2;

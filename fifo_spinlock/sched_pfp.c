@@ -252,9 +252,11 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 	if (np && (out_of_time || preempt || sleep))
 		request_exit_np(pfp->scheduled);
 
-	if(prev && preempt && prev->rt_param.task_params.mrsp_lock != NULL){
+	if(prev && preempt 
+	   && prev->rt_param.task_params.mrsp_lock != NULL
+	   && prev->rt_param.task_params.migration_bool == 1){
 		int n;
-		TRACE_TASK(prev,"You got it right baby !\n");
+		TRACE_TASK(prev,"Task is holding a MrsP lock, trying to migrate !\n");
 		
 		cpumask_clear_cpu(pfp->cpu,tsk_cpus_allowed(prev));
 		cpumask_set_cpu(2,tsk_cpus_allowed(prev));
@@ -266,7 +268,7 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 			
 		if( n <= num_online_cpus() && n != pfp->cpu){
 
-			TRACE_TASK(next, "preempts and scheduled at %llu nearest=%u\n", litmus_clock(),n);
+			TRACE_TASK(next, "preempts and scheduled at %llu going to %u\n", litmus_clock(),n);
 			prev->rt_param.task_params.cpu = n;
 			next = fp_prio_take(&pfp->ready_queue);
 			pfp->scheduled = next;
@@ -1127,9 +1129,9 @@ int pfp_mrsp_open(struct litmus_lock* l, int *config)
 
 	local_cpu = get_partition(t);
 	
-	sem->prio_per_cpu = config;
 
 	spin_lock_irqsave(&sem->wait.lock, flags);
+	sem->prio_per_cpu = config;
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
 		if (cpu != local_cpu) {
 			sem->prio_ceiling[cpu] = min(sem->prio_ceiling[cpu],
