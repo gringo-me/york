@@ -1135,7 +1135,6 @@ TESTCASE(mrsp, P_FP,
 
 	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
 
-
 	prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY +1 ;
 	prio_per_cpu [1] = 10 ;
 	prio_per_cpu [2] = 20 ;
@@ -1157,7 +1156,7 @@ TESTCASE(mrsp, P_FP,
 		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
 
 		SYSCALL( wait_for_ts_release() );
-		times = 4;
+		times = 300;
 		while(times--){
 		exec_start = wctime();
 		SYSCALL( litmus_lock(od) );
@@ -1165,7 +1164,7 @@ TESTCASE(mrsp, P_FP,
 		while(cputime() - start < 0.1);
 		SYSCALL( litmus_unlock(od) );
 		exec_end = wctime();
-		printf("%f\n", exec_end - exec_start);
+		printf("%d %f\n", times,exec_end - exec_start);
 	}
 		);
 
