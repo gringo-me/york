@@ -139,6 +139,75 @@ static void job_completion(struct task_struct* t, int forced)
 		sched_trace_task_release(t);
 }
 
+/* called with preemptions disabled */
+static void pfp_migrate_to(int target_cpu)
+{
+	struct task_struct* t = current;
+	pfp_domain_t *from;
+
+	if (get_partition(t) == target_cpu)
+		return;
+
+	/* make sure target_cpu makes sense */
+	BUG_ON(!cpu_online(target_cpu));
+
+	local_irq_disable();
+
+	from = task_pfp(t);
+	raw_spin_lock(&from->slock);
+
+	/* Scheduled task should not be in any ready or release queue.  Check
+	 * this while holding the lock to avoid RT mode transitions.*/
+	BUG_ON(is_realtime(t) && is_queued(t));
+
+	/* switch partitions */
+	tsk_rt(t)->task_params.cpu = target_cpu;
+
+	raw_spin_unlock(&from->slock);
+
+	/* Don't trace scheduler costs as part of
+	 * locking overhead. Scheduling costs are accounted for
+	 * explicitly. */
+	TS_LOCK_SUSPEND;
+
+	local_irq_enable();
+	preempt_enable_no_resched();
+
+	/* deschedule to be migrated */
+	schedule();
+
+	/* we are now on the target processor */
+	preempt_disable();
+
+	/* start recording costs again */
+	TS_LOCK_RESUME;
+
+	BUG_ON(smp_processor_id() != target_cpu && is_realtime(t));
+}
+int get_nearest_cpu_affinity(struct task_struct *t){
+	struct cpumask holder_mask; 
+	int current_cpu, nb_cpus;
+	int i;
+
+	if (!t) return -1 ;
+
+	if(!sched_getaffinity(t->pid, &holder_mask)) return -1;
+	
+	current_cpu = get_partition(t);
+	nb_cpus = num_online_cpus();
+	i = current_cpu + 1;
+
+	while(i != nb_cpus){
+
+		if (i > nb_cpus) i = 0;
+
+		if (cpumask_test_cpu(i,tsk_cpus_allowed(t)) && i != current_cpu)
+			return i;
+		i++;
+	}
+	return -1;	
+}
+
 static struct task_struct* pfp_schedule(struct task_struct * prev)
 {
 	pfp_domain_t* 	pfp = local_pfp;
@@ -183,6 +252,35 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 	if (np && (out_of_time || preempt || sleep))
 		request_exit_np(pfp->scheduled);
 
+	if(prev && preempt && prev->rt_param.task_params.mrsp_lock != NULL){
+		int n;
+		TRACE_TASK(prev,"You got it right baby !\n");
+		
+		cpumask_clear_cpu(pfp->cpu,tsk_cpus_allowed(prev));
+		cpumask_set_cpu(2,tsk_cpus_allowed(prev));
+		
+		n = cpumask_next(pfp->cpu, tsk_cpus_allowed(prev));
+
+		if( n > num_online_cpus())
+			n = cpumask_first(tsk_cpus_allowed(prev));
+			
+		if( n <= num_online_cpus() && n != pfp->cpu){
+
+			TRACE_TASK(next, "preempts and scheduled at %llu nearest=%u\n", litmus_clock(),n);
+			prev->rt_param.task_params.cpu = n;
+			next = fp_prio_take(&pfp->ready_queue);
+			pfp->scheduled = next;
+			sched_state_task_picked();
+			raw_spin_unlock(&pfp->slock);
+			return next;
+		}
+		else {
+		
+			TRACE_TASK(prev,"Could not migrate n=%d cpu=%d \n",n,pfp->cpu);
+			resched = 1;
+		}
+	}
+
 	/* Any task that is preemptable and either exhausts its execution
 	 * budget or wants to sleep completes. We may have to reschedule after
 	 * this.
@@ -205,7 +303,9 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 		 */
 		if (pfp->scheduled && !blocks  && !migrate)
 			requeue(pfp->scheduled, pfp);
+	
 		next = fp_prio_take(&pfp->ready_queue);
+	
 		if (next == prev) {
 			struct task_struct *t = fp_prio_peek(&pfp->ready_queue);
 			TRACE_TASK(next, "next==prev sleep=%d oot=%d np=%d preempt=%d migrate=%d "
@@ -235,16 +335,16 @@ static struct task_struct* pfp_schedule(struct task_struct * prev)
 
 	if (next) {
 		TRACE_TASK(next, "scheduled at %llu\n", litmus_clock());
-	} else {
-		TRACE("becoming idle at %llu\n", litmus_clock());
-	}
+	} 
+//	else {TRACE("becoming idle at %llu\n", litmus_clock());}
 
 	pfp->scheduled = next;
 	sched_state_task_picked();
 	raw_spin_unlock(&pfp->slock);
-
 	return next;
 }
+
+
 
 #ifdef CONFIG_LITMUS_LOCKING
 
@@ -897,8 +997,6 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 {
 	struct task_struct* t = current;
 	struct mrsp_semaphore *sem = mrsp_from_lock(l);
-	prio_wait_queue_t wait;
-	unsigned long flags;
 	unsigned char ticket;
 	struct cpumask holder_mask; 
 
@@ -910,21 +1008,17 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 	    tsk_rt(t)->num_local_locks_held)
 		return -EBUSY;
 
+	smp_wmb();
 	ticket = atomic_xchg(&sem->next, sem->next.counter +1);
-	//preempt_disable();
 
 	/* Priority-boost ourself. Use the priority
 	 * ceiling for the local partition. */
 	t->rt_param.task_params.saved_priority = t->rt_param.task_params.priority;	
 	t->rt_param.task_params.priority = sem->prio_per_cpu[get_partition(t)];
-	TRACE_CUR("Priority is now %d\n",t->rt_param.task_params.priority);
+	TRACE_CUR("Priority is now %d, partition %d\n",t->rt_param.task_params.priority,get_partition(t));
 
-//	spin_lock_irqsave(&sem->wait.lock, flags);
-
-	//preempt_enable_no_resched();
 
 	if (sem->owner) {
-//	   set_task_state(t, TASK_UNINTERRUPTIBLE);
 	   TRACE_CUR("On cpu %d lock has owner %d on cpu %d\n",
 		get_partition(t),
 		sem->owner->pid ,
@@ -956,25 +1050,19 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 		}
 	}
 	BUG_ON(sem->owner != t);
-	TRACE_CUR("Increased ticket sem->owner is %d and current is %d\n",sem->owner,t);
+	TRACE_CUR("Obtained lock sem->owner is %d and current is %d\n",sem->owner,t);
 	tsk_rt(t)->num_locks_held++;
 	t->rt_param.task_params.mrsp_lock = sem;
-	t->rt_param.task_params.cpu++;
-	
 	sched_getaffinity(t->pid, &sem->saved_cpumask);		 
-	schedule();
 	return 0;
 }
 int pfp_mrsp_unlock(struct litmus_lock* l)
 {
-	struct task_struct *t = current, *next = NULL;
+	struct task_struct *t = current;
 	struct mrsp_semaphore *sem = mrsp_from_lock(l);
-	unsigned long flags;
 	int err = 0;
 
 	preempt_disable();
-
-//	spin_lock_irqsave(&sem->wait.lock, flags);
 
 	if (sem->owner != t) {
 		err = -EINVAL;
@@ -986,8 +1074,6 @@ int pfp_mrsp_unlock(struct litmus_lock* l)
 	tsk_rt(t)->num_locks_held--;
 
 	do_set_cpus_allowed(t, &sem->saved_cpumask);
-	/* we lose the benefit of priority boosting */
-	//unboost_priority(t);
 
 	/* update the fifo spinlock */
 	TRACE_CUR("MRSP  unlock owner_ticket: %d\n",sem->owner_ticket.counter);
@@ -995,10 +1081,10 @@ int pfp_mrsp_unlock(struct litmus_lock* l)
 	atomic_inc(&sem->owner_ticket);
 	TRACE_CUR("MRSP AFTER unlock owner_ticket: %d\n",sem->owner_ticket.counter);
 out:
-//	spin_unlock_irqrestore(&sem->wait.lock, flags);
-
 	preempt_enable();
 
+	t->rt_param.task_params.cpu = cpumask_first(tsk_cpus_allowed(t));
+	schedule();
 	return err;
 }
 int pfp_mpcp_open(struct litmus_lock* l, void* config)
@@ -1579,51 +1665,6 @@ static inline struct dpcp_semaphore* dpcp_from_lock(struct litmus_lock* lock)
 	return container_of(lock, struct dpcp_semaphore, litmus_lock);
 }
 
-/* called with preemptions disabled */
-static void pfp_migrate_to(int target_cpu)
-{
-	struct task_struct* t = current;
-	pfp_domain_t *from;
-
-	if (get_partition(t) == target_cpu)
-		return;
-
-	/* make sure target_cpu makes sense */
-	BUG_ON(!cpu_online(target_cpu));
-
-	local_irq_disable();
-
-	from = task_pfp(t);
-	raw_spin_lock(&from->slock);
-
-	/* Scheduled task should not be in any ready or release queue.  Check
-	 * this while holding the lock to avoid RT mode transitions.*/
-	BUG_ON(is_realtime(t) && is_queued(t));
-
-	/* switch partitions */
-	tsk_rt(t)->task_params.cpu = target_cpu;
-
-	raw_spin_unlock(&from->slock);
-
-	/* Don't trace scheduler costs as part of
-	 * locking overhead. Scheduling costs are accounted for
-	 * explicitly. */
-	TS_LOCK_SUSPEND;
-
-	local_irq_enable();
-	preempt_enable_no_resched();
-
-	/* deschedule to be migrated */
-	schedule();
-
-	/* we are now on the target processor */
-	preempt_disable();
-
-	/* start recording costs again */
-	TS_LOCK_RESUME;
-
-	BUG_ON(smp_processor_id() != target_cpu && is_realtime(t));
-}
 
 int pfp_dpcp_lock(struct litmus_lock* l)
 {
