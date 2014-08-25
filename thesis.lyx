@@ -162,7 +162,7 @@ Multiprocessor real-time resource control algorithms are currently an active
 \begin_layout Abstract
 This project intends to contribute to the field of multiprocessor resource
  sharing protocols in real-time systems.
- Multiprocessor architectures have become mainstream, used in small embedded
+ Multiprocessor architectures have become a standard, used in small embedded
  devices as well as enterprise servers.
  Multiple processing units architectures offer increasing computational
  capacity performance that need to be efficiently employed.
@@ -172,9 +172,21 @@ This project intends to contribute to the field of multiprocessor resource
  The widespread use of multicore architectures is challenging the real-time
  systems area for a protocol that could make a consensus and presenting
  features that are at least as good as the single processor protocols.
- The purpose of a lock-based multiprocessor resource sharing protocol implementa
-tion in an operating system as popular as Linux is a step forward to catch
- up on processor manufacturers.
+ Many multiprocessor resource sharing protocols have been proposed, however
+ they do not always offer effective schedulability analysis.
+ The lack of predictability motivated the proposition of a new protocol
+ that offers schedulability analysis similar to single processor protocols.
+ This report describes a working implementation of the Multiprocessor Resource
+ Sharing Protocol into LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+, an open source real-time operating system based on Linux.
 \end_layout
 
 \begin_layout Abstract
@@ -290,7 +302,7 @@ g.
 \end_layout
 
 \begin_layout Itemize
-Understand how real-time scheduling is done in the Linux kernel.
+Understand how real-time scheduling is done in LITMUS.
 \end_layout
 
 \begin_layout Itemize
@@ -306,12 +318,12 @@ Implement a priority-per-processor for each task.
 Implement affinity inheritance.
 \end_layout
 
-\begin_layout Standard
-These goals will be discussed in greater details throughout this report.
+\begin_layout Itemize
+Implement First-In First Out spinlocks
 \end_layout
 
-\begin_layout Subsubsection
-Requirements
+\begin_layout Standard
+These goals will be discussed in greater details throughout this report.
 \end_layout
 
 \begin_layout Subsubsection
@@ -352,7 +364,7 @@ Exploratory prototyping : After studying the linux scheduler, areas of the
 Incremental model : After the experience gained on the Linux kernel with
  the early prototypes and the feasibility of the system demonstrated and
  risks mitigated, an incremental development lifecycle was chosen.
- The features were planified in a phases that included design, implementation,
+ The features were planified in phases that included design, implementation,
  deployment and testing.
 \end_layout
 
@@ -658,7 +670,7 @@ The actions are computer instructions executed by the processor in a sequential
  Tasks execution can be safely interleaved as long as a switching and preempting
  between different tasks is done between any two atomic instructions.
  Tasks are assigned a priority level to enable prioritised scheduling where
- higher tasks are given more processor time with less waiting time.
+ higher tasks are given more processor time and have less waiting time.
 \end_layout
 
 \begin_layout Standard
@@ -669,7 +681,7 @@ Programs necessarily share resources because resources are available in
  Often resources can not be accessed by two tasks at the same time.
  Two different tasks might both be trying to update a resource at the same
  time, this is called a race condition and if not prevented, there is a
- risk of leaving the resource in a corrupted state and source of computing
+ risk of leaving the resource in a corrupted state, a source of computing
  errors.
 \end_layout
 
@@ -6240,6 +6252,25 @@ Description
 \end_layout
 
 \begin_layout Standard
+The MrsP protocol is a variant of MRSP, with two major differences :
+\end_layout
+
+\begin_layout Itemize
+Tasks requesting access to an unavaible global resource do not spin at processor
+ ceiling (becoming effectively non-preemptable) but at a local per-processor
+ ceiling that corresponds to the maximum priority level of tasks using the
+ resource on that processor.
+\end_layout
+
+\begin_layout Itemize
+Tasks spinning for a resource can 
+\emph on
+cooperate
+\emph default
+ with the preempted task holder to reduce resource access time.
+\end_layout
+
+\begin_layout Standard
 Here we present informally the protocol as it is described in details in
  
 \begin_inset CommandInset citation
@@ -6258,39 +6289,45 @@ We assume a fully partitioned system.
 \end_layout
 
 \begin_layout Enumerate
-All mutexes are assigned a set of ceiling priorities, one per processor
- (for those processors that have threads that use the mutex); for processor
- Pk the mutex's priority is the maximum priority of all threads allocated
- to Pk that use the mutex.
+All resources are assigned a set of ceiling priorities, one per processor
+ (for those processors that have threads that use it) for processor 
+\emph on
+P
+\emph default
+ the resource's priority is the maximum priority of all threads allocated
+ to 
+\emph on
+P
+\emph default
+ that use it.
  
 \end_layout
 
 \begin_layout Enumerate
-A lock request on any mutex results in the priority of the thread being
- immediately raised (ICPP) to the local ceiling for the mutex i.e the mutex's
- priority for the processor executing the thread.
+A lock request on any resource results in the priority of the thread being
+ immediately raised to the local resource ceiling i.e the resource's priority
+ for the processor executing the task.
 \end_layout
 
 \begin_layout Enumerate
-Accesses to a mutex are dealt with in a FIFO order.
+Accesses to a resource are dealt with in a FIFO order.
  
 \end_layout
 
 \begin_layout Enumerate
-While waiting to gain access to the mutex, and while actually holding the
- mutex, the thread continues to be active and executes (possible spinning)
- with priority equal to the local ceiling of the mutex.
+While spinning for the resource the task continues to be active and executes
+ with priority equal to the local resource ceiling.
  
 \end_layout
 
 \begin_layout Enumerate
-Any thread waiting to gain access to a mutex must be capable of undertaking
- the associated computation on behalf of any other waiting thread (SPEPP).
+Any task waiting to gain access to a resource must be capable of undertaking
+ the associated computation on behalf of any other waiting task.
  
 \end_layout
 
 \begin_layout Enumerate
-This cooperating thread must undertake the outstanding requests in the original
+This cooperating task must undertake the outstanding requests in the original
  FIFO order.
  
 \end_layout
@@ -6512,7 +6549,7 @@ color{black!50}]{1}{20}
 \backslash
 ganttbar[bar/.append style={fill=gray!75}]{
 \backslash
-small{HP Task - P1}}{3}{12}
+small{HP1 Task - P1}}{3}{12}
 \end_layout
 
 \begin_layout Plain Layout
@@ -6544,7 +6581,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{17}{17}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task - P1}}{1}{1}
+small{LP1 Task - P1}}{1}{1}
 \end_layout
 
 \begin_layout Plain Layout
@@ -6594,7 +6631,7 @@ ganttbar[bar/.append style={fill=green!75}]{}{18}{18}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{HP Task - P2}}{6}{8}
+small{HP2 Task - P2}}{6}{8}
 \end_layout
 
 \begin_layout Plain Layout
@@ -6616,7 +6653,7 @@ small{HP Task - P2}}{6}{8}
 \backslash
 ganttbar[bar/.append style={fill=green!75}]{
 \backslash
-small{LP Task - P2}}{1}{1}
+small{LP2 Task - P2}}{1}{1}
 \end_layout
 
 \begin_layout Plain Layout
@@ -6788,8 +6825,71 @@ T17: HP1 continues executing and finishes.
 T18: LP1 executes and finishes.
 \end_layout
 
+\begin_layout Subparagraph
+Advantages
+\end_layout
+
+\begin_layout Itemize
+Having tasks spin at the local resource ceiling has the advantage of not
+ punishing high priority tasks and at the same time bounds the blocking
+ time ([Andy paper] equations 4 and 5)
+\end_layout
+
+\begin_layout Itemize
+Nested resource usage is allowed at the condition of statically (offline)
+ ordering resource usage
+\end_layout
+
+\begin_layout Subsubsection
+A schedulability compatible protocol
+\end_layout
+
+\begin_layout Standard
+MrsP being a variant of MRSP, which itself is a PCP-based protocol, it exhibits
+ the same properties with regards to schedulability.
+\end_layout
+
+\begin_layout Subsubsection
+Spinning versus suspension-based protocols
+\end_layout
+
+\begin_layout Standard
+There are two possible approaches when request access to a resource already
+ in use is made : spinning, that is continue to execute in a loop or suspending,
+ meaning relinquish the processor.
+\end_layout
+
+\begin_layout Standard
+Most multiprocessor resource sharing protocols (which protocols ? give examples)
+ use suspension-based algorithms.
+ Suspension is chosed over spinning to avoid wasting processor cycles, however
+ implementation of suspend-based protocols often consists of enqueuing tasks
+ to a FIFO queue while waiting for the resource to become available.
+ This approach is a source of non-negligible overheads (de-scheduling, queuing,
+ dequeing, rescheduling), with the possibility of a priority inversion (a
+ lower task with high ceiling priority can preempt the current resource
+ holder).
+ Additionally some protocols also implement priority inheritance which price
+ is more overheads.
+ The size of suspension queues is theoretically bounded by the maximum number
+ of tasks that can be run concurrently in a given RTOS.
+ In contrast, spin-based protocols benefits from lower overheads.
+ To sum up, spinning can be said to be a strategy that becomes costly the
+ longer a resource is held and vice-versa, suspension becomes cheaper.
+ Operations associated with suspension-based protocols added to a possibly
+ large FIFO queue make them harder to analyze than spinning protocols while
+ doing schedulability analysis and too costly.
+\end_layout
+
+\begin_layout Standard
+In his paper [realtime-suspend or spin] Brandenburg evaluates the impact
+ of spinning as opposed to suspension and he comes to the conclusion that
+ unless at least 20% of a program is spent in mutually exclusive areas,
+ spinning is always preferable to suspending.
+\end_layout
+
 \begin_layout Subsection
-A migration approach
+A task migration approach
 \end_layout
 
 \begin_layout Standard
@@ -6873,7 +6973,7 @@ MrsP : Design and Implementation
 \end_layout
 
 \begin_layout Subsection
-Linux Kernel with RT patch
+Linux Kernel
 \end_layout
 
 \begin_layout Subsubsection
@@ -7383,29 +7483,989 @@ he focus of LITMUSRT is algorithmic changes; it does not improve the Linux
 Requirements of MrsP
 \end_layout
 
-\begin_layout Enumerate
-Be able to assign one priority per processor to spinlocks
+\begin_layout Standard
+This section specifies the requirements for implementing the Multiprocessor
+ Resource Sharing Protocol as recommended in the section 3.2 of IEEE 830-1998
+ standard [REF].
+ Each requirement has : 
 \end_layout
 
-\begin_layout Enumerate
-Make waiters spin and be able to get preempted only by holder
+\begin_layout Itemize
+A unique identification number (i.e.
+ Functional requirement 1.1) 
 \end_layout
 
-\begin_layout Enumerate
-Make waiters add their affinities to holder
+\begin_layout Itemize
+Description of the requirement/functionality.
+ 
 \end_layout
 
-\begin_layout Enumerate
-FIFO Spinlock
+\begin_layout Itemize
+Fit criterion to evaluate completion of the requirement.
+ 
 \end_layout
 
-\begin_layout Enumerate
-A migrated task re-migrates back to its original partition when releasing
- the resource
+\begin_layout Itemize
+An importance level: 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Required
+\end_layout
+
+\begin_layout Itemize
+Optional
+\end_layout
+
+\begin_layout Itemize
+Future work
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+The requirements were derived either from the supervisor, the MrsP specification
+ or elicited after prototyping.
+ We use the system requirements level since we are describing middleware
+ requirements.
+ Requirements are either functional or non-functional.
+ Since some of these requirements are coarse they will be refined into finer-gra
+ined sub-requirements, using the main requirement ID associated to a sub-require
+ment ID, 
+\emph on
+e.g.
+ 
+\emph default
+main requirement 2, sub-requirement 2.1.
+\end_layout
+
+\begin_layout Subsubsection
+Functional Requirements
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="18" columns="4">
+<features islongtable="true" longtabularalignment="center">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="5cm">
+<column alignment="left" valignment="middle" width="5cm">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ID
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Description
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Fit criterion
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Level
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Resources must assign one priority per processor 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks are automatically set with the local cpu ceiling priority upon requesting
+ access to the resource
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks must spin at local resource ceiling immediately after resource request
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks priority is boosted to the resource local ceiling
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks must recover their original priority upon releasing the resource
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks have the same priority before and after resource access
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FIFO spinlocks must be implemented
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks acquire the resource in a FIFO order
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ticket spinlocks should not have an upper bound value 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ticket spinlocks auto-reset to zero when reaching maximum value
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Medium
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ticket spinlocks must not be subject to race conditions
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Atomic operations for setting and getting ticket value must be used
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2.3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Updating resource owner must not be subject to race conditions
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Atomic operations for setting and getting holder or cpu affinities must
+ be used
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The task holding the resource's lock should inherit the cpu affinities of
+ each waiting task
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Holder task's affinities are automatically updated
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks should recover their original cpu affinity upon releasing the resource
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks have the same priority before and after accessing the resource
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks migrated to a different cpu while holding the lock must migrate back
+ to the original cpu
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks have the same cpu affinity before and after accessing the resource
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tasks preempted while holding the lock must migrate to cpu included in their
+ cpu affinities
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Target cpu is included in cpu affinities
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4.1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+When being migrated tasks should preempt the waiting task on target cpu
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+When being migrated tasks are assigned a slightly higher priority than the
+ resource local ceiling
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Priority level higher than resource local ceiling should be available
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Resource priority ceiling can never by the maximum priority level
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Nested resources should be supported
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Deadlock is avoided in case of nested resources usage
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Optional
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The sporadic task model must be supported
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Implementation supports sporadic tasks
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Partitionned Preemptive Fixed-Priority scheduling policy must be supported
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Implementation supports partitionned P-FP
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Global Fixed-Priority and EDF scheduling must be supported
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Implementation supports G-FP and G-EDF
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Future work
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Non-functional Requirements
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="5cm">
+<column alignment="center" valignment="top" width="5cm">
+<column alignment="center" valignment="top" width="5cm">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ID
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Description
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Fit criterion
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Level
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The system implementation shoud be reliable
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Real-time tasks and resource configuration should execute correctly
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The system should be extendable
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Additional features implementation is made easy
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Optional
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The system should have low overhead
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Performance of MrsP implementation has low latency
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
 FIFO Spinlock
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Kernel ticket spinlock only appear in the 3.16 version, therefore we had
+ to implement our own.
 \end_layout
 
 \begin_layout Standard
