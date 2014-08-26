@@ -6954,532 +6954,6 @@ Runtime Overhead Calculation in LITMUS-RT
 \end_layout
 
 \begin_layout Subsection
-Limitations
-\end_layout
-
-\begin_layout Subsection
-Project Goals Revisited and Project Requirements
-\end_layout
-
-\begin_layout Standard
-\begin_inset Newpage newpage
-\end_inset
-
-
-\end_layout
-
-\begin_layout Section
-MrsP : Design and Implementation
-\end_layout
-
-\begin_layout Subsection
-Linux Kernel
-\end_layout
-
-\begin_layout Subsubsection
-Kernel Preemption
-\end_layout
-
-\begin_layout Itemize
-Linux, prior to the 2.5 Linux Kernel, was a non-preemptive kernel.
- That means that whenever a thread was running in 
-\series bold
-kernel context
-\series default
- (for instance a user application making a system call) that thread would
- not be preempted unless it volunteered to schedule (calls yield() function)
- -> basic Non Preemptive Protocol.
- The 2.6 version of the Linux Kernel introduces preemption and protects critical
- section through the use of spin-locks e.g.
- busy-waiting locks 
-\begin_inset CommandInset citation
-LatexCommand cite
-key "rostedt2007internals"
-
-\end_inset
-
-.
- This was a major improvement however it still allowed lower threads blocking
- higher threads requesting access to the same shared resource or not.
- It makes sense for a spinlock to be fully non-preemptible for the following
- reasons: 
-\end_layout
-
-\begin_layout Itemize
-Busy-waiting blocks a whole processor, we want to access and leave the critical
- section rapidly.
- 
-\end_layout
-
-\begin_layout Itemize
-Other tasks might be spinning on different processors for the same lock
-\end_layout
-
-\begin_layout Itemize
-Interrupt kernel threads [
-\series bold
-Define
-\series default
-] are given priority over all other tasks, they can spin on the lock held
- by the preempted task and thus create a deadlock.
-\end_layout
-
-\begin_layout Standard
-However spinlocks can create large non-deterministic latencies and that
- is conflicting with the requirements of an RTOS.
-\end_layout
-
-\begin_layout Standard
-To address that issue the RT patch converts most spinlocks into a mutex
- 
-\begin_inset CommandInset citation
-LatexCommand cite
-key "rostedt2007internals"
-
-\end_inset
-
-, this has the effect to enable preemption in the critical sections as a
- task trying to lock an already held mutex will be suspended (deadlock avoided).
-\end_layout
-
-\begin_layout Subsubsection
-Key Data Structures
-\end_layout
-
-\begin_layout Paragraph
-task_struct
-\end_layout
-
-\begin_layout Standard
-This data structure represents a task in the system.
- It contains useful information for the scheduler such as the real-time
- priority of a task, its current state (running, sleeping, etc..) and the
- policy under which it is being scheduled.
- 
-\end_layout
-
-\begin_layout Paragraph
-runqueue
-\end_layout
-
-\begin_layout Standard
-There is two runqueue per processor, one of which is listing the active
- tasks and the other the expired tasks.
- A runqueue is a linked list composed of 140 nodes corresponding to each
- priority level.
- Each node is itself a linked list referencing the tasks of the same priority
-\end_layout
-
-\begin_layout Subsection
-LITMUS
-\begin_inset script superscript
-
-\begin_layout Plain Layout
-RT
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-LITMUS
-\begin_inset script superscript
-
-\begin_layout Plain Layout
-RT
-\end_layout
-
-\end_inset
-
- stands for Linux Testbed for Multiprocessor Scheduling in Real-Time Systems
- and is a real-time patch for the Linux operating system.
- Linux is a popular UNIX-based open-source kernel.
- It was developed by Brandenburg et al [REF] with the intent to facilitate
- implementation and comparison of scheduling and locking algorithms.
- It supports partitioned, semi-partitioned, global and clustered scheduling
- policies.
- The main contributions of LITMUS
-\begin_inset script superscript
-
-\begin_layout Plain Layout
-RT
-\end_layout
-
-\end_inset
-
- are :
-\end_layout
-
-\begin_layout Itemize
-An implementation of the sporadic task model for Linux.
-\end_layout
-
-\begin_layout Itemize
-Providing a plugin interface that allows for custom scheduling and locking
- protocols to be implemented.
-\end_layout
-
-\begin_layout Itemize
-Provides an API composed of system calls to manipulate real time tasks from
- userspace.
-\end_layout
-
-\begin_layout Standard
-The implementation of the MrsP Protocol was performed on version 2014.2 based
- on Linux kernel 3.10.41.
-\end_layout
-
-\begin_layout Subsubsection
-Architecture overview
-\end_layout
-
-\begin_layout Standard
-LITMUS
-\begin_inset script superscript
-
-\begin_layout Plain Layout
-RT
-\end_layout
-
-\end_inset
-
- is composed of four logical components as shown in figure [REF] taken from
- [REF] :
-\end_layout
-
-\begin_layout Itemize
-A core infrastructure that hooks into the Linux Kernel scheduling decision
- algorithm and provides a level of indirection that allows dynamically choosing
- a scheduling protocol at runtime.
- This is possible by the addition of a LITMUS
-\begin_inset script superscript
-
-\begin_layout Plain Layout
-RT
-\end_layout
-
-\end_inset
-
- scheduling class in the standard scheduling mechanism that takes precedence
- over all other scheduling decisions.
- The core essentially provides a mean to forward scheduling requests to
- the selected scheduling protocol thus implementing the Decorator design
- pattern.
-\end_layout
-
-\begin_layout Itemize
-Scheduler plugins which are the implementation of different scheduling policies
- (such as preemptive-fixed priority, global earliest-deadline-first, ...) are
- implemented in a modular fashion (one source file per protocol).
- Plugins are requested to be statically compiled with the Linux kernel itself
- 
-\emph on
-e.g.
-
-\emph default
- they are not loadable modules (that are a way of adding functionality to
- the base kernel).
- Plugins can be dynamically changed at runtime, however not while real-time
- tasks are running, only before or after a task set execution.
- Plugins have to implement mandatory functions such as 
-\family typewriter
-schedule() 
-\family default
-that returns the next task to be scheduled for execution.
- A flowchart depicts the LITMUS
-\begin_inset script superscript
-
-\begin_layout Plain Layout
-RT
-\end_layout
-
-\end_inset
-
- wrapper scheduler in figure [REF].
-\end_layout
-
-\begin_layout Itemize
-User-space API
-\end_layout
-
-\begin_layout Itemize
-User-space library and tools
-\end_layout
-
-\begin_layout Standard
-\begin_inset Float figure
-placement H
-wide false
-sideways false
-status open
-
-\begin_layout Plain Layout
-\begin_inset Graphics
-	filename litmus.png
-	scale 50
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset Caption
-
-\begin_layout Plain Layout
-LITMUS
-\begin_inset script superscript
-
-\begin_layout Plain Layout
-RT
-\end_layout
-
-\end_inset
-
- Architecture
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-Scheduling decision flowchart :
-\end_layout
-
-\begin_layout Standard
-\begin_inset Float figure
-placement H
-wide false
-sideways false
-status open
-
-\begin_layout Plain Layout
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-tikzstyle{decision} = [diamond, draw, 
-\end_layout
-
-\begin_layout Plain Layout
-
-    text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-tikzstyle{block} = [rectangle, draw, 
-\end_layout
-
-\begin_layout Plain Layout
-
-    text width=5em, text centered, rounded corners, minimum height=4em]
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-tikzstyle{line} = [draw, -latex']
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-tikzstyle{cloud} = [draw, ellipse, node distance=3cm,
-\end_layout
-
-\begin_layout Plain Layout
-
-    minimum height=2em]
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-centering
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-begin{tikzpicture}[node distance = 2cm, auto]
-\end_layout
-
-\begin_layout Plain Layout
-
-    % Place nodes
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-node [block] (schedule) {schedule};
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-node [block, below of=schedule] (plugin) {forward scheduling request to
- plugin};
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-node [decision, below of=plugin] (migration) {is task migration needed ?};
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-node [block, right of=migration, node distance=5cm] (migrate) {migration
- process};
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-node [block, below of=migration,node distance=3cm] (update) {update task
- structure};
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-node [block, below of=update, node distance=3cm] (clock) {update clock};
-\end_layout
-
-\begin_layout Plain Layout
-
-    % Draw edges
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-path [line] (schedule) -- (plugin);
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-path [line] (plugin) -- (migration);
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-path [line] (migration) -- node {yes} (migrate);
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-path [line] (migration) -- (update);
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-path [line] (migrate) |- (update);
-\end_layout
-
-\begin_layout Plain Layout
-
-    
-\backslash
-path [line] (update) -- (clock);
-\end_layout
-
-\begin_layout Plain Layout
-
-
-\backslash
-end{tikzpicture}
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Plain Layout
-\align right
-\begin_inset Caption
-
-\begin_layout Plain Layout
-Schedule decision flowchart
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsubsection
-Limitations
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-\emph on
-T
-\series default
-he focus of LITMUSRT is algorithmic changes; it does not improve the Linux
- kernel’s real-time capabilities in terms of interrupt latencies and does
- not force split interrupt handling.
- LITMUSRT is thus complimentary in goals to the PREEMPT RT patch, which
- targets these areas but does not change or augment the implemented scheduling
- algorithms (see page 156).
- However, this also implies that LITMUSRT is not applicable to workloads
- with very short relative deadlines, like mainline Linux itself.
- 
-\end_layout
-
-\begin_layout Subsection
 Requirements of MrsP
 \end_layout
 
@@ -8248,18 +7722,23 @@ Future work
 
 \end_layout
 
+\begin_layout Standard
+Functional requirement 1 is derived directly from MrsP description which
+ requires one priority ceiling per lock.
+\end_layout
+
 \begin_layout Subsubsection
 Non-functional Requirements
 \end_layout
 
 \begin_layout Standard
 \begin_inset Tabular
-<lyxtabular version="3" rows="5" columns="4">
+<lyxtabular version="3" rows="4" columns="4">
 <features tabularvalignment="middle">
 <column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="4cm">
 <column alignment="center" valignment="top" width="5cm">
-<column alignment="center" valignment="top" width="5cm">
-<column alignment="center" valignment="top" width="5cm">
+<column alignment="center" valignment="top" width="0pt">
 <row>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
@@ -8375,7 +7854,7 @@ Optional
 </cell>
 </row>
 <row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8384,7 +7863,7 @@ Optional
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8393,7 +7872,7 @@ The system should have low overhead
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8402,49 +7881,11 @@ Performance of MrsP implementation has low latency
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-High
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+High
 \end_layout
 
 \end_inset
@@ -8457,23 +7898,1055 @@ High
 
 \end_layout
 
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+MrsP : Design and Implementation
+\end_layout
+
+\begin_layout Standard
+This section details the implementation of requirements presented in section
+ 3.5.
+ The operating system chosen to implement the Multiprocessor Resource Sharing
+ Protocol is LITMUS, which is a patch to the mainline Linux kernel.
+ First a general description of Linux and programming at kernel level will
+ be given, followed by a presentation of the LITMUS patch.
+ We will then explain design choices and how requirements have been meet.
+\end_layout
+
 \begin_layout Subsection
+Linux Kernel
+\end_layout
+
+\begin_layout Standard
+Linux is an open-source kernel used worldwide in a variety of systems and
+ industries.
+ Linux is licenced under GPL (GNU General Public License).
+ This license [https://gnu.org/licenses/gpl.html] allows distribution, modificatio
+n and sale of Linux but requires that all any distributed copy be released
+ under the GPL license and be accompanied by the complete corresponding
+ source code.
+ The GPL license permitted the contributions from thousands of developers
+ around the world [http://go.linuxfoundation.org/who-writes-linux-2012], Linux
+ has been estimated to be worth over a 1 billion dollars [http://www.linuxfoundat
+ion.org/sites/main/files/publications/estimatinglinux.html] and comprises
+ more than 6 million lines of code.
+ This section describes in further details the Linux kernel and specificities
+ of kernel level programming.
+\end_layout
+
+\begin_layout Subsubsection
+Overview of the kernel
+\end_layout
+
+\begin_layout Standard
+The linux kernel is monolithic, which means that it is running in a privileged
+ mode, having full access to hardware and able to perform any operation.
+ User applications in contrast can only use the hardware or perform operations
+ usually reserved to the kernel through system calls, which essentially
+ forward the request to the kernel, which decides to satisfy it or not.
+ 
+\end_layout
+
+\begin_layout Standard
+System calls are included in the kernel and provide a secure interface as
+ well as hardware abstraction through which untrusted programs (all programs
+ except the kernel itself are considered untrusted) can perform operations
+ that if otherwise unmanaged could damage the system integrity.
+ Having the kernel centralise resource usage, process management, hardware
+ access and other privileged operations brings more control over programs
+ actions, as stated in the book Linux Kernel Development 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "love2010linux"
+
+\end_inset
+
+ : 
+\shape italic
+if tasks were free to access system and hardware resources without the kernel's
+ knowledge, it would be nearly impossible to implement multitasking and
+ virtual memory, and certainly impossible to do so with stability and security.
+\end_layout
+
+\begin_layout Standard
+The figure [REF] illustrates the relation between kernel, hardware and userspace
+ programs.
+\end_layout
+
+\begin_layout Standard
+The Linux kernel also provides an abstraction of the different hardware
+ architectures, that each have different instructions and constraints, therefore
+ simplifying user application programming.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename kernel.jpg
+	scale 80
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Kernel and userpace programs relation
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Kernel level programming
+\end_layout
+
+\begin_layout Standard
+The linux kernel is developped in the C language, however the common high-level
+ functions found in the userspace are not available in kernel development
+ (they are part of glibc system calls).
+ Instead understanding low-level programming and having the bigger picture
+ of the system in mind is essential.
+\end_layout
+
+\begin_layout Paragraph
+Virtualisation tools
+\end_layout
+
+\begin_layout Standard
+Virtualisation tools are inherent to kernel development because they provide
+ a safe environment to test kernel changes.
+ Indeed, changes to the way the kernel operates might have unexpected side
+ effects in the best case, failure and hardware damage in the worst.
+ We have used the QEMU virtualisation tool for this project mainly because
+ it allows simulation of hardware, in particular configurations with different
+ number of processors can be experimented.
+\end_layout
+
+\begin_layout Paragraph
+Kernel configuration
+\end_layout
+
+\begin_layout Standard
+When compiling the kernel a configuration file must be provided.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+Fully preemptible Kernel
+\end_layout
+
+\begin_layout Itemize
+Linux, prior to the 2.5 Linux Kernel, was a non-preemptive kernel.
+ That means that whenever a thread was running in 
+\series bold
+kernel context
+\series default
+ (for instance a user application making a system call) that thread would
+ not be preempted unless it volunteered to schedule (calls yield() function),
+ a basic non-preemption scheme was applied.
+ The 2.6 version of the Linux Kernel introduces preemption and protects critical
+ section through the use of spinlocks 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "rostedt2007internals"
+
+\end_inset
+
+.
+ This was a major improvement however it still allowed lower threads blocking
+ higher threads requesting access to the same shared resource or not (priority
+ inversion).
+ It makes sense for a spinlock to be fully non-preemptible for the following
+ reasons: 
+\end_layout
+
+\begin_layout Itemize
+Busy-waiting blocks a whole processor, we want to access and leave the critical
+ section rapidly.
+\end_layout
+
+\begin_layout Itemize
+Other tasks might be spinning on different processors for the same lock
+\end_layout
+
+\begin_layout Itemize
+Interrupt kernel threads are given priority over all other tasks, they can
+ spin on the lock held by the preempted task and thus create a deadlock.
+\end_layout
+
+\begin_layout Standard
+However spinlocks can create large non-deterministic latencies and that
+ is conflicting with the requirements of an RTOS.
+\end_layout
+
+\begin_layout Standard
+To address that issue the RT patch converts most spinlocks into a mutex
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "rostedt2007internals"
+
+\end_inset
+
+, this has the effect to enable preemption in the critical sections as a
+ task trying to lock an already held mutex will be suspended (deadlock avoided).
+\end_layout
+
+\begin_layout Subsubsection
+Kernel Data Structures
+\end_layout
+
+\begin_layout Paragraph
+task_struct
+\end_layout
+
+\begin_layout Standard
+This data structure represents a task in the system.
+ It contains useful information for the scheduler such as the real-time
+ priority of a task, its current state (running, sleeping, etc..) and the
+ policy under which it is being scheduled.
+ 
+\end_layout
+
+\begin_layout Paragraph
+runqueue
+\end_layout
+
+\begin_layout Standard
+There is two runqueue per processor, one of which is listing the active
+ tasks and the other the expired tasks.
+ A runqueue is a linked list composed of 140 nodes corresponding to each
+ priority level.
+ Each node is itself a linked list referencing the tasks of the same priority
+\end_layout
+
+\begin_layout Subsection
+LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ stands for Linux Testbed for Multiprocessor Scheduling in Real-Time Systems
+ and is a real-time patch for the Linux operating system.
+ Linux is a popular UNIX-based open-source kernel.
+ It was developed by Brandenburg et al [REF] with the intent to facilitate
+ implementation and comparison of scheduling and locking algorithms.
+ It supports partitioned, semi-partitioned, global and clustered scheduling
+ policies.
+ The main contributions of LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ are :
+\end_layout
+
+\begin_layout Itemize
+An implementation of the sporadic task model for Linux.
+\end_layout
+
+\begin_layout Itemize
+Providing a plugin interface that allows for custom scheduling and locking
+ protocols to be implemented.
+\end_layout
+
+\begin_layout Itemize
+Provides an API composed of system calls to manipulate real time tasks from
+ userspace.
+\end_layout
+
+\begin_layout Standard
+The implementation of the MrsP Protocol was performed on version 2014.2 based
+ on Linux kernel 3.10.41.
+\end_layout
+
+\begin_layout Subsubsection
+Architecture overview
+\end_layout
+
+\begin_layout Standard
+LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ is composed of four logical components as shown in figure [REF] taken from
+ [REF] :
+\end_layout
+
+\begin_layout Itemize
+A core infrastructure that hooks into the Linux Kernel scheduling decision
+ algorithm and provides a level of indirection that allows dynamically choosing
+ a scheduling protocol at runtime.
+ This is possible by the addition of a LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ scheduling class in the standard scheduling mechanism that takes precedence
+ over all other scheduling decisions.
+ The core essentially provides a mean to forward scheduling requests to
+ the selected scheduling protocol thus implementing the Decorator design
+ pattern.
+\end_layout
+
+\begin_layout Itemize
+Scheduler plugins which are the implementation of different scheduling policies
+ (such as preemptive-fixed priority, global earliest-deadline-first, ...) are
+ implemented in a modular fashion (one source file per protocol).
+ Plugins are requested to be statically compiled with the Linux kernel itself
+ 
+\emph on
+e.g.
+
+\emph default
+ they are not loadable modules (that are a way of adding functionality to
+ the base kernel).
+ Plugins can be dynamically changed at runtime, however not while real-time
+ tasks are running, only before or after a task set execution.
+ Plugins have to implement mandatory functions such as 
+\family typewriter
+schedule() 
+\family default
+that returns the next task to be scheduled for execution.
+ A flowchart depicts the LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ wrapper scheduler in figure [REF].
+\end_layout
+
+\begin_layout Itemize
+User-space API
+\end_layout
+
+\begin_layout Itemize
+User-space library and tools
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename litmus.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+LITMUS
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+RT
+\end_layout
+
+\end_inset
+
+ Architecture
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Scheduling decision flowchart :
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{decision} = [diamond, draw, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{block} = [rectangle, draw, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=5em, text centered, rounded corners, minimum height=4em]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{line} = [draw, -latex']
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{cloud} = [draw, ellipse, node distance=3cm,
+\end_layout
+
+\begin_layout Plain Layout
+
+    minimum height=2em]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[node distance = 2cm, auto]
+\end_layout
+
+\begin_layout Plain Layout
+
+    % Place nodes
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block] (schedule) {schedule};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, below of=schedule] (plugin) {forward scheduling request to
+ plugin};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [decision, below of=plugin] (migration) {is task migration needed ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, right of=migration, node distance=5cm] (migrate) {migration
+ process};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, below of=migration,node distance=3cm] (update) {update task
+ structure};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, below of=update, node distance=3cm] (clock) {update clock};
+\end_layout
+
+\begin_layout Plain Layout
+
+    % Draw edges
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (schedule) -- (plugin);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (plugin) -- (migration);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (migration) -- node {yes} (migrate);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (migration) -- (update);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (migrate) |- (update);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (update) -- (clock);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tikzpicture}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\align right
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Schedule decision flowchart
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Limitations
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\emph on
+T
+\series default
+he focus of LITMUSRT is algorithmic changes; it does not improve the Linux
+ kernel’s real-time capabilities in terms of interrupt latencies and does
+ not force split interrupt handling.
+ LITMUSRT is thus complimentary in goals to the PREEMPT RT patch, which
+ targets these areas but does not change or augment the implemented scheduling
+ algorithms (see page 156).
+ However, this also implies that LITMUSRT is not applicable to workloads
+ with very short relative deadlines, like mainline Linux itself.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+Programming Constraints
+\end_layout
+
+\begin_layout Subsection
+Early prototype
+\end_layout
+
+\begin_layout Standard
+Reconaissance mission, throw away code and other niceties
+\end_layout
+
+\begin_layout Standard
+Functional requirement 1 -> modified the task_struct
+\end_layout
+
+\begin_layout Subsection
+Implementation
+\end_layout
+
+\begin_layout Subsubsection
+The MrsP lock structure
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language=C,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+struct mrsp_semaphore {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct litmus_lock litmus_lock;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct task_struct *owner;
+\end_layout
+
+\begin_layout Plain Layout
+
+	spinlock_t lock;
+\end_layout
+
+\begin_layout Plain Layout
+
+	volatile pid_t taskid;
+\end_layout
+
+\begin_layout Plain Layout
+
+	volatile unsigned int owner_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+	volatile unsigned int next;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int *prio_per_cpu; 
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct cpumask saved_cpumask;
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The 
+\family sans
+mrsp_semaphore 
+\family default
+structure as its name indicates is the representation of a MrsP lock :
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+struct litmus_lock litmus_lock 
+\family default
+embeds pointers to functions necessary to lock, unlock, opening, closing,
+ freeing the semaphore.
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	struct task_struct *owner 
+\family default
+points to the current holder of the lock if any
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	spinlock_t lock 
+\family default
+is a spinlock necessary to update the owner of the lock
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	volatile unsigned int owner_ticket 
+\family default
+is the FIFO ticket number the holder has
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	volatile unsigned int next is 
+\family default
+the FIFO the next ticket number available
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	int *prio_per_cpu 
+\family default
+holds the array containing the priority for each processor
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	struct cpumask saved_cpumask 
+\family default
+is a copy of the tasks cpumask affinities prior to obtaining the lock
+\end_layout
+
+\begin_layout Subsubsection
+The LITMUS real-time task structure
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language=C,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+struct rt_task {
+\end_layout
+
+\begin_layout Plain Layout
+
+	lt_t    exec_cost;
+\end_layout
+
+\begin_layout Plain Layout
+
+	lt_t    period;
+\end_layout
+
+\begin_layout Plain Layout
+
+	lt_t	relative_deadline;
+\end_layout
+
+\begin_layout Plain Layout
+
+	lt_t	phase;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int	cpu;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int	priority;
+\end_layout
+
+\begin_layout Plain Layout
+
+	task_class_t	cls;
+\end_layout
+
+\begin_layout Plain Layout
+
+	budget_policy_t budget_policy; /* ignored by pfair */
+\end_layout
+
+\begin_layout Plain Layout
+
+	release_policy_t release_policy;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct mrsp_semaphore* mrsp_lock;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int saved_priority;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int migration_bool;
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The 
+\family sans
+rt_task 
+\family default
+represents the real-time parameters of a task, and is tied to the main 
+\family sans
+task_struct 
+\family default
+used by the stock Linux kernel that represents as task (process or thread).
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+lt_t 
+\family default
+is a typedef to unsigned long long
+\family sans
+   
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+lt_t exec_cost 
+\family default
+is the execution cost of the task
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	lt_t period 
+\family default
+is the relative periodic release time of task
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	lt_t	relative_deadline 
+\family default
+is the relative deadline of the task
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	lt_t	phase;
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	unsigned int	cpu 
+\family default
+is the processor the task is assigned to (we are only considering partitioned
+ policy)
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	unsigned int	priority 
+\family default
+is the priority of the task.
+ It is to be noted that the higher the value the lower the priority level
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	task_class_t	cls;
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	budget_policy_t budget_policy; 
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	release_policy_t release_policy;
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	
+\series bold
+struct mrsp_semaphore*
+\series default
+ mrsp_lock 
+\family default
+is a pointer to a
+\family sans
+ mrsp_semaphore.
+ 
+\family default
+We have to tie the lock to the task to decide wheter the task should be
+ migrated in case of a preemption for instance.
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	
+\series bold
+unsigned int saved_priority
+\series default
+ 
+\family default
+is the priority the task had prior to acquiring a MrsP lock
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+	
+\series bold
+unsigned int migration_bool
+\series default
+ 
+\family default
+is a flag needed to disable migration.
+ That is useful while comparing MrsP to the Ceiling protocol for instance.
+\end_layout
+
+\begin_layout Standard
+The fields in bold are modifications to the original structure.
+\end_layout
+
+\begin_layout Subsubsection
+Priority per processor
+\end_layout
+
+\begin_layout Standard
+Functional requirement 1 (resources have one priority per processor) is
+ satisfied in a two-step fashion.
+ Firstly we defined an dynamic array in the MrsP structure.
+\end_layout
+
+\begin_layout Subsubsection
 FIFO Spinlock
 \end_layout
 
 \begin_layout Standard
-
-\emph on
 Kernel ticket spinlock only appear in the 3.16 version, therefore we had
- to implement our own.
+ to implement our own version of FIFO spinlocks.
 \end_layout
 
 \begin_layout Standard
-In multithreading, spinlocks are rarely used, most applications favor the
- more sophisticated solution of mutexes.
- However with sophistication comes complexity, and complexity in computing
- often means slower response times.
- At kernel level, performance is crucial and areas are often protected with
+At kernel level, performance is crucial and areas are often protected with
  very short busy-waiting locks.
  Typically the spinlock is implemented as single variable acting as boolean
  indicating whether the resource is currently being used, tasks enter a
@@ -8621,7 +9094,7 @@ The lock variables are initialized to zero at the beginning.
  and increasing it by one.
  The task then spins in a busy loop waiting for its ticket number to be
  equal to the owner variable.
- The unlocking is done by a simple (atomic?) increase of the owner variable.
+ The unlocking is done by a simple increase of the owner variable.
  
 \end_layout
 
@@ -8634,7 +9107,7 @@ owner
 \family typewriter
 next_ticket
 \family default
- are defined as unsigned 1 byte variables in our implementation which means
+ are defined as unsigned int variables in our implementation which means
  there can be up to 255 tasks spinning on the same lock.
  We can notice that code above always increments the variable and never
  decrease them, which can lead to ask 
@@ -9025,27 +9498,6 @@ Implementation of MrsP
 
 \begin_layout Subsubsection
 System calls
-\end_layout
-
-\begin_layout Standard
-A system call (also called kernel call) is a request to a service typically
- made from userspace.
- The service needed is usually only accessible by the kernel because of
- its possible misuse that could damage the system integrity.
- System calls act as an Application Programming Interface for the kernel
- functions and enable to abstract hardware in a safe fashion from the user.
- As stated in the book Linux Kernel Development 
-\begin_inset CommandInset citation
-LatexCommand cite
-key "love2010linux"
-
-\end_inset
-
- : 
-\shape italic
-if tasks were free to access system and hardware resources without the kernel's
- knowledge, it would be nearly impossible to implement multitasking and
- virtual memory, and certainly impossible to do so with stability and security.
 \end_layout
 
 \begin_layout Paragraph
