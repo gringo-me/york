@@ -8576,6 +8576,13 @@ Functional requirement 1 -> modified the task_struct
 Implementation
 \end_layout
 
+\begin_layout Standard
+In this section we start by presenting the most important data structures.
+ We then explain how the FIFO spinlock algorithm works and present our version
+ for MrsP.
+ Finally the MrsP functions are presented in detail and design choices discussed.
+\end_layout
+
 \begin_layout Subsubsection
 The MrsP lock structure
 \end_layout
@@ -8840,7 +8847,9 @@ is the relative deadline of the task
 \begin_layout Itemize
 
 \family sans
-	lt_t	phase;
+	lt_t	phase 
+\family default
+is the release of the first job of task, also known as offset.
 \end_layout
 
 \begin_layout Itemize
@@ -8864,19 +8873,29 @@ is the priority of the task.
 \begin_layout Itemize
 
 \family sans
-	task_class_t	cls;
+	task_class_t	cls 
+\family default
+is an enum type defining whether the task has hard, soft or best effort
+ real-time constraints.
+
+\family sans
+ 
 \end_layout
 
 \begin_layout Itemize
 
 \family sans
-	budget_policy_t budget_policy; 
+	budget_policy_t budget_policy 
+\family default
+represents the level of strictness in respecting the attributed cost.
 \end_layout
 
 \begin_layout Itemize
 
 \family sans
-	release_policy_t release_policy;
+	release_policy_t release_policy 
+\family default
+is an enum type defining wheter the task is sporadic, periodic.
 \end_layout
 
 \begin_layout Itemize
@@ -8927,13 +8946,32 @@ The fields in bold are modifications to the original structure.
 \end_layout
 
 \begin_layout Subsubsection
+LITMUS Priority Fixed Processor implementation
+\end_layout
+
+\begin_layout Subsubsection
 Priority per processor
 \end_layout
 
 \begin_layout Standard
 Functional requirement 1 (resources have one priority per processor) is
  satisfied in a two-step fashion.
- Firstly we defined an dynamic array in the MrsP structure.
+ Firstly we defined a variable MrsP structure that references a variable
+ size array that must be defined in userspace.
+ Secondly we have identified that the best place to effectively automatically
+ change the priority of a task when it is being migrated is in the migration
+ routine : 
+\family sans
+pfp_finish_switch (task).
+ 
+\family default
+This function is has been modified so that the priority of the task being
+ migrated is updated only if it is holding a MrsP lock.
+ The user has the responsibility to make sure that the 
+\family sans
+prio_per_cpu variable
+\family default
+ is correctly set before running his real-time program.
 \end_layout
 
 \begin_layout Subsubsection
@@ -8941,24 +8979,19 @@ FIFO Spinlock
 \end_layout
 
 \begin_layout Standard
-Kernel ticket spinlock only appear in the 3.16 version, therefore we had
- to implement our own version of FIFO spinlocks.
+Kernel ticket spinlock only appear in the 3.16 version (LITMUS part is based
+ on version 3.10.41), therefore we had to implement our own version of FIFO
+ spinlocks.
 \end_layout
 
 \begin_layout Standard
 At kernel level, performance is crucial and areas are often protected with
  very short busy-waiting locks.
- Typically the spinlock is implemented as single variable acting as boolean
+ Typically the spinlock is implemented as a single variable acting as boolean
  indicating whether the resource is currently being used, tasks enter a
  loop and check continuously its value.
  MrsP requires busy-waiting, but not only, it also requires that a FIFO
  access to the lock is respected.
- The Pthread implementation for instance doesn't provide such a facility,
- resulting in threads competing for the lock.
- The three others requirements for MrsP are affinity inheritance, priority
- ceiling and the ability to assign one priority per processor to each lock.
- The following sections will give the details of a custom FIFO spinlock
- implemented to fulfill the above requirements.
 \end_layout
 
 \begin_layout Subsubsection
@@ -8991,7 +9024,7 @@ key "Piggin_ticket_spin"
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "basicstyle={\ttfamily},language=C"
+lstparams "basicstyle={\ttfamily},language=C,numbers=left"
 inline false
 status open
 
@@ -9002,12 +9035,17 @@ LOCK {
 
 \begin_layout Plain Layout
 
-owner;
+	owner;
 \end_layout
 
 \begin_layout Plain Layout
 
-next_ticket;
+	next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+	ticket;
 \end_layout
 
 \begin_layout Plain Layout
@@ -9031,7 +9069,7 @@ FIFO_Spin_Lock(LOCK L){
 
 \begin_layout Plain Layout
 
- Local Ticket = L.next_ticket;
+ ticket = L.next_ticket;
 \end_layout
 
 \begin_layout Plain Layout
@@ -9089,12 +9127,74 @@ FIFO_Spin_Unlock(LOCK L){
 \end_layout
 
 \begin_layout Standard
-The lock variables are initialized to zero at the beginning.
- The task calling FIFO_Spin_Lock starts by atomically getting a ticket number
- and increasing it by one.
- The task then spins in a busy loop waiting for its ticket number to be
- equal to the owner variable.
- The unlocking is done by a simple increase of the owner variable.
+FIFO spinlocks require two variables :
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+owner 
+\family default
+: represents the number of the current holder of the lock.
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+next_ticket : 
+\family default
+represents the next available number for task whishing to take the lock.
+\end_layout
+
+\begin_layout Itemize
+ticket : represents the current available ticket
+\end_layout
+
+\begin_layout Standard
+The lock is initialized to zero at the beginning.
+ 
+\end_layout
+
+\begin_layout Itemize
+The task calling 
+\family sans
+FIFO_Spin_Lock
+\family default
+ starts by first atomically getting the 
+\family sans
+owner
+\family default
+ ticket number.
+\end_layout
+
+\begin_layout Itemize
+The 
+\family sans
+task
+\family default
+ is obtained
+\end_layout
+
+\begin_layout Itemize
+Then the 
+\family sans
+next_ticket
+\family default
+ is obtained and increased by one y one.
+ 
+\end_layout
+
+\begin_layout Itemize
+The task then spins in a busy loop until the 
+\family sans
+owner
+\family default
+ and the ticket have the same value.
+ 
+\end_layout
+
+\begin_layout Itemize
+The unlocking is done by a simple increase of the owner variable.
  
 \end_layout
 
@@ -9107,8 +9207,7 @@ owner
 \family typewriter
 next_ticket
 \family default
- are defined as unsigned int variables in our implementation which means
- there can be up to 255 tasks spinning on the same lock.
+ are defined as unsigned int variables in our implementation .
  We can notice that code above always increments the variable and never
  decrease them, which can lead to ask 
 \begin_inset Quotes eld
@@ -9127,8 +9226,9 @@ wrapping
 \shape default
  property of unsigned variables which resets the variable to zero in the
  case of an overflow.
- FIFO spinlocks therefore support an infinite number of accesses.
- 
+ FIFO spinlocks therefore support an infinite number of accesses, the only
+ limit if there is an architecture that is composed of more processors than
+ the maximum value of an unsigned int ( architecture dependent).
 \end_layout
 
 \begin_layout Subsubsection
