@@ -32,7 +32,7 @@ struct mrsp_semaphore {
 	struct task_struct *owner;
 
 	/* priority queue of waiting tasks */
-	wait_queue_head_t wait;
+	spinlock_t lock;
 
 	/* priority ceiling per cpu */
 	unsigned int prio_ceiling[NR_CPUS];
