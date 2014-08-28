@@ -6141,7 +6141,7 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename processor_cache_shared.gif
+	filename processor_cache_shared.png
 	scale 65
 
 \end_inset
@@ -6230,6 +6230,17 @@ The cost of two migrations must be less than the interference of a higher
  In shared memory systems the overhead associated with task migration is
  defined as the time needed to copy its hardware state accross private memory
  caches.
+\end_layout
+
+\begin_layout Subsubsection
+Memory barriers
+\end_layout
+
+\begin_layout Standard
+The compiler is free to re-order instructions if not stated otherwise.
+ 
+\series bold
+[EXPLAIN]
 \end_layout
 
 \begin_layout Subsection
@@ -8584,7 +8595,1201 @@ In this section we start by presenting the most important data structures.
 \end_layout
 
 \begin_layout Subsubsection
-The MrsP lock structure
+FIFO Spinlock
+\end_layout
+
+\begin_layout Standard
+Kernel ticket spinlock only appear in the 3.16 version (LITMUS part is based
+ on version 3.10.41), therefore we had to implement our own version of FIFO
+ spinlocks.
+\end_layout
+
+\begin_layout Standard
+At kernel level, performance is crucial and areas are often protected with
+ very short busy-waiting locks.
+ Typically the spinlock is implemented as a single variable acting as boolean
+ indicating whether the resource is currently being used, tasks enter a
+ loop and check continuously its value.
+ MrsP requires busy-waiting, but not only, it also requires that a FIFO
+ access to the lock is respected.
+\end_layout
+
+\begin_layout Subsubsection
+FIFO Spinlock basic algorithm
+\end_layout
+
+\begin_layout Standard
+Our implementation is inspired from 
+\begin_inset Quotes eld
+\end_inset
+
+Tickets Spinlocks
+\begin_inset Quotes erd
+\end_inset
+
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Piggin_ticket_spin"
+
+\end_inset
+
+ and the Lamport Bakery Algorithm.
+ Below is a pseudo-code describing the algorithm.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},language=C,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+LOCK {
+\end_layout
+
+\begin_layout Plain Layout
+
+	owner;
+\end_layout
+
+\begin_layout Plain Layout
+
+	next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+FIFO_Spin_Lock(LOCK L){
+\end_layout
+
+\begin_layout Plain Layout
+
+ Atomic{
+\end_layout
+
+\begin_layout Plain Layout
+
+ ticket = L.next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+ increment L.next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+ }
+\end_layout
+
+\begin_layout Plain Layout
+
+ WHILE ticket != L.owner
+\end_layout
+
+\begin_layout Plain Layout
+
+	Spin
+\end_layout
+
+\begin_layout Plain Layout
+
+ ENDWHILE
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+FIFO_Spin_Unlock(LOCK L){
+\end_layout
+
+\begin_layout Plain Layout
+
+ increment L.owner
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+FIFO spinlocks require two variables :
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+owner 
+\family default
+: represents the number of the current holder of the lock.
+\end_layout
+
+\begin_layout Itemize
+
+\family sans
+next_ticket : 
+\family default
+represents the next available number for task whishing to take the lock.
+\end_layout
+
+\begin_layout Itemize
+ticket : represents the current available ticket
+\end_layout
+
+\begin_layout Standard
+The lock is initialized to zero at the beginning.
+ 
+\end_layout
+
+\begin_layout Itemize
+The task calling 
+\family sans
+FIFO_Spin_Lock
+\family default
+ starts by first atomically getting the 
+\family sans
+owner
+\family default
+ ticket number.
+\end_layout
+
+\begin_layout Itemize
+The 
+\family sans
+task
+\family default
+ number is obtained
+\end_layout
+
+\begin_layout Itemize
+Then the 
+\family sans
+next_ticket
+\family default
+ is obtained and increased by one.
+ 
+\end_layout
+
+\begin_layout Itemize
+The task then spins in a busy loop until the 
+\family sans
+owner
+\family default
+ and the ticket have the same value.
+ 
+\end_layout
+
+\begin_layout Itemize
+The unlocking is done by a simple increase of the owner variable.
+ 
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+owner
+\family default
+ and 
+\family typewriter
+next_ticket
+\family default
+ are defined as unsigned int variables in our implementation.
+ We can notice that code above always increments the variable and never
+ decrease them, which asks the question of how many accesses/tickets can
+ a lock provide.
+ The algorithm takes advantage of the 
+\family typewriter
+\shape italic
+wrapping
+\family default
+\shape default
+ property of unsigned variables which resets the variable to zero in the
+ case of an overflow.
+ FIFO spinlocks therefore support an infinite number of accesses, the only
+ limit is if there is an architecture that is composed of more processors
+ than the maximum value of an unsigned int ( architecture dependent).
+ 
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Minimal bookkeeping ! No need for a list, enqueue, dequeue, etc...
+\end_layout
+
+\begin_layout Subparagraph
+Example
+\end_layout
+
+\begin_layout Standard
+Let's take three tasks A, B, C and one FIFO spinlock L.
+ In the following example we will track the values of owner, next_ticket
+ and ticket.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="8" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="5cm">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Time
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Description
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+next_ticket
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+owner
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ticket
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+All values are initialised to zero
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A requests access to the lock, it copies the value of next_ticket in ticket
+ and increases next_ticket by 1 and takes the lock
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+B requests access to the lock, takes ticket and spins, waiting for owner
+ and ticket to be equal
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A releases the lock by increasing owner by 1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+B can now take the lock
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+B releases the lock
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C requests the lock and gets it straight away
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+FIFO Spinlock MrsP Algorithm
+\end_layout
+
+\begin_layout Standard
+Below is a pseudocode of the FIFO spinlock with the constraints of MrsP.
+ Because the parameters of the task can change while it is holding the lock
+ we have to save them and restore them when the lock is released.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset listings
+lstparams "basicstyle={\normalsize\ttfamily},language=C,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+LOCK {
+\end_layout
+
+\begin_layout Plain Layout
+
+  owner;
+\end_layout
+
+\begin_layout Plain Layout
+
+  next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+  taskid;
+\end_layout
+
+\begin_layout Plain Layout
+
+  prio_per_cpu;
+\end_layout
+
+\begin_layout Plain Layout
+
+  save_task_prio;
+\end_layout
+
+\begin_layout Plain Layout
+
+  save_task_affinity;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+FIFO_Spin_Lock(LOCK L){
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ #Declare local variables
+\end_layout
+
+\begin_layout Plain Layout
+
+ Local copy_priority, copy_affinity
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ copy_priority = Current Task.Priority
+\end_layout
+
+\begin_layout Plain Layout
+
+ copy_affinity = Current Task.Affinity
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ #Priority ceiling
+\end_layout
+
+\begin_layout Plain Layout
+
+ Task.Prio_Per_CPU = L.prio_per_cpu
+\end_layout
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+ Atomic{
+\end_layout
+
+\begin_layout Plain Layout
+
+ Local Ticket = L.next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+ increment L.next_ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+ }
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ #Affinity Inheritance to holder
+\end_layout
+
+\begin_layout Plain Layout
+
+ IF L.taskid != NULL
+\end_layout
+
+\begin_layout Plain Layout
+
+    ADD_Current_CPU(Task(L.taskid));
+\end_layout
+
+\begin_layout Plain Layout
+
+ ENDIF
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ WHILE Ticket != L.owner
+\end_layout
+
+\begin_layout Plain Layout
+
+	Spin
+\end_layout
+
+\begin_layout Plain Layout
+
+ ENDWHILE
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ L.taskid = Current Task.ID
+\end_layout
+
+\begin_layout Plain Layout
+
+ L.save_affinity = copy_affinity;
+\end_layout
+
+\begin_layout Plain Layout
+
+ L.save_priority = copy_priority;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+FIFO_Spin_Unlock(LOCK L){
+\end_layout
+
+\begin_layout Plain Layout
+
+ L.taskid = undef
+\end_layout
+
+\begin_layout Plain Layout
+
+ Task.Affinities = L.save_affinity
+\end_layout
+
+\begin_layout Plain Layout
+
+ Task.Prio = L.save_priority
+\end_layout
+
+\begin_layout Plain Layout
+
+ increment L.owner
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+C language implementation
+\end_layout
+
+\begin_layout Standard
+We have amended the sched_pfp.c file that implements the preemptive-fixed
+ priority scheduling policy to include MrsP.
+\end_layout
+
+\begin_layout Standard
+Below is the locking function.
+\end_layout
+
+\begin_layout Paragraph
+Mrsp Lock
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\small\sffamily},language=C,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+int pfp_mrsp_lock(struct litmus_lock* l)
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct task_struct* t = current;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct mrsp_semaphore *sem = mrsp_from_lock(l);
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct cpumask holder_mask;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned long flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!is_realtime(t))
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EPERM;
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* prevent nested lock acquisition */
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (tsk_rt(t)->num_locks_held ||
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk_rt(t)->num_local_locks_held)
+\end_layout
+
+\begin_layout Plain Layout
+
+	return -EBUSY;
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	smp_wmb();
+\end_layout
+
+\begin_layout Plain Layout
+
+	ticket = xchg(&sem->next, sem->next +1);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	t->rt_param.task_params.saved_priority = t->rt_param.task_params.priority;	
+\end_layout
+
+\begin_layout Plain Layout
+
+	t->rt_param.task_params.priority = sem->prio_per_cpu[get_partition(t)];
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_lock_irqsave(&sem->lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (sem->owner) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		TRACE_CUR("On cpu %d lock has owner %d on cpu %d
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+		get_partition(t),
+\end_layout
+
+\begin_layout Plain Layout
+
+		sem->owner->pid ,
+\end_layout
+
+\begin_layout Plain Layout
+
+		get_partition(sem->owner));
+\end_layout
+
+\begin_layout Plain Layout
+
+		sched_getaffinity(sem->owner->pid, &holder_mask);
+\end_layout
+
+\begin_layout Plain Layout
+
+		cpumask_set_cpu(get_partition(t), &holder_mask);
+\end_layout
+
+\begin_layout Plain Layout
+
+		do_set_cpus_allowed(sem->owner, &holder_mask);
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_unlock_irqrestore(&sem->lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	while (1){
+\end_layout
+
+\begin_layout Plain Layout
+
+		smp_wmb();
+\end_layout
+
+\begin_layout Plain Layout
+
+		cmpxchg(&sem->owner_ticket,ticket,ticket);
+\end_layout
+
+\begin_layout Plain Layout
+
+		
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (sem->owner_ticket == ticket){
+\end_layout
+
+\begin_layout Plain Layout
+
+			sem->owner = t ;
+\end_layout
+
+\begin_layout Plain Layout
+
+			break;	
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	BUG_ON(sem->owner != t);
+\end_layout
+
+\begin_layout Plain Layout
+
+	TRACE_CUR("Obtained lock sem->owner is %d and current is %d
+\backslash
+n",sem->owner,t);
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk_rt(t)->num_locks_held++;
+\end_layout
+
+\begin_layout Plain Layout
+
+	t->rt_param.task_params.mrsp_lock = sem;
+\end_layout
+
+\begin_layout Plain Layout
+
+	sched_getaffinity(t->pid, &sem->saved_cpumask);	
+\end_layout
+
+\begin_layout Plain Layout
+
+	return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We first ensure that the calling task is in realtime mode.
+ The memory barrier smp_wmb() is used to be sure to have the latest version
+ of the next variable and not a cached one.
+ We then get the current ticket number and increase next by one via xchg(),
+ we do not need to protect the call by a spinlock because xchg() is atomic.
+ Current priority of the task is saved so that we can reset it upon lock
+ release.
+ We need to protect the variable containing the owner of the lock, a race
+ condition can occur when the task is releasing the lock because it has
+ to set the owner to NULL.
+ In the case the lock is held, an affinity inheritance occurs, the task
+ adds the cpu it is currently on to the holder.
+ At this point the task is ready to spin, it continuously checks if the
+ owner and ticket variable have the same value.
+ This is done atomically via cmpxchg(), which compares two values and if
+ they are equal assigns the third value to the first.
+ When the owner and ticket are equal, the current task is now effectively
+ the new owner of the task.
+\end_layout
+
+\begin_layout Subsubsection
+The MrsP lock structure 
 \end_layout
 
 \begin_layout Standard
@@ -8974,344 +10179,6 @@ prio_per_cpu variable
  is correctly set before running his real-time program.
 \end_layout
 
-\begin_layout Subsubsection
-FIFO Spinlock
-\end_layout
-
-\begin_layout Standard
-Kernel ticket spinlock only appear in the 3.16 version (LITMUS part is based
- on version 3.10.41), therefore we had to implement our own version of FIFO
- spinlocks.
-\end_layout
-
-\begin_layout Standard
-At kernel level, performance is crucial and areas are often protected with
- very short busy-waiting locks.
- Typically the spinlock is implemented as a single variable acting as boolean
- indicating whether the resource is currently being used, tasks enter a
- loop and check continuously its value.
- MrsP requires busy-waiting, but not only, it also requires that a FIFO
- access to the lock is respected.
-\end_layout
-
-\begin_layout Subsubsection
-FIFO Spinlock basic algorithm
-\end_layout
-
-\begin_layout Standard
-Our implementation is inspired from 
-\begin_inset Quotes eld
-\end_inset
-
-Tickets Spinlocks
-\begin_inset Quotes erd
-\end_inset
-
- 
-\begin_inset CommandInset citation
-LatexCommand cite
-key "Piggin_ticket_spin"
-
-\end_inset
-
- and the Lamport Bakery Algorithm.
- Below 
-\series bold
-[EXPLAIN]
-\series default
- is a pseudo-code describing the algorithm.
-\end_layout
-
-\begin_layout Standard
-\begin_inset listings
-lstparams "basicstyle={\ttfamily},language=C,numbers=left"
-inline false
-status open
-
-\begin_layout Plain Layout
-
-LOCK {
-\end_layout
-
-\begin_layout Plain Layout
-
-	owner;
-\end_layout
-
-\begin_layout Plain Layout
-
-	next_ticket;
-\end_layout
-
-\begin_layout Plain Layout
-
-	ticket;
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-FIFO_Spin_Lock(LOCK L){
-\end_layout
-
-\begin_layout Plain Layout
-
- Atomic{
-\end_layout
-
-\begin_layout Plain Layout
-
- ticket = L.next_ticket;
-\end_layout
-
-\begin_layout Plain Layout
-
- increment L.next_ticket;
-\end_layout
-
-\begin_layout Plain Layout
-
- }
-\end_layout
-
-\begin_layout Plain Layout
-
- WHILE Ticket != L.owner
-\end_layout
-
-\begin_layout Plain Layout
-
-	Spin
-\end_layout
-
-\begin_layout Plain Layout
-
- ENDWHILE
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-FIFO_Spin_Unlock(LOCK L){
-\end_layout
-
-\begin_layout Plain Layout
-
- increment L.owner
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-FIFO spinlocks require two variables :
-\end_layout
-
-\begin_layout Itemize
-
-\family sans
-owner 
-\family default
-: represents the number of the current holder of the lock.
-\end_layout
-
-\begin_layout Itemize
-
-\family sans
-next_ticket : 
-\family default
-represents the next available number for task whishing to take the lock.
-\end_layout
-
-\begin_layout Itemize
-ticket : represents the current available ticket
-\end_layout
-
-\begin_layout Standard
-The lock is initialized to zero at the beginning.
- 
-\end_layout
-
-\begin_layout Itemize
-The task calling 
-\family sans
-FIFO_Spin_Lock
-\family default
- starts by first atomically getting the 
-\family sans
-owner
-\family default
- ticket number.
-\end_layout
-
-\begin_layout Itemize
-The 
-\family sans
-task
-\family default
- is obtained
-\end_layout
-
-\begin_layout Itemize
-Then the 
-\family sans
-next_ticket
-\family default
- is obtained and increased by one y one.
- 
-\end_layout
-
-\begin_layout Itemize
-The task then spins in a busy loop until the 
-\family sans
-owner
-\family default
- and the ticket have the same value.
- 
-\end_layout
-
-\begin_layout Itemize
-The unlocking is done by a simple increase of the owner variable.
- 
-\end_layout
-
-\begin_layout Standard
-The 
-\family typewriter
-owner
-\family default
- and 
-\family typewriter
-next_ticket
-\family default
- are defined as unsigned int variables in our implementation .
- We can notice that code above always increments the variable and never
- decrease them, which can lead to ask 
-\begin_inset Quotes eld
-\end_inset
-
-How many accesses/tickets can a 1 byte variable provide
-\begin_inset Quotes erd
-\end_inset
-
-.
- The algorithm takes advantage of the 
-\family typewriter
-\shape italic
-wrapping
-\family default
-\shape default
- property of unsigned variables which resets the variable to zero in the
- case of an overflow.
- FIFO spinlocks therefore support an infinite number of accesses, the only
- limit if there is an architecture that is composed of more processors than
- the maximum value of an unsigned int ( architecture dependent).
-\end_layout
-
-\begin_layout Subsubsection
-FIFO Spinlock structure
-\end_layout
-
-\begin_layout Standard
-\begin_inset listings
-inline false
-status open
-
-\begin_layout Plain Layout
-
-struct fifo_spinlock_chart { 
-\end_layout
-
-\begin_layout Plain Layout
-
-volatile pid_t  taskid; 
-\end_layout
-
-\begin_layout Plain Layout
-
-volatile unsigned char owner; 
-\end_layout
-
-\begin_layout Plain Layout
-
-volatile unsigned char next; 
-\end_layout
-
-\begin_layout Plain Layout
-
-volatile unsigned char prio; 
-\end_layout
-
-\begin_layout Plain Layout
-
-volatile unsigned char task_prio; 
-\end_layout
-
-\begin_layout Plain Layout
-
-cpu_set_t saved_cpumask;
-\end_layout
-
-\begin_layout Plain Layout
-
-} ;
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Itemize
-taskid : This variable stores the task id of the task currently holding
- the lock (defaults to -1).
-\end_layout
-
-\begin_layout Itemize
-owner : This variable keeps track of the ticket owner.
-\end_layout
-
-\begin_layout Itemize
-next : This variable keeps track of the waiters to allow a FIFO access.
-\end_layout
-
-\begin_layout Itemize
-prio : This variable is the priority ceiling of the lock.
-\end_layout
-
-\begin_layout Itemize
-task_prio : This variable saves the priority the task had before attempting
- to take the lock.
-\end_layout
-
-\begin_layout Itemize
-saved_cpumask : This variable saves the cpu affinities the task had before
- attempting to take the lock.
-\end_layout
-
 \begin_layout Paragraph
 Priority ceiling
 \end_layout
@@ -9341,328 +10208,6 @@ affinity inheritance
  This way in case of a forced migration e.g due to preemption, the holder
  task can migrate to processor where the task is currently waiting on the
  spinlock and preempt it.
- 
-\end_layout
-
-\begin_layout Paragraph
-Priority per processor
-\end_layout
-
-\begin_layout Standard
-MrsP requires to have one priority per processor in case a task is preempted
- and migrated to another cpu.
- 
-\end_layout
-
-\begin_layout Standard
-This is further described in TODO
-\end_layout
-
-\begin_layout Subsubsection
-FIFO Spinlock MrsP Algorithm
-\end_layout
-
-\begin_layout Standard
-
-\family typewriter
-\begin_inset listings
-lstparams "basicstyle={\normalsize\ttfamily},language=C"
-inline false
-status open
-
-\begin_layout Plain Layout
-
-LOCK {
-\end_layout
-
-\begin_layout Plain Layout
-
-  owner;
-\end_layout
-
-\begin_layout Plain Layout
-
-  next_ticket;
-\end_layout
-
-\begin_layout Plain Layout
-
-  taskid;
-\end_layout
-
-\begin_layout Plain Layout
-
-  prio_per_cpu;
-\end_layout
-
-\begin_layout Plain Layout
-
-  save_task_prio;
-\end_layout
-
-\begin_layout Plain Layout
-
-  save_task_affinity;
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-FIFO_Spin_Lock(LOCK L){
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
- #Declare local variables
-\end_layout
-
-\begin_layout Plain Layout
-
- Local copy_priority, copy_affinity
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
- copy_priority = Current Task.Priority
-\end_layout
-
-\begin_layout Plain Layout
-
- copy_affinity = Current Task.Affinity
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
- #Priority ceiling
-\end_layout
-
-\begin_layout Plain Layout
-
- Task.Prio_Per_CPU = L.prio_per_cpu
-\end_layout
-
-\begin_layout Plain Layout
-
- 
-\end_layout
-
-\begin_layout Plain Layout
-
- Atomic{
-\end_layout
-
-\begin_layout Plain Layout
-
- Local Ticket = L.next_ticket;
-\end_layout
-
-\begin_layout Plain Layout
-
- increment L.next_ticket;
-\end_layout
-
-\begin_layout Plain Layout
-
- }
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
- #Affinity Inheritance to holder
-\end_layout
-
-\begin_layout Plain Layout
-
- IF L.taskid != NULL
-\end_layout
-
-\begin_layout Plain Layout
-
-    ADD_Current_CPU(Task(L.taskid));
-\end_layout
-
-\begin_layout Plain Layout
-
- ENDIF
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
- WHILE Ticket != L.owner
-\end_layout
-
-\begin_layout Plain Layout
-
-	Spin
-\end_layout
-
-\begin_layout Plain Layout
-
- ENDWHILE
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
- L.taskid = Current Task.ID
-\end_layout
-
-\begin_layout Plain Layout
-
- L.save_affinity = copy_affinity;
-\end_layout
-
-\begin_layout Plain Layout
-
- L.save_priority = copy_priority;
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-FIFO_Spin_Unlock(LOCK L){
-\end_layout
-
-\begin_layout Plain Layout
-
- L.taskid = undef
-\end_layout
-
-\begin_layout Plain Layout
-
- Task.Affinities = L.save_affinity
-\end_layout
-
-\begin_layout Plain Layout
-
- Task.Prio = L.save_priority
-\end_layout
-
-\begin_layout Plain Layout
-
- increment L.owner
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsection
-Implementation of MrsP 
-\end_layout
-
-\begin_layout Subsubsection
-System calls
-\end_layout
-
-\begin_layout Paragraph
-System call handler
-\end_layout
-
-\begin_layout Paragraph
-System call overhead
-\end_layout
-
-\begin_layout Subsubsection
-Modifications to Litmus-RT
-\end_layout
-
-\begin_layout Standard
-We have added a variable in the task_struct definition that can hold one
- priority per processor.
-\end_layout
-
-\begin_layout Standard
-We have added a bitmask in the task_struct definition that holds the inherited
- processor affinities.
- Those are added to the task holding the lock and removed when it releases
- the lock.
-\end_layout
-
-\begin_layout Standard
-We have added a boolean variable to make a task scheduled under our algorithm.
- TODO to be modified for a new scheduling policy (SCHED_MRSP).
-\end_layout
-
-\begin_layout Standard
-A call to sys_futex with SCHED_MRSP makes the thread spin at local ceiling
- for the rt-mutex.
-\end_layout
-
-\begin_layout Standard
-The task is checked when being migrated between two cpus, if a task is spinning
- on that cpu, it raises its own priority to task_on_other_cpu +1 so that
- it can preempt it.
-\end_layout
-
-\begin_layout Standard
-We take advantage of the previously implemented PI-futexes.
-\end_layout
-
-\begin_layout Paragraph
-Task migration
-\end_layout
-
-\begin_layout Standard
-When the task is being migrated by the scheduler, we detect it and modify
- it before it gets added to the target cpu.
-\end_layout
-
-\begin_layout Subsubsection
-MrsP API
-\end_layout
-
-\begin_layout Standard
-A system call sys_set_smp_prio allows to set one priority per task.
-\end_layout
-
-\begin_layout Standard
-Task spinning giving up its share -> cooperative scheduling ?
 \end_layout
 
 \begin_layout Subsection
