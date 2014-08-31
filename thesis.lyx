@@ -37,7 +37,7 @@
 \pdf_bookmarksopen false
 \pdf_bookmarksopenlevel 1
 \pdf_breaklinks false
-\pdf_pdfborder false
+\pdf_pdfborder true
 \pdf_colorlinks false
 \pdf_backref false
 \pdf_pdfusetitle true
@@ -173,9 +173,11 @@ This project intends to contribute to the field of multiprocessor resource
  systems area for a protocol that could make a consensus and presenting
  features that are at least as good as the single processor protocols.
  Many multiprocessor resource sharing protocols have been proposed, however
- they do not always offer effective schedulability analysis.
- The lack of predictability motivated the proposition of a new protocol
- that offers schedulability analysis similar to single processor protocols.
+ they do not always offer effective schedulability analysis and impose restricti
+ons.
+ The lack of predictability and flexibility motivated the proposition of
+ a new protocol that offers schedulability analysis similar to single processor
+ protocols.
  This report describes a working implementation of the Multiprocessor Resource
  Sharing Protocol into LITMUS
 \begin_inset script superscript
@@ -197,57 +199,10 @@ RT
 \end_layout
 
 \begin_layout Standard
+\begin_inset Newpage cleardoublepage
+\end_inset
 
-\size larger
-Ideas
-\end_layout
 
-\begin_layout Standard
-Importance of metrics
-\end_layout
-
-\begin_layout Standard
-Implement protocol with kernel
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-Investigate : How does Linux do SMP real-time scheduling ?
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-Investigate : How to allow threads to have a priority per processor ?
-\end_layout
-
-\begin_layout Standard
-How do we assess/certify the priority of threads ?
-\end_layout
-
-\begin_layout Standard
-How can the Linux Kernel be modified to allow a priority per processor ?
- 
-\end_layout
-
-\begin_layout Enumerate
-Modify task_struct in sched.h and add a priority per processor variable
-\end_layout
-
-\begin_layout Enumerate
-Modify migrate_thread to set the new priority on that processor
-\end_layout
-
-\begin_layout Standard
-What is the estimated time ?
-\end_layout
-
-\begin_layout Standard
-Is there an overhead associated to a priority per processor ?
-\end_layout
-
-\begin_layout Standard
 \begin_inset Newpage newpage
 \end_inset
 
@@ -260,8 +215,9 @@ Introduction
 
 \begin_layout Standard
 This section will briefly describe the reasons for undertaking this project.
- It will introduce the technical requirements involved, as well as present
- the development workflow and finally the ethics used to complete it.
+ It will introduce the technical requirements involved, the technical challenges
+ as well as present the development workflow and finally the ethics used
+ to complete it.
 \end_layout
 
 \begin_layout Subsection
@@ -269,8 +225,8 @@ Motivation
 \end_layout
 
 \begin_layout Standard
-The Real-Time System Group at York have recently proposed a new multiprocessor
- resource sharing algorithm
+The Real-Time System Group at York have recently proposed the Multiprocessor
+ Resource Sharing Protocol, a new multiprocessor resource sharing algorithm
 \begin_inset CommandInset citation
 LatexCommand cite
 key "burns2013schedulability"
@@ -278,8 +234,25 @@ key "burns2013schedulability"
 \end_inset
 
  based on a well known single processor resource sharing protocol.
- This report provides an implementation in a Linux Real-Time kernel.
+ MrsP is applied to real-time systems e.g.
+ that responds to an external stimuli within a finite predictable time-frame.
  
+\end_layout
+
+\begin_layout Standard
+This project is tasked with developing a working implementation of the MrsP
+ at operating system level.
+ Currently multiprocessor resource sharing protocols are not well developed
+ in comparison with their single processor counterpart.
+ One of the reasons for this is the lack of effective implementation in
+ favour of simulations in research papers proposals.
+ Some protocols, when implemented in genuine systems, generate too much
+ overhead (due to requirements and constraints) which in turn either render
+ them too difficult to analyse from a predictability point of view or impractica
+l to use.
+ It would be extremely beneficial to have an implementation of MrsP within
+ an actual real-time operating system in order to accurately measure and
+ compare different aspects of the protocol and test it under real conditions.
 \end_layout
 
 \begin_layout Subsection
@@ -287,13 +260,17 @@ Project Goals
 \end_layout
 
 \begin_layout Standard
-The project goal is to implement a practical version of the MrsP protocol
+The main project goal is to implement a practical version of the MrsP protocol
  in the Linux Kernel.
  In order to achieve that, specific sub-goals have to be fulfilled : 
 \end_layout
 
 \begin_layout Itemize
 Become familiar with Linux kernel development and source code.
+\end_layout
+
+\begin_layout Itemize
+Investigate the feasibility of the project
 \end_layout
 
 \begin_layout Itemize
@@ -326,8 +303,15 @@ Implement First-In First Out spinlocks
 These goals will be discussed in greater details throughout this report.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Technical challenges
+\end_layout
+
+\begin_layout Standard
+The Linux operating system is a complex piece of software, a lot of programming
+ facilities are not available precisely because we are working at kernel
+ level.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -335,7 +319,9 @@ Development Lifecycle
 \end_layout
 
 \begin_layout Standard
-In this project, the requirements are well-defined and known in advance.
+Non-trivial software projects require a development strategy in order to
+ attain the set goals.
+ In this project, the requirements are well-defined and known in advance.
  However the project involves working with a complex and large legacy system
  and the feasibility was uncertain : the most critical requirement is the
  ability to assign one priority per processor for a given task.
@@ -348,11 +334,12 @@ In this project, the requirements are well-defined and known in advance.
 \end_layout
 
 \begin_layout Itemize
-Exploratory prototyping : After studying the linux scheduler, areas of the
+Exploratory prototyping : After studying the Linux scheduler, areas of the
  code were identified for modifications in order to comply with the requirements.
  The task data structure, the scheduler and the migration routine have been
  identified as places to be amended.
- An early prototype was completed that allowed simple testing.
+ An early prototype of a priority per processor feature was completed that
+ allowed simple testing.
  When the expected behaviour was obtained and the uncertainty reduced by
  ensuring feasibility of the most critical constraints, the prototype could
  be evolved to include some of the complementary features.
@@ -376,8 +363,42 @@ Deliverables
 Ethics in the project
 \end_layout
 
+\begin_layout Standard
+As outlined on University of York Computer Science department page [10]
+ this project will: 
+\end_layout
+
+\begin_layout Itemize
+Not intentionally cause harm to individuals.
+ If the code produced during this report is to be used in a project more
+ thorough checking and validation is suggested.
+\end_layout
+
+\begin_layout Itemize
+Not require any informed consent since there were no participates in this
+ project.
+ 
+\end_layout
+
+\begin_layout Itemize
+Not keep any confidential data.
+ Also the project follows the guidelines from the Student Programme Handbook
+ [11].
+ 
+\end_layout
+
+\begin_layout Standard
+Except where specifically indicated, all the work presented in this report
+ is original.
+ 
+\end_layout
+
 \begin_layout Subsection
 Report structure
+\end_layout
+
+\begin_layout Standard
+TODO...
 \end_layout
 
 \begin_layout Standard
@@ -493,7 +514,7 @@ Operating systems implement schedulers to efficiently allocate processor
 Real-time multiprocessor scheduling protocols are divided among three classes
  : 
 \shape italic
-partitioned scheduling, semi-partitioned scheduling 
+partitioned scheduling, clustered scheduling 
 \shape default
 and
 \shape italic
@@ -501,7 +522,7 @@ and
 \end_layout
 
 \begin_layout Standard
-Each above class can be implemented with either 
+Each class can be implemented with either 
 \shape italic
 fixed-priority (FP) 
 \shape default
@@ -655,7 +676,11 @@ Semi-partitioned protocols are a compromise between global and partitioned
 \end_layout
 
 \begin_layout Subsection
-Problems and Concepts in Real-time Resource Sharing Protocols 
+Problems and Concepts in Real-time Resource Sharing Protocols
+\end_layout
+
+\begin_layout Subsubsection
+Overview
 \end_layout
 
 \begin_layout Standard
@@ -693,19 +718,28 @@ To prevent race condition, mutual exclusion techniques have been introduced.
  However other problems remain to be solved when doing multitasking.
 \end_layout
 
-\begin_layout Subparagraph
+\begin_layout Subsubsection
+Sporadic task model
+\end_layout
+
+\begin_layout Standard
+TODO
+\end_layout
+
+\begin_layout Subsubsection
+
+\series bold
+Schedulability Analysis
+\end_layout
+
+\begin_layout Standard
+TODO
+\end_layout
+
+\begin_layout Subsubsection
 
 \series bold
 Deadlocks 
-\end_layout
-
-\begin_layout Subparagraph
-
-\series bold
-\begin_inset space ~
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
@@ -721,17 +755,10 @@ Deadlock is a task and resource configuration where two tasks or more are
  order.
 \end_layout
 
-\begin_layout Subparagraph
+\begin_layout Subsubsection
 
 \series bold
 Resource starvation
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
@@ -794,19 +821,10 @@ While semaphores are suited for traditional systems, real-time systems have
  these issues.
 \end_layout
 
-\begin_layout Subparagraph
+\begin_layout Subsubsection
 
 \series bold
 Priority Inversion
-\end_layout
-
-\begin_layout Subparagraph
-
-\series bold
-\begin_inset space ~
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
@@ -828,15 +846,8 @@ Priority inversion is a situation where a higher priority task gets preempted
 Mars Path Finder famous priority inversion
 \end_layout
 
-\begin_layout Subparagraph
+\begin_layout Subsubsection
 Unbounded priority inversion
-\end_layout
-
-\begin_layout Subparagraph
-\begin_inset space ~
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
@@ -855,29 +866,8 @@ Unbounded priority inversion can and must be avoided because it severely
  of priority inversion.
 \end_layout
 
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subparagraph
-Concepts in real-time multiprocessor resource sharing protocols
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
+\begin_layout Subsubsection
+Concepts in multiprocessor resource sharing protocols
 \end_layout
 
 \begin_layout Standard
@@ -886,24 +876,10 @@ Different protocols have been designed to address the issues described above.
  required in order to understand them.
 \end_layout
 
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
-\end_layout
-
 \begin_layout Subparagraph
 
 \series bold
 Local Or Global Resources
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
@@ -971,12 +947,6 @@ Scheduling protocols can be suspend-based or spin-based when wanting to
  is widely used at kernel level.
  The typical suspend based structure is the mutex, the typical spin based
  structure is the spinlock.
-\end_layout
-
-\begin_layout Subparagraph
-
-\series bold
-Schedulability Analysis (Response Time Analysis)
 \end_layout
 
 \begin_layout Standard
@@ -1052,42 +1022,9 @@ Mutual exclusion to a critical section may be implemented on a uniprocessor
 \end_layout
 
 \begin_layout Standard
-____________________
-\end_layout
 
-\begin_layout Standard
-Spin_locks are relatively fast.
- The idea behind a spin_lock is to protect critical sections that are very
- short.
- A spin_lock is considered fast compared to suspend-based locks because
- it avoids the overhead of a re-schedule.
- [Internal RT papers]
-\end_layout
-
-\begin_layout Standard
-____________________
-\end_layout
-
-\begin_layout Standard
-If the time to run the code in a critical section is shorter than the time
- of a context switch, it is reasonable to use a spin_lock, and on contention,
- spin in a busy loop, while waiting for a thread on another CPU to release
- the spin_lock.
- [Internals RT]
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
+\series bold
+Response time of tasks holding lock
 \end_layout
 
 \begin_layout Subsection
@@ -6048,7 +5985,7 @@ key "davis2011survey"
  
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Subparagraph
 Limitations
 \end_layout
 
@@ -6237,7 +6174,7 @@ Memory barriers
 \end_layout
 
 \begin_layout Standard
-The compiler is free to re-order instructions if not stated otherwise.
+The compiler is free to re-order instructions if not explicitly stated otherwise.
  
 \series bold
 [EXPLAIN]
@@ -6245,6 +6182,51 @@ The compiler is free to re-order instructions if not stated otherwise.
 
 \begin_layout Subsection
 Summary
+\end_layout
+
+\begin_layout Standard
+Uniprocessor resource sharing protocol are well understood and empirical
+ applications exists demonstrating their beneficial properties on predictability.
+ PCP and its evolution SRP are a standard in the real-time industry.
+ In order to leverage the processing power of multiprocessor machines, new
+ constraints and requirements must be met.
+ Sharing resources between processors calls for synchronization constructs
+ that reduce waiting for the lock but without incurring long delays for
+ higher priority tasks.
+ Remote blocking is introduced as the new key parameter to take into account
+ for lock request response time.
+\end_layout
+
+\begin_layout Standard
+Protocols try to simplify the problem domain by restricting flexibility
+ in the way resources are used.
+ For instance MPCP does not allow access to global resources from local
+ and global resources and FMLP forbids nesting long and short resources.
+ 
+\end_layout
+
+\begin_layout Standard
+Complex multiprocessor resource sharing protocol are difficult to analyse
+ from a schedulability point of view which decreases the level of confidence
+ in them.
+ 
+\end_layout
+
+\begin_layout Standard
+In proposal papers, overheads are deemed negligible, however in practice
+ their implementation has too much overhead which results in impractically
+ slow response times.
+ 
+\end_layout
+
+\begin_layout Standard
+Poor schedulability associated to high overheads are making multiprocessor
+ resource sharing protocols unusable precisely at a time where we need to
+ use efficiently the processing power provided by multiprocessor machines.
+ In the following section, a new protocol is presented that shows the desirable
+ schedulability properties of single processor protocols whose specification
+ is kept elegantly lightweight and restriction on resource usage reduced
+ to a minimum.
 \end_layout
 
 \begin_layout Standard
@@ -6940,10 +6922,6 @@ Migration addresses points 5 and 6 of the protocol : A thread that is spinning
 
 \begin_layout Subsection
 Schedulability Analysis
-\end_layout
-
-\begin_layout Subsection
-Runtime Overhead Calculation in LITMUS-RT
 \end_layout
 
 \begin_layout Subsection
@@ -8125,7 +8103,7 @@ This data structure represents a task in the system.
  It contains useful information for the scheduler such as the real-time
  priority of a task, its current state (running, sleeping, etc..) and the
  policy under which it is being scheduled.
- 
+ Tasks are kept in memory as a doubly linked list.
 \end_layout
 
 \begin_layout Paragraph
@@ -8137,7 +8115,12 @@ There is two runqueue per processor, one of which is listing the active
  tasks and the other the expired tasks.
  A runqueue is a linked list composed of 140 nodes corresponding to each
  priority level.
- Each node is itself a linked list referencing the tasks of the same priority
+ Each node is itself a linked list referencing the task struct of the same
+ priority.
+\end_layout
+
+\begin_layout Paragraph
+waitqueues
 \end_layout
 
 \begin_layout Subsection
@@ -10464,7 +10447,7 @@ n",
 
 \begin_layout Plain Layout
 
-	t->rt_param.task_params.mrsp_lock = sem;
+	tsk_rt(t)->mrsp_lock = sem;
 \end_layout
 
 \begin_layout Plain Layout
@@ -10687,7 +10670,7 @@ int pfp_mrsp_unlock(struct litmus_lock* l)
 
 \begin_layout Plain Layout
 
-	tsk_rt(t)->priority = tsk_t(t)->saved_priority;
+	tsk_rt(t)->priority = tsk_rt(t)->saved_priority;
 \end_layout
 
 \begin_layout Plain Layout
@@ -10697,13 +10680,6 @@ int pfp_mrsp_unlock(struct litmus_lock* l)
 
 \begin_layout Plain Layout
 
-\end_layout
-
-\begin_layout Plain Layout
-
-	TRACE_CUR("MRSP AFTER unlock owner_ticket: %d
-\backslash
-n",sem->owner_ticket);
 \end_layout
 
 \begin_layout Plain Layout
@@ -10764,28 +10740,419 @@ owner
 Preemptive Fixed-priority modifications for MrsP
 \end_layout
 
+\begin_layout Standard
+In order to comply with MrsP requirements of task migration, we had to modify
+ the LITMUS Preemptive Fixed-Priority implementation.
+ We add a new branch in the scheduling decision that offers the opportunity
+ to migrate for those tasks which are holding a MrsP lock and have waiters.
+ In a migration case, the target cpu is the next cpu, if for instance we
+ are currently on cpu 3 on a four processor machine, we wrap and start counting
+ checking again from cpu 0.
+ The modifications are outlined in blue in figure 17.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{decision} = [diamond, draw, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{block} = [rectangle, draw, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=5em, text centered, rounded corners, minimum height=4em]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{line} = [draw, -latex']
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{cloud} = [draw, ellipse, node distance=3cm,
+\end_layout
+
+\begin_layout Plain Layout
+
+    minimum height=2em]
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{blue_decision} = [diamond, draw, fill=blue!20, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{blue_block} = [rectangle, draw, fill=blue!20, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=5em, text centered, rounded corners, minimum height=4em]
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[auto]
+\end_layout
+
+\begin_layout Plain Layout
+
+    % Place nodes
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block] (schedule) {schedule};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [decision, below of=schedule] (new) {is there a new task ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [decision, right of=new, node distance=3.5cm] (check_prio) {is priority
+ higher than current ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [blue_decision, below of=check_prio, node distance=4cm] (mrsp) {is
+ task holding MrsP lock ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+node [blue_decision, right of=mrsp, node distance=3.5cm] (migrate) {can task
+ migrate to other cpu ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+node [blue_block, right of=migrate, node distance=3cm] (migration) {schedule
+ for migration};
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+node [block, below of=mrsp, node distance=3cm] (preempt) {preempt current
+ task};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [decision, below of=new,node distance=4cm] (exhausted_sleep) {is bugdet
+ exhausted or task sleeping?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, left of=exhausted_sleep, node distance=4cm] (requeue) {requeue
+ task};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+node [block, below of=exhausted_sleep, node distance=3cm] (highest) {get
+ highest task in queue};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+node [decision, below of=highest, node distance=4cm] (different) {is task
+ different from current ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, right of=different, node distance=3.5cm] (switch) {switch to
+ highest task};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+node [block, below of=different, node distance=3cm] (end) {finish};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+	% Draw edges
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (schedule) -- (new);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (new) -- node {yes} (check_prio);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (check_prio) -- node {yes} (mrsp);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (mrsp) -- node {no} (preempt);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (mrsp) -- node {yes} (migrate);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (migrate) -- node {yes} (migration);	
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (new) -- node {no} (exhausted_sleep);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (exhausted_sleep) -- node {no} (highest);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (exhausted_sleep) -- node {yes} (requeue);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (highest) -- (different);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (different) -- node {yes} (switch);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (different) -- node {no} (end);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (requeue) |- (schedule);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (preempt) -- (switch);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (migrate) |- node {no} (preempt);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (migration) |- (switch);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (switch) |- (end);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tikzpicture}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Modified P-FP for MrsP
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsubsection
 MrsP helper functions
 \end_layout
 
-\begin_layout Standard
+\begin_layout Itemize
 pfp_mrsp_open
 \end_layout
 
-\begin_layout Standard
+\begin_layout Itemize
 pfp_mrsp_close
 \end_layout
 
-\begin_layout Standard
+\begin_layout Itemize
 pfp_mrsp_free
-\end_layout
-
-\begin_layout Subsection
-Semi-partitioned systems considerations
-\end_layout
-
-\begin_layout Subsection
-Globally partitioned systems considerations
 \end_layout
 
 \begin_layout Subsection
@@ -10812,23 +11179,27 @@ QEMU
 \end_layout
 
 \begin_layout Subsubsection
-Kernelshark and trace-cmd
-\end_layout
-
-\begin_layout Subsubsection
-ftrace & profiling
-\end_layout
-
-\begin_layout Subsubsection
 Hardware used
 \end_layout
 
+\begin_layout Subsubsection
+Debugging
+\end_layout
+
 \begin_layout Subsection
-Test Cases
+Tests & Results
 \end_layout
 
 \begin_layout Subsubsection
 Methodology
+\end_layout
+
+\begin_layout Subsubsection
+Measurements
+\end_layout
+
+\begin_layout Standard
+All tests will include NPP,MrsP, Ceiling and FMLP
 \end_layout
 
 \begin_layout Enumerate
@@ -10851,19 +11222,27 @@ Response time 3 low tasks on 3 cpus + 2 high tasks on cpu 0,1
 \end_layout
 
 \begin_layout Enumerate
-Case of ordered nested lock.
-\end_layout
-
-\begin_layout Enumerate
-FMLP vs MrsP same 5 test cases as above.
+Case of ordered nested lock (optional).
 \end_layout
 
 \begin_layout Enumerate
 (Optional MrsP implementation in G-EDF)
 \end_layout
 
-\begin_layout Standard
-Results
+\begin_layout Subsubsection
+Tests
+\end_layout
+
+\begin_layout Enumerate
+Task dies with lock
+\end_layout
+
+\begin_layout Enumerate
+Task becomes non-realtime when holding lock
+\end_layout
+
+\begin_layout Enumerate
+Task tries to unlock lock it doesn't own
 \end_layout
 
 \begin_layout Standard
