@@ -6905,49 +6905,31 @@ A task migration approach
 
 \begin_layout Standard
 While the protocol developed is intended for partitioned systems, thread
- migration between processors is common in SMP operating systems.
+ migration between processors is a common feature in SMP operating systems.
 \end_layout
 
 \begin_layout Standard
-Migration-based classification 
+As described in Carpenter's categorisation 
 \begin_inset CommandInset citation
 LatexCommand cite
 key "carpenter2004categorization"
 
 \end_inset
 
-.
- Interprocessor migration has traditionally been forbidden in real-time
- systems for the following reasons: 
-\end_layout
-
-\begin_layout Standard
-• In many systems, the cost associated with each migration — i.e.
- , the cost of transferring a job’s context from one processor to another
- — can be prohibitive.
+, migration of tasks between processors has traditionally been forbidden
+ in real-time systems.
+ The first reason is the prohibitive cost of transferring a task's context.
+ The second reason is the lack of research in that area of scheduling, partition
+ed systems have thus become the approach of choice.
  
-\end_layout
+\series bold
+Carpenter cite results of recent experiments demonstrating that scheduling
+ algorithms that allow migration are competitive in terms of schedulability
+ with those that do not migrate, even after incorporating migration overheads
+ [26].
 
-\begin_layout Standard
-• Until recently, traditional real-time scheduling theory lacked the techniques,
- tools, and results to permit a detailed analysis of systems that allow
- migration.
- Hence, partitioning has been the preferred approach due largely to the
- non-existence of viable alternative approaches.
- Recent developments in computer architecture, including single-chip multiproces
-sors and very fast interconnection networks over small areas, have resulted
- in the first of these concerns becoming less of an issue.
- Thus, system designers need no longer rule out interprocessor migration
- solely due to implementation considerations, especially in tightly-coupled
- systems.
- (However, it may still be desirable to strict overhead in order to reduce
- runtime overhead.) In addition, results of recent experiments demonstrate
- that scheduling algorithms that allow migration are competitive in terms
- of schedulability with those that do not migrate, even after incorporating
- migration overheads [26].
- This is due to the fact that systems exist that can be successfully scheduled
- only if interprocessor 5 migration is allowed (refer to Lemmas 3 and 4
- in Section 3)
+\series default
+ 
 \end_layout
 
 \begin_layout Standard
@@ -8571,6 +8553,295 @@ he focus of LITMUSRT is algorithmic changes; it does not improve the Linux
 Programming Constraints
 \end_layout
 
+\begin_layout Subsubsection
+LITMUS Priority Fixed Processor implementation
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{decision} = [diamond, draw, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{block} = [rectangle, draw, 
+\end_layout
+
+\begin_layout Plain Layout
+
+    text width=5em, text centered, rounded corners, minimum height=4em]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{line} = [draw, -latex']
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{cloud} = [draw, ellipse, node distance=3cm,
+\end_layout
+
+\begin_layout Plain Layout
+
+    minimum height=2em]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[node distance = 2cm, auto]
+\end_layout
+
+\begin_layout Plain Layout
+
+    % Place nodes
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block] (schedule) {schedule};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [decision, below of=schedule] (new) {is there a new task ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [decision, right of=new] (check_prio) {is priority higher than current
+ ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, right of=check_prio, node distance=4cm] (preempt) {preempt
+ current task};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [decision, below of=new,node distance=4cm] (exhausted_sleep) {has task
+ exhausted bugdet or is sleeping?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, left of=exhausted_sleep, node distance=4cm] (requeue) {requeue
+ task};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+node [block, below of=exhausted_sleep, node distance=4cm] (highest) {get
+ highest task in queue};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+node [decision, below of=highest, node distance=4cm] (different) {is task
+ different from current ?};
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+node [block, right of=different, node distance=4cm] (switch) {switch to
+ highest task};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+node [block, below of=different, node distance=3cm] (end) {finish};
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+	% Draw edges
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (schedule) -- (new);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (new) -- node {yes} (check_prio);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (check_prio) -- node {yes} (preempt);
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\backslash
+path [line] (new) -- node {no} (exhausted_sleep);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (exhausted_sleep) -- node {no} (highest);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (exhausted_sleep) -- node {yes} (requeue);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (highest) -- (different);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (different) -- node {yes} (switch);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (different) -- node {no} (end);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (requeue) |- (schedule);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (preempt) |- (switch);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\backslash
+path [line] (switch) |- (end);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tikzpicture}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Preemptive-Fixed Priority Flow chart
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Early prototype
 \end_layout
@@ -8612,6 +8883,13 @@ At kernel level, performance is crucial and areas are often protected with
  loop and check continuously its value.
  MrsP requires busy-waiting, but not only, it also requires that a FIFO
  access to the lock is respected.
+ Traditionally FIFO queues are implemented using a data structure based
+ on a linked list, operations such as enqueuing, dequeuing and other bookkeeppin
+g related tasks have to be implemented as well.
+ The implementation aims for the less overheads possible as its cost can
+ impact schedulability.
+ We have chosed a lightweight and elegant solution, that requires minimal
+ maintenance-related operations from the system.
 \end_layout
 
 \begin_layout Subsubsection
@@ -8635,6 +8913,12 @@ key "Piggin_ticket_spin"
 \end_inset
 
  and the Lamport Bakery Algorithm.
+ The general idea is the following : as tasks requests access to a mutual
+ exclusive area, they take a ticket number, that represent their order of
+ arrival.
+ They are allowed to use the resource when their turn has arrived.
+ As they release a resource tasks signal the next task in the queue (if
+ any) that it is safe for it to use the resource.
  Below is a pseudo-code describing the algorithm.
 \end_layout
 
@@ -8819,8 +9103,8 @@ owner
 next_ticket
 \family default
  are defined as unsigned int variables in our implementation.
- We can notice that code above always increments the variable and never
- decrease them, which asks the question of how many accesses/tickets can
+ We can notice that the code above always increments the variables and never
+ decrements them, which asks the question of how many accesses/tickets can
  a lock provide.
  The algorithm takes advantage of the 
 \family typewriter
@@ -8828,18 +9112,18 @@ next_ticket
 wrapping
 \family default
 \shape default
- property of unsigned variables which resets the variable to zero in the
- case of an overflow.
- FIFO spinlocks therefore support an infinite number of accesses, the only
- limit is if there is an architecture that is composed of more processors
- than the maximum value of an unsigned int ( architecture dependent).
+ property of unsigned variables int eh C language which resets the variable
+ to zero in the case of an overflow.
+ FIFO spinlocks therefore support an infinite number of serial accesses.
+ The only capacity limit consists in the number of tasks concurrently waiting
+ for the lock, in other words if the number of processors in the system
+ exceeds the maximum value an unsigned integer can take.
+ Nowadays this is possible in very large systems, however it is quite unlikely
+ that in a real system, so many processors request access to the same lock
+ at the same time.
+ The risk lies in the fact that we could end with different tasks having
+ the same ticket number.
  
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-Minimal bookkeeping ! No need for a list, enqueue, dequeue, etc...
 \end_layout
 
 \begin_layout Subparagraph
@@ -8849,7 +9133,7 @@ Example
 \begin_layout Standard
 Let's take three tasks A, B, C and one FIFO spinlock L.
  In the following example we will track the values of owner, next_ticket
- and ticket.
+ and ticket which is a variable local to each thread.
 \end_layout
 
 \begin_layout Standard
@@ -9251,9 +9535,17 @@ FIFO Spinlock MrsP Algorithm
 \end_layout
 
 \begin_layout Standard
-Below is a pseudocode of the FIFO spinlock with the constraints of MrsP.
- Because the parameters of the task can change while it is holding the lock
- we have to save them and restore them when the lock is released.
+Below is a pseudocode of an enhanced version of the basic FIFO spinlock
+ complying with the constraints of MrsP.
+ It is expected that the parameters of the task can change while it is holding
+ the lock we then have to save them and restore them when the lock is released.
+ MrsP also requires one priority per processor, a variable is added in this
+ effect.
+ 
+\end_layout
+
+\begin_layout Standard
+The updated algorithm is shown in the following listing.
 \end_layout
 
 \begin_layout Standard
@@ -9415,7 +9707,7 @@ FIFO_Spin_Lock(LOCK L){
 
 \begin_layout Plain Layout
 
-	Spin
+	Spin at local ceiling
 \end_layout
 
 \begin_layout Plain Layout
@@ -9487,308 +9779,92 @@ FIFO_Spin_Unlock(LOCK L){
 \end_layout
 
 \begin_layout Subsubsection
+Priority per processor
+\end_layout
+
+\begin_layout Standard
+Functional requirement 1 (resources have one priority per processor) is
+ satisfied in a two-step fashion.
+ Firstly we defined a variable in the MrsP structure that references a variable
+ size array that must be defined in userspace.
+ Secondly we have identified that the best place to effectively automatically
+ change the priority of a task when it is being migrated is in the migration
+ routine : 
+\family sans
+pfp_finish_switch (task).
+ 
+\family default
+This function has been modified so that the priority of the task being migrated
+ is updated only if it is holding a MrsP lock.
+ The user has the responsibility to make sure that the 
+\family sans
+prio_per_cpu variable
+\family default
+ is correctly set before running his real-time program.
+\end_layout
+
+\begin_layout Subsubsection
+Affinity inheritance
+\end_layout
+
+\begin_layout Standard
+MrsP requires waiting tasks to add the current cpu they are spinning on
+ to the list of cpu affinities of the holder in case it gets preempted.
+ We name it 
+\shape italic
+affinity inheritance
+\shape default
+.
+ The mechanism is very similar to the mechanism used in priority inheritance.
+ When a task is waiting on a contended spinlock, the holder of the lock
+ inherits the spinning task's cpu.
+ The intuitive logic behind this feature is that in a case of preemption,
+ everything is made so that the holder can make progress the quickest possible,
+ therefore reducing the expensive busy-waiting on other cpus.
+ This way in case of a forced migration e.g.
+ due to preemption, the holder task can migrate to processor where the task
+ is currently waiting on the spinlock and preempt it.
+ We implement that using the kernel 
+\family sans
+cpumask_t 
+\family default
+structure.
+\end_layout
+
+\begin_layout Subsubsection
+Task migration
+\end_layout
+
+\begin_layout Standard
+In the task and resource configuration where many tasks are spinning for
+ the same lock and the holder gets preempted, the MrsP description
+\begin_inset CommandInset citation
+LatexCommand cite
+key "burns2013schedulability"
+
+\end_inset
+
+ doesn't specify what method to use to choose the target cpu to migrate
+ to.
+ Our implementation chooses the next contiguous cpu in the cpumask list.
+\end_layout
+
+\begin_layout Subsubsection
+Nested resources usage
+\end_layout
+
+\begin_layout Subsubsection
 C language implementation
 \end_layout
 
 \begin_layout Standard
-We have amended the sched_pfp.c file that implements the preemptive-fixed
- priority scheduling policy to include MrsP.
-\end_layout
-
-\begin_layout Standard
-Below is the locking function.
+We have amended the file that implements the preemptive-fixed priority schedulin
+g policy to include MrsP.
+ We first present data structures used in the algorithms and then the algorithm
+ itself.
 \end_layout
 
 \begin_layout Paragraph
-Mrsp Lock
-\end_layout
-
-\begin_layout Standard
-\begin_inset listings
-lstparams "basicstyle={\small\sffamily},language=C,numbers=left"
-inline false
-status open
-
-\begin_layout Plain Layout
-
-int pfp_mrsp_lock(struct litmus_lock* l)
-\end_layout
-
-\begin_layout Plain Layout
-
-{
-\end_layout
-
-\begin_layout Plain Layout
-
-	struct task_struct* t = current;
-\end_layout
-
-\begin_layout Plain Layout
-
-	struct mrsp_semaphore *sem = mrsp_from_lock(l);
-\end_layout
-
-\begin_layout Plain Layout
-
-	unsigned int ticket;
-\end_layout
-
-\begin_layout Plain Layout
-
-	struct cpumask holder_mask;
-\end_layout
-
-\begin_layout Plain Layout
-
-	unsigned long flags;
-\end_layout
-
-\begin_layout Plain Layout
-
-	
-\end_layout
-
-\begin_layout Plain Layout
-
-	if (!is_realtime(t))
-\end_layout
-
-\begin_layout Plain Layout
-
-		return -EPERM;
-\end_layout
-
-\begin_layout Plain Layout
-
-	
-\end_layout
-
-\begin_layout Plain Layout
-
-	/* prevent nested lock acquisition */
-\end_layout
-
-\begin_layout Plain Layout
-
-	if (tsk_rt(t)->num_locks_held ||
-\end_layout
-
-\begin_layout Plain Layout
-
-	tsk_rt(t)->num_local_locks_held)
-\end_layout
-
-\begin_layout Plain Layout
-
-	return -EBUSY;
-\end_layout
-
-\begin_layout Plain Layout
-
-	
-\end_layout
-
-\begin_layout Plain Layout
-
-	smp_wmb();
-\end_layout
-
-\begin_layout Plain Layout
-
-	ticket = xchg(&sem->next, sem->next +1);
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-	t->rt_param.task_params.saved_priority = t->rt_param.task_params.priority;	
-\end_layout
-
-\begin_layout Plain Layout
-
-	t->rt_param.task_params.priority = sem->prio_per_cpu[get_partition(t)];
-\end_layout
-
-\begin_layout Plain Layout
-
-	
-\end_layout
-
-\begin_layout Plain Layout
-
-	spin_lock_irqsave(&sem->lock, flags);
-\end_layout
-
-\begin_layout Plain Layout
-
-	if (sem->owner) {
-\end_layout
-
-\begin_layout Plain Layout
-
-		TRACE_CUR("On cpu %d lock has owner %d on cpu %d
-\backslash
-n",
-\end_layout
-
-\begin_layout Plain Layout
-
-		get_partition(t),
-\end_layout
-
-\begin_layout Plain Layout
-
-		sem->owner->pid ,
-\end_layout
-
-\begin_layout Plain Layout
-
-		get_partition(sem->owner));
-\end_layout
-
-\begin_layout Plain Layout
-
-		sched_getaffinity(sem->owner->pid, &holder_mask);
-\end_layout
-
-\begin_layout Plain Layout
-
-		cpumask_set_cpu(get_partition(t), &holder_mask);
-\end_layout
-
-\begin_layout Plain Layout
-
-		do_set_cpus_allowed(sem->owner, &holder_mask);
-\end_layout
-
-\begin_layout Plain Layout
-
-	}
-\end_layout
-
-\begin_layout Plain Layout
-
-	spin_unlock_irqrestore(&sem->lock, flags);
-\end_layout
-
-\begin_layout Plain Layout
-
-	
-\end_layout
-
-\begin_layout Plain Layout
-
-	while (1){
-\end_layout
-
-\begin_layout Plain Layout
-
-		smp_wmb();
-\end_layout
-
-\begin_layout Plain Layout
-
-		cmpxchg(&sem->owner_ticket,ticket,ticket);
-\end_layout
-
-\begin_layout Plain Layout
-
-		
-\end_layout
-
-\begin_layout Plain Layout
-
-		if (sem->owner_ticket == ticket){
-\end_layout
-
-\begin_layout Plain Layout
-
-			sem->owner = t ;
-\end_layout
-
-\begin_layout Plain Layout
-
-			break;	
-\end_layout
-
-\begin_layout Plain Layout
-
-		}
-\end_layout
-
-\begin_layout Plain Layout
-
-	}
-\end_layout
-
-\begin_layout Plain Layout
-
-	BUG_ON(sem->owner != t);
-\end_layout
-
-\begin_layout Plain Layout
-
-	TRACE_CUR("Obtained lock sem->owner is %d and current is %d
-\backslash
-n",sem->owner,t);
-\end_layout
-
-\begin_layout Plain Layout
-
-	tsk_rt(t)->num_locks_held++;
-\end_layout
-
-\begin_layout Plain Layout
-
-	t->rt_param.task_params.mrsp_lock = sem;
-\end_layout
-
-\begin_layout Plain Layout
-
-	sched_getaffinity(t->pid, &sem->saved_cpumask);	
-\end_layout
-
-\begin_layout Plain Layout
-
-	return 0;
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-We first ensure that the calling task is in realtime mode.
- The memory barrier smp_wmb() is used to be sure to have the latest version
- of the next variable and not a cached one.
- We then get the current ticket number and increase next by one via xchg(),
- we do not need to protect the call by a spinlock because xchg() is atomic.
- Current priority of the task is saved so that we can reset it upon lock
- release.
- We need to protect the variable containing the owner of the lock, a race
- condition can occur when the task is releasing the lock because it has
- to set the owner to NULL.
- In the case the lock is held, an affinity inheritance occurs, the task
- adds the cpu it is currently on to the holder.
- At this point the task is ready to spin, it continuously checks if the
- owner and ticket variable have the same value.
- This is done atomically via cmpxchg(), which compares two values and if
- they are equal assigns the third value to the first.
- When the owner and ticket are equal, the current task is now effectively
- the new owner of the task.
-\end_layout
-
-\begin_layout Subsubsection
 The MrsP lock structure 
 \end_layout
 
@@ -9918,7 +9994,7 @@ holds the array containing the priority for each processor
 is a copy of the tasks cpumask affinities prior to obtaining the lock
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Paragraph
 The LITMUS real-time task structure
 \end_layout
 
@@ -10150,64 +10226,558 @@ is a flag needed to disable migration.
 The fields in bold are modifications to the original structure.
 \end_layout
 
-\begin_layout Subsubsection
-LITMUS Priority Fixed Processor implementation
-\end_layout
-
-\begin_layout Subsubsection
-Priority per processor
+\begin_layout Paragraph
+Mrsp Lock
 \end_layout
 
 \begin_layout Standard
-Functional requirement 1 (resources have one priority per processor) is
- satisfied in a two-step fashion.
- Firstly we defined a variable MrsP structure that references a variable
- size array that must be defined in userspace.
- Secondly we have identified that the best place to effectively automatically
- change the priority of a task when it is being migrated is in the migration
- routine : 
+\begin_inset listings
+lstparams "basicstyle={\small\sffamily},language=C,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+int pfp_mrsp_lock(struct litmus_lock* l)
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct task_struct* t = current;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct mrsp_semaphore *sem = mrsp_from_lock(l);
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int ticket;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct cpumask holder_mask;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned long flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!is_realtime(t))
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EPERM;
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* prevent nested lock acquisition */
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (tsk_rt(t)->num_locks_held ||
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk_rt(t)->num_local_locks_held)
+\end_layout
+
+\begin_layout Plain Layout
+
+	return -EBUSY;
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	smp_wmb();
+\end_layout
+
+\begin_layout Plain Layout
+
+	ticket = xchg(&sem->next, sem->next +1);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk_rt(t)->saved_priority = tsk_rt(t)->priority;	
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk_rt(t)>priority = sem->prio_per_cpu[get_partition(t)];
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_lock_irqsave(&sem->lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (sem->owner) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		TRACE_CUR("On cpu %d lock has owner %d on cpu %d
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+		get_partition(t),
+\end_layout
+
+\begin_layout Plain Layout
+
+		sem->owner->pid ,
+\end_layout
+
+\begin_layout Plain Layout
+
+		get_partition(sem->owner));
+\end_layout
+
+\begin_layout Plain Layout
+
+		sched_getaffinity(sem->owner->pid, &holder_mask);
+\end_layout
+
+\begin_layout Plain Layout
+
+		cpumask_set_cpu(get_partition(t), &holder_mask);
+\end_layout
+
+\begin_layout Plain Layout
+
+		do_set_cpus_allowed(sem->owner, &holder_mask);
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_unlock_irqrestore(&sem->lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	while (1){
+\end_layout
+
+\begin_layout Plain Layout
+
+		smp_wmb();
+\end_layout
+
+\begin_layout Plain Layout
+
+		cmpxchg(&sem->owner_ticket,ticket,ticket);
+\end_layout
+
+\begin_layout Plain Layout
+
+		
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (sem->owner_ticket == ticket){
+\end_layout
+
+\begin_layout Plain Layout
+
+			sem->owner = t ;
+\end_layout
+
+\begin_layout Plain Layout
+
+			break;	
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	BUG_ON(sem->owner != t);
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk_rt(t)->num_locks_held++;
+\end_layout
+
+\begin_layout Plain Layout
+
+	t->rt_param.task_params.mrsp_lock = sem;
+\end_layout
+
+\begin_layout Plain Layout
+
+	sched_getaffinity(t->pid, &sem->saved_cpumask);	
+\end_layout
+
+\begin_layout Plain Layout
+
+	return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We retrieve the current task (e.g the task executing the locking function)
+ through the 
 \family sans
-pfp_finish_switch (task).
+current 
+\family default
+variable.
  
-\family default
-This function is has been modified so that the priority of the task being
- migrated is updated only if it is holding a MrsP lock.
- The user has the responsibility to make sure that the 
 \family sans
-prio_per_cpu variable
+container_of() 
 \family default
- is correctly set before running his real-time program.
-\end_layout
-
-\begin_layout Paragraph
-Priority ceiling
-\end_layout
-
-\begin_layout Standard
-While POSIX Pthread mutexes specify and implement priority ceiling, Pthread
- spinlocks are kept very simple and do not benefit of such feature, because
- their rationale is performance and their use cases make them a rarely used
- feature of multithreading.
-\end_layout
-
-\begin_layout Paragraph
-Affinity inheritance
+is a kernel idioms that ensure at runtime that the lvalue and rvalue of
+ and assignement operation correspond (in terms of memory size).
+ We then ensure that the calling task is in realtime mode before proceeding,
+ an error is returned otherwise.
+ 
 \end_layout
 
 \begin_layout Standard
-MrsP requires waiting tasks to add the current cpu they are spinning on
- to the list of cpu affinities of the holder in case it gets preempted.
- This can be defined as 
-\shape italic
-affinity inheritance
-\shape default
+The memory barrier 
+\family sans
+smp_wmb()
+\family default
+ is used to be sure to have the latest version of the next variable and
+ not a cached one.
+ We then get the current ticket number and increase 
+\family sans
+next
+\family default
+ by one via 
+\family sans
+xchg()
+\family default
+, we do not need to protect this call by a spinlock because 
+\family sans
+xchg()
+\family default
+ is atomic.
+ 
+\end_layout
+
+\begin_layout Standard
+Current priority of the task is saved so that we can reset it upon lock
+ release.
+ We need to protect the variable containing the owner of the lock, a race
+ condition can occur when a task is releasing the lock because it has to
+ set the owner to 
+\family sans
+NULL
+\family default
 .
- The mechanism is very similar to the mechanism priority inheritance uses.
- When a task is waiting on a contended spinlock, it adds the cpu it is currently
- executing on to the holding task.
- This way in case of a forced migration e.g due to preemption, the holder
- task can migrate to processor where the task is currently waiting on the
- spinlock and preempt it.
+ In the case the lock is held, an affinity inheritance occurs, the task
+ adds the cpu it is currently on to the holder.
+ At this point the task is ready to spin, it continuously checks if the
+ 
+\family sans
+owner
+\family default
+ and 
+\family sans
+ticket
+\family default
+ variable have the same value.
+ This is done atomically via 
+\family sans
+cmpxchg()
+\family default
+, which compares two values and if they are equal assigns the third value
+ to the first.
+ When the 
+\family sans
+owner
+\family default
+ and 
+\family sans
+ticket
+\family default
+ are equal, the current task is now effectively the new owner of the task.
+\end_layout
+
+\begin_layout Paragraph
+MrsP Unlock
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\sffamily},numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+int pfp_mrsp_unlock(struct litmus_lock* l)
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct task_struct *t = current;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct mrsp_semaphore *sem = mrsp_from_lock(l);
+\end_layout
+
+\begin_layout Plain Layout
+
+	int err = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned long flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (sem->owner != t) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		err = -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto out;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_lock_irqsave(&sem->lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	sem->owner = NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_unlock_irqrestore(&sem->lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk_rt(t)->mrsp_lock = NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	smp_wmb();
+\end_layout
+
+\begin_layout Plain Layout
+
+	xadd(&sem->owner_ticket,1);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	do_set_cpus_allowed(t, &sem->saved_cpumask);
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk_rt(t)->priority = tsk_t(t)->saved_priority;
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk_rt(t)->num_locks_held--;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	TRACE_CUR("MRSP AFTER unlock owner_ticket: %d
+\backslash
+n",sem->owner_ticket);
+\end_layout
+
+\begin_layout Plain Layout
+
+	out:
+\end_layout
+
+\begin_layout Plain Layout
+
+	tsk(t)->cpu = cpumask_first(tsk_cpus_allowed(t));
+\end_layout
+
+\begin_layout Plain Layout
+
+	schedule();
+\end_layout
+
+\begin_layout Plain Layout
+
+	return err;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Similar initialisations occur when unlocking, the current task is retrieved
+ and the lock type checked.
+ We protect the lock 
+\family sans
+owner 
+\family default
+by a spinlock as explained earlier and set it to 
+\family sans
+NULL
+\family default
+.
+ We then force a no-cache value through the memory barrier and atomically
+ increment the 
+\family sans
+owner
+\family default
+.
+ At this point, if any task is spinning for the lock, it can take ownership
+ of the lock and make progress.
+ The original tasks's affinities and priority are restored, the number of
+ locks it is holding is decreased.
+\end_layout
+
+\begin_layout Subsubsection
+Preemptive Fixed-priority modifications for MrsP
+\end_layout
+
+\begin_layout Subsubsection
+MrsP helper functions
+\end_layout
+
+\begin_layout Standard
+pfp_mrsp_open
+\end_layout
+
+\begin_layout Standard
+pfp_mrsp_close
+\end_layout
+
+\begin_layout Standard
+pfp_mrsp_free
 \end_layout
 
 \begin_layout Subsection
@@ -10249,12 +10819,51 @@ Kernelshark and trace-cmd
 ftrace & profiling
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Hardware used
 \end_layout
 
 \begin_layout Subsection
 Test Cases
+\end_layout
+
+\begin_layout Subsubsection
+Methodology
+\end_layout
+
+\begin_layout Enumerate
+Response time of low priority task on cpu3 (if one low task and one high
+ on cpu0).
+\end_layout
+
+\begin_layout Enumerate
+Response time of high priority task on cpu0 (if one low task on cpu0 and
+ one low on cpu3)
+\end_layout
+
+\begin_layout Enumerate
+Response time of high priority task on cpu0 (if one low task on cpu0 and
+ one low on cpu3 with many cycles)
+\end_layout
+
+\begin_layout Enumerate
+Response time 3 low tasks on 3 cpus + 2 high tasks on cpu 0,1
+\end_layout
+
+\begin_layout Enumerate
+Case of ordered nested lock.
+\end_layout
+
+\begin_layout Enumerate
+FMLP vs MrsP same 5 test cases as above.
+\end_layout
+
+\begin_layout Enumerate
+(Optional MrsP implementation in G-EDF)
+\end_layout
+
+\begin_layout Standard
+Results
 \end_layout
 
 \begin_layout Standard
