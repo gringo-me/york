@@ -7,12 +7,14 @@
 \usepackage{tikz}
 \usepackage{pgfgantt}
 \usetikzlibrary{shapes,arrows}
+\usepackage{pgfplots}
+\usepackage{xcolor}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
 \language english
 \language_package default
-\inputencoding auto
+\inputencoding utf8
 \fontencoding global
 \font_roman default
 \font_sans default
@@ -11195,34 +11197,283 @@ Methodology
 \end_layout
 
 \begin_layout Subsubsection
-Measurements
+Measurements & Performance
 \end_layout
 
 \begin_layout Standard
-All tests will include NPP,MrsP, Ceiling and FMLP
+We reproduce here the task and resource configurations used in the MrsP
+ paper [REF] in order to measure the performance of our implementation.
+ The experiments have been conducted on a 4 processor machine with TODO
+ Ghz, with an unloaded system.
+ 
+\end_layout
+
+\begin_layout Standard
+We compare the response time of the Non-Preemptive protocol, the Ceiling
+ protocol in which a task requesting a lock immediately raises its priority
+ to the resource ceiling and spin in a FIFO manner when the lock is already
+ held.
+ The following parameters have been used :
+\end_layout
+
+\begin_layout Itemize
+lock access time : 0.50 ns.
+\end_layout
+
+\begin_layout Itemize
+High thread execution time : 
+\end_layout
+
+\begin_layout Itemize
+Ceiling priorities for ceiling and MrsP have inferior priority than the
+ high priority task.
+\end_layout
+
+\begin_layout Itemize
+The tests use processes.
+\end_layout
+
+\begin_layout Itemize
+The scheduling policy used is preemptive fixed-priority on a fully partitioned
+ system, however migrations are allowed.
+\end_layout
+
+\begin_layout Itemize
+All measures are expressed in microseconds
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Configuration 1
+\series default
+ : 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+2 identical low priority tasks running on cpu 0 and cpu 1 share one lock
+ and a high priority task on cpu0.
+ The release time of the tasks is configured in a way that produces the
+ following scenario : the low task on cpu0 (L0) acquires the lock, the low
+ task on cpu1 (L1) tries to acquire it, fails, and start to spin for it.
+ The high task is then released on cpu0.
+ The motivation for this configuration is to create conditions for L0 to
+ migrate to L1 (affinity inheritance) under MrsP and measure the impact
+ on blocking and priority inversion.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Response time of low priority task on cpu 1 is illustrated in figure [TODO].
+ We make the execution duration of the high thread execute vary in axis
+ x.
+ In axis Y is the response time in microseconds.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename /home/buddha/diss/Dissertation/fig1.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Response time of low priority task on cpu 1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Surprisingly MrsP appears to be faster than the Non-Preemptive protocol,
+ after further tests, we have found that the reason for that lies in the
+ added branch condition in the 
+\family sans
+pfp_schedule() 
+\family default
+function (to handle the case where a task holding a MrsP lock is about to
+ get preempted and thus tries to migrate) returns early comparatively to
+ the main code flow that needs to perform more operations to determine the
+ next task to schedule.
+ MrsP runs in nearly half the time of NP (16 µs - 30µs).
+ As expected both MrsP and NP have a constant response time because their
+ execution is not delayed by the higher priority task, the Ceiling protocol
+ however is fully impacted as the L0 as to wait the higher task finishes.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Response time of high priority task is illustrated in figure [TODO].
+ We make the execution duration of L0 vary in axis y.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename /home/buddha/diss/Dissertation/fig2.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Response time of high priority task on cpu 0
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We can see that NP impacts severely the high thread's response time, MrsP
+ and Ceiling on the other hand limit priority inversion.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Configuration 2 :
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+3 identical low priority tasks running on cpu 0, cpu 1, cpu 2 and two high
+ priority tasks running on cpu 0 and cpu 1.
+ The tasks release time are configured to produce the following scenario
+ : the low task on cpu 0 (L0) acquires the lock, then the low task on cpu
+ 1 (L1) and the low task on cpu 2 (L2) respectively spin for it.
+ Immediately after L0 acquired the lock the high priority tasks are released.
+ The intent here is to produce chained migrations under MrsP : L0 is expected
+ to migrate to cpu 1 and then cpu 2.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Response time of task L2 is illustrated on figure [TODO], we make the high
+ thread execution time vary in axis x.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename /home/buddha/diss/Dissertation/fig3.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Response time of low priority task on cpu 2
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As expected, the low priority on cpu 2 is fully impacted by the added execution
+ times of the high tasks.
+ MrsP and NP have slightly different response times (with MrsP still being
+ lower) due to migration costs.
+\end_layout
+
+\begin_layout Standard
+
 \end_layout
 
 \begin_layout Enumerate
-Response time of low priority task on cpu3 (if one low task and one high
- on cpu0).
-\end_layout
-
-\begin_layout Enumerate
-Response time of high priority task on cpu0 (if one low task on cpu0 and
- one low on cpu3)
-\end_layout
-
-\begin_layout Enumerate
-Response time of high priority task on cpu0 (if one low task on cpu0 and
- one low on cpu3 with many cycles)
-\end_layout
-
-\begin_layout Enumerate
-Response time 3 low tasks on 3 cpus + 2 high tasks on cpu 0,1
-\end_layout
-
-\begin_layout Enumerate
-Case of ordered nested lock (optional).
+Case of ordered nested lock.
 \end_layout
 
 \begin_layout Enumerate
@@ -11231,6 +11482,30 @@ Case of ordered nested lock (optional).
 
 \begin_layout Subsubsection
 Tests
+\end_layout
+
+\begin_layout Enumerate
+Task get priority raised upon lock request
+\end_layout
+
+\begin_layout Enumerate
+Task affinities are inherited
+\end_layout
+
+\begin_layout Enumerate
+Lock is accessed in a FIFO order
+\end_layout
+
+\begin_layout Enumerate
+Task migration occurs on inherited affinities
+\end_layout
+
+\begin_layout Enumerate
+Task recovers original priority
+\end_layout
+
+\begin_layout Enumerate
+Task migrates back to original cpu
 \end_layout
 
 \begin_layout Enumerate
@@ -11243,6 +11518,11 @@ Task becomes non-realtime when holding lock
 
 \begin_layout Enumerate
 Task tries to unlock lock it doesn't own
+\end_layout
+
+\begin_layout Enumerate
+Task wants to migrate to cpu, but cpu is currently running high priority
+ thread
 \end_layout
 
 \begin_layout Standard
