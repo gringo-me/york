@@ -86,6 +86,7 @@ struct rt_task {
 	struct mrsp_semaphore* mrsp_lock;
 	unsigned int 	saved_priority;
 	unsigned int	migration_bool;
+	unsigned int 	max_held;
 };
 
 union np_flag {
