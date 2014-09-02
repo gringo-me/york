@@ -37,14 +37,12 @@ struct mrsp_semaphore {
 	/* priority ceiling per cpu */
 	unsigned int prio_ceiling[NR_CPUS];
 
-	/* should jobs spin "virtually" for this resource? */
-	int vspin;
-	 
 	volatile pid_t taskid;
 	volatile unsigned int owner_ticket;
 	volatile unsigned int  next;
 	int *prio_per_cpu;
 	volatile unsigned char task_prio;
 	struct cpumask saved_cpumask;
+	int order;
 };
 #endif
