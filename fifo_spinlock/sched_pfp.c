@@ -1006,10 +1006,11 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 		return -EPERM;
 
 	/* prevent unordered nested lock acquisition */
-	if ((tsk_rt(t)->num_locks_held ||
-	    tsk_rt(t)->num_local_locks_held)
-	    && t->rt_param.task_params.max_held > sem->order)
+	if (t->rt_param.task_params.max_held > sem->order){
+	TRACE_CUR("Lock request failed :lock %d order %d - max_held %d num_locks %d\n", sem, sem->order,
+		t->rt_param.task_params.max_held, tsk_rt(t)->num_locks_held );
 		return -EPERM;
+	}
 
 	smp_wmb();
 	ticket = xchg(&sem->next, sem->next +1);
@@ -1054,7 +1055,7 @@ int pfp_mrsp_lock(struct litmus_lock* l)
 		}
 	}
 	BUG_ON(sem->owner != t);
-	TRACE_CUR("Obtained lock sem->owner is %d and current is %d\n",sem->owner,t);
+	TRACE_CUR("Obtained lock sem->owner is %d and current is %d, order%d:\n",sem->owner,t,sem->order);
 	tsk_rt(t)->num_locks_held++;
 	t->rt_param.task_params.max_held = sem->order;
 	t->rt_param.task_params.mrsp_lock = sem;
@@ -1122,11 +1123,13 @@ int pfp_mpcp_open(struct litmus_lock* l, void* config)
 	return 0;
 }
 
-int pfp_mrsp_open(struct litmus_lock* l, int *config)
+int pfp_mrsp_open(struct litmus_lock* l, void *config)
 {
 	struct task_struct *t = current;
 	int cpu, local_cpu;
 	struct mrsp_semaphore *sem = mrsp_from_lock(l);
+	struct mrsp_config *cfg = (struct mrsp_config*) config ;
+
 	unsigned long flags;
 
 	if (!is_realtime(t))
@@ -1137,8 +1140,9 @@ int pfp_mrsp_open(struct litmus_lock* l, int *config)
 	
 
 	spin_lock_irqsave(&sem->lock, flags);
-	sem->prio_per_cpu = config->ppc;
-	sem->order = config->order;
+	sem->prio_per_cpu = cfg->prio_per_cpu;
+	sem->order = cfg->order;
+	TRACE_CUR("New MrsP lock order %d \n",sem->order);	
 	spin_unlock_irqrestore(&sem->lock, flags);
 
 	return 0;

@@ -1113,15 +1113,17 @@ long long int fibb(int n){
 TESTCASE(mrsp, P_FP,
 	 "mrsp rta tests 3 tasks")
 {
-	int fd, od, od2;
+	int fd, od;
 
 	int child_hi, child_lo, child_middle, status, waiters;
 	lt_t delay = ms2ns(100);
 	double exec_start, exec_end, start, m_start, h_start, avg, cycles, high_load ;
 	int times,  m;
-	struct config cfg;
+	struct mrsp_config cfg;
 	struct rt_task params;
 	int loops, np,mrsp, ceiling ;
+	int od2, fd2;
+
 
 	init_rt_task_param(&params);
 
@@ -1135,7 +1137,8 @@ TESTCASE(mrsp, P_FP,
 
 	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
 
-
+	SYSCALL( fd2 = open(".pcp_lo", O_RDONLY | O_CREAT, S_IRUSR) );
+	
 	mrsp = 1; ceiling = 0; np = 0;
 	cycles = 0.005;
 	high_load = 0.0001;
@@ -1174,11 +1177,12 @@ TESTCASE(mrsp, P_FP,
 
 		SYSCALL( od = open_mrsp_sem(fd, 0, &cfg) );
 		cfg.order = 1;
-		SYSCALL_FAILS(EBUSY, od2 = open_mrsp_sem(fd, 0, &cfg) );
+		SYSCALL( od2 = open_mrsp_sem(fd2, 0, &cfg) );
 		
 		SYSCALL( wait_for_ts_release() );
 		
 		SYSCALL( litmus_lock(od) );
+		SYSCALL_FAILS(EPERM, litmus_lock(od2) );
 		start = cputime();
 		while(cputime() - start < cycles);
 		SYSCALL( litmus_unlock(od) );
