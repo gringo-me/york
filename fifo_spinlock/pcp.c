@@ -1109,16 +1109,17 @@ long long int fibb(int n){
 
 }
 
+
 TESTCASE(mrsp, P_FP,
 	 "mrsp rta tests 3 tasks")
 {
-	int fd, od;
+	int fd, od, od2;
 
 	int child_hi, child_lo, child_middle, status, waiters;
 	lt_t delay = ms2ns(100);
 	double exec_start, exec_end, start, m_start, h_start, avg, cycles, high_load ;
 	int times,  m;
-	int prio_per_cpu[4];
+	struct config cfg;
 	struct rt_task params;
 	int loops, np,mrsp, ceiling ;
 
@@ -1135,43 +1136,46 @@ TESTCASE(mrsp, P_FP,
 	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
 
 
-	mrsp = 0; ceiling = 0; np = 1;
-	cycles = 0.5;
+	mrsp = 1; ceiling = 0; np = 0;
+	cycles = 0.005;
 	high_load = 0.0001;
 
 	if(mrsp){
 		params.migration_bool = 1;
-		prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY  +10;
+		cfg.prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY  +10;
 	}
 
 	if(ceiling){
 		params.migration_bool = 0;
-		prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY  +10;
+		cfg.prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY  +10;
 	}
 	
 	if(np){
 		params.migration_bool = 0;
-		prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY ;
+		cfg.prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY ;
 	}
 
-	prio_per_cpu [1] = 10 ;
-	prio_per_cpu [2] = 20 ;
-	prio_per_cpu [3] = 30 ;
+	cfg.prio_per_cpu [1] = 10 ;
+	cfg.prio_per_cpu [2] = 20 ;
+	cfg.prio_per_cpu [3] = 30 ;
 
 	params.cpu        = 0;
 	loops = 50;
 	m = times = loops;
 	m++;
+	cfg.order = 10;
 	
 	child_lo = FORK_TASK(
-		params.priority = prio_per_cpu[params.cpu];
+		params.priority = cfg.prio_per_cpu[params.cpu];
 		params.phase    = 0;
 		SYSCALL( set_rt_task_param(gettid(), &params) );
 		SYSCALL( be_migrate_to_cpu(params.cpu) );
 		SYSCALL( task_mode(LITMUS_RT_TASK) );
 
-		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
-
+		SYSCALL( od = open_mrsp_sem(fd, 0, &cfg) );
+		cfg.order = 1;
+		SYSCALL_FAILS(EBUSY, od2 = open_mrsp_sem(fd, 0, &cfg) );
+		
 		SYSCALL( wait_for_ts_release() );
 		
 		SYSCALL( litmus_lock(od) );
@@ -1185,43 +1189,42 @@ TESTCASE(mrsp, P_FP,
 
 	params.cpu        = 2;
 	child_middle = FORK_TASK(
-		params.priority = prio_per_cpu[params.cpu];
+		params.priority = cfg.prio_per_cpu[params.cpu];
 		params.phase    = ms2ns(2);
 
 		SYSCALL( set_rt_task_param(gettid(), &params) );
 		SYSCALL( be_migrate_to_cpu(params.cpu) );
 		SYSCALL( task_mode(LITMUS_RT_TASK) );
 
-		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
+		SYSCALL( od = open_mrsp_sem(fd, 0, &cfg) );
 
 		SYSCALL( wait_for_ts_release() );
 
 		/* block on semaphore */
+		exec_start = wctime();
 		SYSCALL( litmus_lock(od) );
 		m_start = cputime();
 		while(cputime() - m_start < cycles);
 		SYSCALL( litmus_unlock(od) );
+		exec_end = wctime();
+		avg = exec_end - exec_start;
+		printf("\nRTA1 %f\n", s2us(avg));
 		);
 
 	params.cpu        = 0;
 	child_hi = FORK_TASK(
 		params.priority	= LITMUS_HIGHEST_PRIORITY;
-		params.phase    = ms2ns(2);
+		params.phase    = ms2ns(1);
 		
 		SYSCALL( set_rt_task_param(gettid(), &params) );
 		SYSCALL( be_migrate_to_cpu(params.cpu) );
 		SYSCALL( task_mode(LITMUS_RT_TASK) );
-		SYSCALL( od = open_mrsp_sem(fd, 0, prio_per_cpu) );
 
-		exec_start = wctime();
 		SYSCALL( wait_for_ts_release() );
 		
 		h_start = cputime();
 		while(cputime() - h_start < high_load);
-		exec_end = wctime();
-		avg = exec_end - exec_start;
-		printf("\nRTA %f\n", s2us(avg));
-		//SYSCALL( sleep_next_period() );
+		SYSCALL( sleep_next_period() );
 		);
 
 	do {
@@ -1251,11 +1254,11 @@ TESTCASE(mrsp, P_FP,
 //	int child_hi, child_lo, child_lo_1,child_lo_2,child_hi_2, status, waiters;
 //	lt_t delay = ms2ns(100);
 //	double exec_start, exec_end, start, m_start, avg ;
-//	double l1_start, h1_start, h2_start;
+//	double l1_start, h1_start, h2_start, cycles, high_load;
 //	int times,h,  m;
 //	int prio_per_cpu[4];
 //	struct rt_task params;
-//	int loops ;
+//	int loops, mrsp, ceiling,np ;
 //
 //	init_rt_task_param(&params);
 //
@@ -1269,8 +1272,25 @@ TESTCASE(mrsp, P_FP,
 //
 //	SYSCALL( fd = open(".pcp_locks", O_RDONLY | O_CREAT, S_IRUSR) );
 //
-//	params.migration_bool = 1;
-//	prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY +10;
+//	mrsp = 0; ceiling = 0; np = 1;
+//	cycles = 0.000047;
+//	high_load = 0.0001;
+//
+//	if(mrsp){
+//		params.migration_bool = 1;
+//		prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY  +10;
+//	}
+//
+//	if(ceiling){
+//		params.migration_bool = 0;
+//		prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY  +10;
+//	}
+//	
+//	if(np){
+//		params.migration_bool = 0;
+//		prio_per_cpu [0] = LITMUS_HIGHEST_PRIORITY ;
+//	}
+//
 //	prio_per_cpu [1] = 10 ;
 //	prio_per_cpu [2] = 20 ;
 //	prio_per_cpu [3] = 30 ;
@@ -1292,7 +1312,7 @@ TESTCASE(mrsp, P_FP,
 //		SYSCALL( wait_for_ts_release() );
 //		SYSCALL( litmus_lock(od) );
 //		start = cputime();
-//		while(cputime() - start < 0.80);
+//		while(cputime() - start < cycles);
 //		SYSCALL( litmus_unlock(od) );
 //		SYSCALL( sleep_next_period() );
 //		);
@@ -1311,7 +1331,7 @@ TESTCASE(mrsp, P_FP,
 //		
 //		SYSCALL( litmus_lock(od) );
 //		l1_start = cputime();
-//		while(cputime() - l1_start < 0.15);
+//		while(cputime() - l1_start < cycles);
 //		SYSCALL( litmus_unlock(od) );
 //		SYSCALL( sleep_next_period() );
 //	
@@ -1334,18 +1354,18 @@ TESTCASE(mrsp, P_FP,
 //		exec_start = wctime();
 //		SYSCALL( litmus_lock(od) );
 //		m_start = cputime();
-//		while(cputime() - m_start < 0.25);
+//		while(cputime() - m_start < cycles);
 //		SYSCALL( litmus_unlock(od) );
 //		exec_end = wctime();
 //		avg = exec_end - exec_start;
-//		printf("\nRTA %f\n", s2ms(avg));
+//		printf("\nRTA %f\n", s2us(avg));
 //		SYSCALL( sleep_next_period() );
 //		);
 //
 //	params.cpu        = 0;
 //	child_hi = FORK_TASK(
 //		params.priority	= LITMUS_HIGHEST_PRIORITY;
-//		params.phase    = ms2ns(2);
+//		params.phase    = ms2ns(1);
 //		
 //		SYSCALL( set_rt_task_param(gettid(), &params) );
 //		SYSCALL( be_migrate_to_cpu(params.cpu) );
@@ -1355,7 +1375,7 @@ TESTCASE(mrsp, P_FP,
 //		SYSCALL( wait_for_ts_release() );
 //		
 //		h1_start = cputime();
-//		while(cputime() - h1_start < 0.15);
+//		while(cputime() - h1_start < high_load);
 //		SYSCALL( sleep_next_period() );
 //		);
 //
@@ -1372,7 +1392,7 @@ TESTCASE(mrsp, P_FP,
 //		SYSCALL( wait_for_ts_release() );
 //		
 //		h2_start = cputime();
-//		while(cputime() - h2_start < 0.25);
+//		while(cputime() - h2_start < high_load);
 //		SYSCALL( sleep_next_period() );
 //		);
 //	do {
@@ -1386,14 +1406,11 @@ TESTCASE(mrsp, P_FP,
 //
 //	SYSCALL( waitpid(child_hi, &status, 0) );
 //	ASSERT( status == 0 );
-//
 //	SYSCALL( waitpid(child_lo, &status, 0) );
 ////	ASSERT( status ==  SIGUSR2);
 //	SYSCALL( waitpid(child_lo_1, &status, 0) );
 //	SYSCALL( waitpid(child_lo_2, &status, 0) );
 //	SYSCALL( waitpid(child_hi_2, &status, 0) );
-//
-//
 ////	ASSERT( status ==  SIGUSR2);
 //
 //}
