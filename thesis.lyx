@@ -170,40 +170,44 @@ LatexCommand tableofcontents
 \end_layout
 
 \begin_layout Abstract
-Multiprocessor real-time resource control algorithms are currently an active
- research topic as more and more real-time systems become multicore.
+Real-time systems are concerned with the timing and response time of programs.
+ Programs share resources whose access must be managed in order to avoid
+ state corruption.
+ Multiprocessor real-time resource sharing algorithms are currently an active
+ research topic as multicore architecture become a de facto standard.
 \end_layout
 
 \begin_layout Abstract
 This project intends to contribute to the field of multiprocessor resource
  sharing protocols in real-time systems.
- Multiprocessor architectures have become a standard, used in small embedded
- devices as well as enterprise servers.
+ Multiprocessor architectures are found in small embedded devices as well
+ as enterprise servers.
  Multiple processing units architectures offer increasing computational
  capacity performance that need to be efficiently employed.
  While we can expect massively multi-core processors chips to be available
  soon, research in the real-time systems has been mainly designed for single
  processors.
- The widespread use of multicore architectures is challenging the real-time
- systems area for a protocol that could make a consensus and presenting
- features that are at least as good as the single processor protocols.
+ Multicore architectures popularity is challenging the real-time systems
+ area for a protocol that could make a consensus and presenting features
+ that are at least as good as the single processor protocols.
  Many multiprocessor resource sharing protocols have been proposed, however
- they do not always offer effective schedulability analysis and impose restricti
-ons.
- The lack of predictability and flexibility motivated the proposition of
- a new protocol that offers schedulability analysis similar to single processor
- protocols.
+ they do not always offer effective schedulability analysis and impose many
+ usage restrictions.
+ The authors of these protocols often present them at the theoretical level,
+ but do not always offer any actual implementation.
+ The little experience of real-life experimentation in these protocols is
+ the motivation for this project .
  This report describes a working implementation of the Multiprocessor Resource
  Sharing Protocol into LITMUS
 \begin_inset script superscript
 
 \begin_layout Plain Layout
-RT
+RT,
 \end_layout
 
 \end_inset
 
-, an open source real-time operating system based on Linux.
+ an open source real-time operating system based on Linux.
 \end_layout
 
 \begin_layout Abstract
@@ -262,9 +266,9 @@ This project is tasked with developing a working implementation of the MrsP
  One of the reasons for this is the lack of effective implementation in
  favour of simulations in research papers proposals.
  Some protocols, when implemented in genuine systems, generate too much
- overhead (due to requirements and constraints) which in turn either render
- them too difficult to analyse from a predictability point of view or impractica
-l to use.
+ overhead (due to requirements , constraints or specificitiesof the system)
+ which in turn either render them too difficult to analyse from a predictability
+ point of view or impractical to use.
  It would be extremely beneficial to have an implementation of MrsP within
  an actual real-time operating system in order to accurately measure and
  compare different aspects of the protocol and test it under real conditions.
@@ -326,7 +330,8 @@ Technical challenges
 The Linux operating system is a complex piece of software, a lot of programming
  facilities are not available precisely because we are working at kernel
  level.
- 
+ While general system or module behaviour is available, detailled specification
+ is lacking.
 \end_layout
 
 \begin_layout Subsection
@@ -433,7 +438,7 @@ In this chapter we proceed to first define concepts of real-time scheduling
  of the field.
  It is then pertinent to present traditional resource sharing uniprocessor
  protocols because many multiprocessor protocols are a direct adaptation
- of these, with the difference that they have the handle the case of a resource
+ of these, with the difference that they have to handle the case of a resource
  shared between tasks on different processors.
  
 \end_layout
@@ -612,39 +617,16 @@ ine-first (EDF) systems.
 \end_layout
 
 \begin_layout Standard
-There are different types of tasks : 
-\end_layout
-
-\begin_layout Itemize
-Periodic : tasks are released at regular intervals of time.
- They have a deadline constraint.
-\end_layout
-
-\begin_layout Itemize
-Sporadic : tasks are not executed a determined intervals but are released
- irregularly, typically in response to and event in the system.
- Because sporadic tasks releases are not predictable, they are assigned
- a 
-\shape italic
-Minimum Interarrival Time
-\shape default
- (partly to avoid overloading the scheduler with an unexpected large amount
- of tasks), that is, a minimum interval of time between two successive releases.
- They have a deadline constraint.
-\end_layout
-
-\begin_layout Itemize
-Aperiodic : tasks are released irregularly and without MIT.
- They have a deadline constraint.
-\end_layout
-
-\begin_layout Standard
 A configuration of tasks can be composed of all three types of real-time
  tasks described above.
 \end_layout
 
 \begin_layout Subsubsection
 Scheduling protocols
+\end_layout
+
+\begin_layout Standard
+TODO
 \end_layout
 
 \begin_layout Paragraph
@@ -707,7 +689,7 @@ Computing programs (tasks) are composed of sequences of actions to execute
 The actions are computer instructions executed by the processor in a sequential
  fashion.
  Only one action of one task can be executed at a time.
- Tasks execution can be safely interleaved as long as a switching and preempting
+ Tasks execution can be safely interleaved as long as switching and preempting
  between different tasks is done between any two atomic instructions.
  Tasks are assigned a priority level to enable prioritised scheduling where
  higher tasks are given more processor time and have less waiting time.
@@ -727,28 +709,10 @@ Programs necessarily share resources because resources are available in
 
 \begin_layout Standard
 To prevent race condition, mutual exclusion techniques have been introduced.
- Semaphores are the generic construct that enables task suspension when
- an access request to a resource currently used therefore providing a mutual
- exclusion service to protect resources state.
+ Real time resource sharing constructs have additional constraints besides
+ mutual exclusion, they have to provide bounded waiting time for requesting
+ tasks and blocking time for high priority tasks.
  However other problems remain to be solved when doing multitasking.
-\end_layout
-
-\begin_layout Subsubsection
-Sporadic task model
-\end_layout
-
-\begin_layout Standard
-TODO
-\end_layout
-
-\begin_layout Subsubsection
-
-\series bold
-Schedulability Analysis
-\end_layout
-
-\begin_layout Standard
-TODO
 \end_layout
 
 \begin_layout Subsubsection
@@ -853,12 +817,6 @@ Priority inversion is a situation where a higher priority task gets preempted
  area or resource is hard [EXAMPLE] or impossible.
  It is however possible to minimize its effects and thus increase predictability
  and relative response time of high priority tasks.
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-Mars Path Finder famous priority inversion
 \end_layout
 
 \begin_layout Subsubsection
@@ -1014,60 +972,37 @@ By not-directly involved semaphores which are accessed in a nested form
 
 \end_layout
 
-\begin_layout Standard
-
-\series bold
-The performance parameter are:
-\end_layout
-
-\begin_layout Enumerate
-
-\series bold
-Contention of High priority threads
-\end_layout
-
-\begin_layout Standard
-Mutual exclusion to a critical section may be implemented on a uniprocessor
- (UP) system by simply preventing the thread that accesses the section from
- being preempted.
- On a symmetric multiprocessor (SMP) system, disabling pre- emption is not
- enough.
- A thread on another CPU might access the critical section.
- [Internal RT paper]
-\end_layout
-
-\begin_layout Standard
-
-\series bold
-Response time of tasks holding lock
-\end_layout
-
 \begin_layout Subsection
 
 \series bold
 Real-time Resource Sharing Uniprocessor Protocols
 \end_layout
 
-\begin_layout Subsubsection
-Non Preemptive Protocol
-\end_layout
-
-\begin_layout Subparagraph
-
-\series bold
-Description
+\begin_layout Standard
+Resource sharing protocols intend to mitigate the negative effects of priority
+ inversion while at the same avoiding too much blocking of the low priority
+ tas
 \end_layout
 
 \begin_layout Standard
-The Non Preemptive Protocol is a simple approach to resource sharing.
- It can be described as follows : when a task enters a mutually exclusive
- area it can't be preempted by any other task.
- We can define it as being an absolute non-preemption scheme when a any
- lock is held by any task.
+In this section we describe single processor resource sharing protocols,
+ the problems they solve and their pitfalls.
+ We have organised this section so that each new protocol can be seen as
+ an evolution of the one preceeding it.
+ We have provided each protocol description with a graphical illustration
+ of its scheduling properties, the problems it resolves and the problems
+ or limitation it introduces.
 \end_layout
 
 \begin_layout Standard
-In this report the following color conventions have been used :
+In this section, the following color conventions have been used :
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1229,18 +1164,6 @@ lf}{1}{3}
 
 \begin_layout Plain Layout
 
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
 
 \backslash
 end{ganttchart}
@@ -1263,6 +1186,24 @@ end{figure}
 \end_inset
 
 
+\end_layout
+
+\begin_layout Subsubsection
+Non Preemptive Protocol
+\end_layout
+
+\begin_layout Subparagraph
+
+\series bold
+Description
+\end_layout
+
+\begin_layout Standard
+The Non Preemptive Protocol is a simple approach to resource sharing.
+ It can be described as follows : when a task enters a mutually exclusive
+ area it can't be preempted by any other task.
+ We can define it as being an absolute non-preemption scheme when a any
+ lock is held by any task.
 \end_layout
 
 \begin_layout Subparagraph
@@ -8841,6 +8782,22 @@ Preemptive-Fixed Priority Flow chart
 \end_layout
 
 \begin_layout Subsection
+Tools
+\end_layout
+
+\begin_layout Subsubsection
+QEMU
+\end_layout
+
+\begin_layout Subsubsection
+Hardware used
+\end_layout
+
+\begin_layout Subsubsection
+Debugging
+\end_layout
+
+\begin_layout Subsection
 Early prototype
 \end_layout
 
@@ -11175,6 +11132,10 @@ Limitations
 \end_layout
 
 \begin_layout Standard
+The project covers only preemptive fixed priority
+\end_layout
+
+\begin_layout Standard
 \begin_inset Newpage newpage
 \end_inset
 
@@ -11185,20 +11146,10 @@ Limitations
 Results and evaluation
 \end_layout
 
-\begin_layout Subsection
-Tools
-\end_layout
-
-\begin_layout Subsubsection
-QEMU
-\end_layout
-
-\begin_layout Subsubsection
-Hardware used
-\end_layout
-
-\begin_layout Subsubsection
-Debugging
+\begin_layout Standard
+We have produced a working and testable version of the MrsP, in this section
+ we will assess how well our work fulfills the requirements elicited in
+ section 3.4.
 \end_layout
 
 \begin_layout Subsection
@@ -11492,7 +11443,7 @@ Our implementation of MrsP benefits greatly from being incorporated directly
 \end_layout
 
 \begin_layout Subsubsection
-Validation testing
+Testing of functional requirements
 \end_layout
 
 \begin_layout Standard
@@ -11790,7 +11741,7 @@ cpu2 ->45
 \end_layout
 
 \begin_layout Plain Layout
-cpu ->78
+cpu3 ->78
 \end_layout
 
 \end_inset
@@ -13293,6 +13244,32 @@ Pass
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Summary of functional tests and requirements
+\end_layout
+
+\begin_layout Standard
+In summary evidence has been provided that all mandatory functional requirements
+ have been fulfilled.
+ 
+\end_layout
+
+\begin_layout Standard
+All tests have been carried out successfully and we have good confidence
+ in our system.
+\end_layout
+
+\begin_layout Subsubsection
+Testing of non-functional requirements
 \end_layout
 
 \begin_layout Subsubsection
