@@ -135,6 +135,77 @@ Supervisor : Andy Wellings
 \end_layout
 
 \begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Word count is TODO as counted by detex.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If printed, please print in colour.
+\end_layout
+
+\begin_layout Standard
 \begin_inset Newpage newpage
 \end_inset
 
@@ -621,14 +692,6 @@ A configuration of tasks can be composed of all three types of real-time
  tasks described above.
 \end_layout
 
-\begin_layout Subsubsection
-Scheduling protocols
-\end_layout
-
-\begin_layout Standard
-TODO
-\end_layout
-
 \begin_layout Paragraph
 Global scheduling protocols
 \end_layout
@@ -967,6 +1030,57 @@ By not-directly involved semaphores which are accessed in a nested form
 
 \begin_layout Standard
 \begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Requirements for resource sharing protocols
+\end_layout
+
+\begin_layout Standard
+It is necessary to summarize the above concepts and to have a clear view
+ of how they relate to each other.
+ A set of requirements for resource sharing protocols is defined by Easwaran
+ et al 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "easwaran2009resource"
+
+\end_inset
+
+ of which we inspired ourselves to produce a subset that is of interest
+ to us :
+\end_layout
+
+\begin_layout Enumerate
+The protocol must allow a resource to hold a resource and release it
+\end_layout
+
+\begin_layout Enumerate
+At every instant the resource must be held by at most one task
+\end_layout
+
+\begin_layout Enumerate
+The protocol should ensure the absence of deadlocks
+\end_layout
+
+\begin_layout Enumerate
+The protocol must take advantage of the processing power of multicore architectu
+res
+\end_layout
+
+\begin_layout Enumerate
+The protocol should have low overhead.
+\end_layout
+
+\begin_layout Standard
+Must and should are used here in accordance with RFC 2119 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "RFC2119"
+
 \end_inset
 
 
@@ -4363,7 +4477,14 @@ The Multiprocessor Priority Ceiling Protocol (MPCP)
 \begin_layout Standard
 Rajkumar designed the Multiprocessor Priority Ceiling Protocol (MPCP ) 
 \series bold
-[REF]
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "rajkumar1988real"
+
+\end_inset
+
+
 \series default
  that extends PCP (Priority Ceiling Protocol) to solve the remote blocking
  problem which is a consequence of shared global resources.
@@ -4372,9 +4493,9 @@ Rajkumar designed the Multiprocessor Priority Ceiling Protocol (MPCP )
  However upon acquiring a lock to a global resource, the holding task gets
  its priority raised to a value higher than all running tasks priorities
  in the system, in other terms, it is given absolute higher priority.
- In the case that global resource is already held the requesting task is
- queued to a global waiting list and its priority raised to the resource
- ceiling.
+ In the case that where a global resource is already held the requesting
+ task is queued to a global waiting list and its priority raised to the
+ resource ceiling.
  As noted by 
 \begin_inset CommandInset citation
 LatexCommand cite
@@ -4387,7 +4508,11 @@ key "davis2011survey"
  with a lower task executing taking first a local lock and then a global
  one.
  Even if the resource the higher task is waiting on is released it won't
- be able to execute [GRAPHIC].
+ be able to execute.
+\end_layout
+
+\begin_layout Subparagraph
+Description
 \end_layout
 
 \begin_layout Itemize
@@ -4408,10 +4533,6 @@ A task holding a global resource receives maximal absolute priority immediately
 \begin_layout Itemize
 Resources can be accessed by any processor (shared memory model as opposed
  to distributed memory model)
-\end_layout
-
-\begin_layout Itemize
-Global resources are assigned a ceiling higher than any other task
 \end_layout
 
 \begin_layout Itemize
@@ -4932,15 +5053,15 @@ A high priority task blocked on a global resource can be also locally blocked
 \end_layout
 
 \begin_layout Subparagraph
-Performance
-\end_layout
-
-\begin_layout Subparagraph
 Limitations
 \end_layout
 
-\begin_layout Standard
-Subject to priority inheritance blocking
+\begin_layout Itemize
+Subject to priority inversion blocking
+\end_layout
+
+\begin_layout Itemize
+MPCP is quite complex to implement in practice
 \end_layout
 
 \begin_layout Subsubsection
@@ -4953,11 +5074,22 @@ Description
 
 \begin_layout Standard
 The Multiprocessor Stack Resource Policy (MRSP) is an extension proposed
- by [REF] of the uniprocessor Stack Resource Policy from [REF] (SRP).
- Tasks requests on local resources are arbitrated using SRP.
- Global resources are not managed by SRP.
- Instead, the solution provided to arbitrate global resource access is a
- FIFO spinlock.
+ by 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "gai2001minimizing"
+
+\end_inset
+
+ of the uniprocessor Stack Resource Policy.
+ MRSP seeks to keep the SRP property that allows a task to execute only
+ if all the resources it needs are available.
+\end_layout
+
+\begin_layout Standard
+Resources can be either local or global.
+ It uses SRP for local resource requests.
+ The solution provided to arbitrate global resource access is a FIFO spinlock.
  Upon global resource access request, tasks are immediately granted absolute
  maximum priority (becoming effectively non-preemptable) until they succeed
  accessing the critical section and release it.
@@ -4969,6 +5101,31 @@ The Multiprocessor Stack Resource Policy (MRSP) is an extension proposed
 Tasks accessing nested local and global resources need to be allocated the
  same processor[CHECK].
  
+\end_layout
+
+\begin_layout Subparagraph
+Description
+\end_layout
+
+\begin_layout Itemize
+SRP is used to arbitrate local resource requests.
+ Each resource has a ceiling per processor that is the highest priority
+ of the task using it.
+\end_layout
+
+\begin_layout Itemize
+Processors have a priority ceiling, that is the highest priority level allowed
+ on the processor.
+\end_layout
+
+\begin_layout Itemize
+A task requesting access to a global resource has its priority raised to
+ the processor's ceiling and spins (thus non-preemptively) in a FIFO manner.
+\end_layout
+
+\begin_layout Itemize
+Local to local resource nesting as well as local to global resource nesting
+ is allowed.
 \end_layout
 
 \begin_layout Standard
@@ -5476,6 +5633,25 @@ T15 : LP1 can execute again.
 \end_layout
 
 \begin_layout Subparagraph
+Advantages
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In MRSP tasks access on access global resources non-preemptively, when the
+ resource is not available, tasks spin in a FIFO queue.
+ High priority task blocking is limited to at most one critical section
+ of any lower priority task.
+ 
+\end_layout
+
+\begin_layout Subparagraph
 Constraints
 \end_layout
 
@@ -5487,7 +5663,7 @@ Constraints
 \end_layout
 
 \begin_layout Standard
-Global resources do not support nesting.
+Global to global resources nesting is not allowed.
 \end_layout
 
 \begin_layout Subparagraph
@@ -5496,13 +5672,14 @@ Performance
 
 \begin_layout Standard
 MSRP performs better than MPCP when global critical sections are short and
- access to local resources dominates access to global resources, (which
- is probably the result of good programming practices) [MRSP VS MPCP paper].
- 
-\end_layout
+ access to local resources dominates access to global resources 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "gai2003comparison"
 
-\begin_layout Subparagraph
-Limitations
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Subsubsection
@@ -5510,8 +5687,14 @@ The Flexible Multiprocessor Locking Protocol (FMLP)
 \end_layout
 
 \begin_layout Standard
-FMLP requires the user to define if resources have long or short access
- times.
+FMLP 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "block2007flexible"
+
+\end_inset
+
+ requires the user to define if resources have long or short access times.
  
 \end_layout
 
@@ -5519,19 +5702,26 @@ FMLP requires the user to define if resources have long or short access
 Access is differentiated in function of the type of the resource : 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Itemize
 Short resources benefit from busy-waiting (reduces context-switching) and
  become non-preemptable.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Itemize
 Long resources are handled through suspend-waiting in a FIFO manner.
  
 \end_layout
 
-\begin_layout Standard
+\begin_layout Itemize
 A task holding a short resource is not allowed to require access to a long
  resource to avoid deadlock.
+ 
+\end_layout
+
+\begin_layout Itemize
+Resource nesting is handled through resource grouping that is tasks have
+ to acquire a group lock before acquiring the resource itself.
+ Groups can only contain one type of resources (short or long).
  
 \end_layout
 
@@ -5923,8 +6113,8 @@ T13 : LP2 can execute again.
 Constraints
 \end_layout
 
-\begin_layout Subparagraph
-Performance
+\begin_layout Itemize
+Long resource requests can not be nested in short resource requests.
 \end_layout
 
 \begin_layout Subparagraph
@@ -5939,10 +6129,6 @@ key "davis2011survey"
 
 .
  
-\end_layout
-
-\begin_layout Subparagraph
-Limitations
 \end_layout
 
 \begin_layout Subsection
@@ -6118,8 +6304,13 @@ Cost of migration
 \end_layout
 
 \begin_layout Standard
+Multiprocessor resource sharing protocols have to take into account the
+ cost of migrating a task from one processor to another.
+\end_layout
+
+\begin_layout Standard
 The cost of two migrations must be less than the interference of a higher
- priority thread MrsP .
+ priority task.
  In shared memory systems the overhead associated with task migration is
  defined as the time needed to copy its hardware state accross private memory
  caches.
@@ -6130,10 +6321,16 @@ Memory barriers
 \end_layout
 
 \begin_layout Standard
-The compiler is free to re-order instructions if not explicitly stated otherwise.
- 
-\series bold
-[EXPLAIN]
+The compiler is free, if not explicitly stated otherwise, to re-order instructio
+ns for optimising the time required to execute them.
+ A variable used by tasks on different cpus can have unexpected values,
+ as variable assignement or retrieval is performed in an order that can
+ differ than what specified in the code.
+ Typically a value assigned on one cpu and retrieved on another cpu can
+ have different values on each cpu.
+ In order to prevent that situation, we enforce instructions ordering by
+ using memory barriers to force the compiler to have up-to-date values at
+ a specified time.
 \end_layout
 
 \begin_layout Subsection
@@ -8802,11 +8999,41 @@ Early prototype
 \end_layout
 
 \begin_layout Standard
-Reconaissance mission, throw away code and other niceties
+We have described in section 1.4 our development strategy to complete this
+ project.
+ The uncertainty of the fulfilment of certain key requirements added to
+ the complexity of the Linux kernel called for a rapid mitigation of the
+ risks.
+ After understanding the way the linux scheduler is built, a quick working
+ prototype has been developed.
+ Its basic functionality is the ability to give one priority per processor
+ to a mutex.
+ It is implemented as a modification to the migration kernel thread and
+ to the task data structure.
+ A flag is tied and an array of priorities are tied to the task data structure
+ indicating if the current task being migrated needed special treatment,
+ when it is the case the migration thread does a lookup into the array and
+ modifies the task's priority immediately before its migration to the target
+ cpu.
+ This prototype worked well, however many other requirements were difficult
+ to implement, in particular :
+\end_layout
+
+\begin_layout Itemize
+FR_3.2, tasks have to migrate back to the original cpu on lock release.
+ This involved changing completely how locks are implemented in Linux.
+\end_layout
+
+\begin_layout Itemize
+FR_4, tasks have to migrate to a cpu included in their affinities.
+ The scheduler in the standard Linux seeks to load balance tasks between
+ processors, setting cpu affinities is just a hint that the scheduler is
+ free to ignore.
 \end_layout
 
 \begin_layout Standard
-Functional requirement 1 -> modified the task_struct
+The experience gained in modifying the Linux kernel has given me a clear
+ view of the steps to undertake in LITMUS.
 \end_layout
 
 \begin_layout Subsection
@@ -11160,6 +11387,18 @@ Tests & Results
 Methodology
 \end_layout
 
+\begin_layout Standard
+We want to measure the response time of MrsP to assess its impact on schedulabil
+ity.
+ The measurement method we choose is the difference of time between lock
+ request and lock release, because it is exclusively between these two events
+ that the MrsP operates.
+ Different configurations are experimented in order to have a more accurate
+ picture of the protocol's performance.
+ The tests are performed with a LITMUS kernel installed on a physical machine
+ (as opposed to a virtual machine).
+\end_layout
+
 \begin_layout Subsubsection
 Measurements & Performance
 \end_layout
@@ -11167,9 +11406,8 @@ Measurements & Performance
 \begin_layout Standard
 We reproduce here the task and resource configurations used in the MrsP
  paper [REF] in order to measure the performance of our implementation.
- The experiments have been conducted on a 4 processor machine with TODO
- Ghz, with an unloaded system.
- 
+ The experiments have been conducted on a 4 processor machine with frenquency
+ 3.10GHz, on an idle system
 \end_layout
 
 \begin_layout Standard
@@ -13258,8 +13496,8 @@ Summary of functional tests and requirements
 \end_layout
 
 \begin_layout Standard
-In summary evidence has been provided that all mandatory functional requirements
- have been fulfilled.
+In summary, evidence has been provided that all mandatory functional requirement
+s have been fulfilled.
  
 \end_layout
 
