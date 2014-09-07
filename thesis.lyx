@@ -403,6 +403,8 @@ The Linux operating system is a complex piece of software, a lot of programming
  level.
  While general system or module behaviour is available, detailled specification
  is lacking.
+ Developing an ability to read low-level code and kernel idioms has been
+ essential for this project.
 \end_layout
 
 \begin_layout Subsection
@@ -655,15 +657,17 @@ Fixed-Priority : Tasks are manually assigned a static offline priority.
 \begin_layout Itemize
 Earliest Deadline First : Tasks are dynamically assigned a priority.
  The task with the closest deadline at a given time is always scheduled.
- EDF is said to be optimal because if a configuration of tasks and resource
- is schedulable then EDF can guarantee all tasks will meet their deadline.
+ EDF is said to be optimal 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "EDFOptimal"
+
+\end_inset
+
+ because if a configuration of tasks and resource is schedulable then EDF
+ can guarantee all tasks will meet their deadline.
  If EDF can't schedule a configuration then no other scheduling policy can
- schedule it.
- (
-\series bold
-REF
-\series default
-) 
+ schedule it .
 \end_layout
 
 \begin_layout Subsubsection
@@ -683,8 +687,6 @@ Real-time systems have response time and timings that must be guaranteed,
  Schedulability analysis can be applied to fixed-priority (FP) or earliest-deadl
 ine-first (EDF) systems.
  
-\series bold
-[MORE]
 \end_layout
 
 \begin_layout Standard
@@ -1022,10 +1024,8 @@ Transitive blocking
 \end_layout
 
 \begin_layout Standard
-By not-directly involved semaphores which are accessed in a nested form
- by blocking jobs.
- Transitive blocking is said to occur if a job J is blocked by J1 which,
- in turn, is blocked by another job J2 
+Transitive blocking is said to occur if a job J is blocked by J1 which,
+ in turn, is blocked by another job J2.
 \end_layout
 
 \begin_layout Standard
@@ -1707,6 +1707,10 @@ This protocol allows low priority tasks to block higher priority tasks that
  
 \end_layout
 
+\begin_layout Itemize
+If resources are to be nested they have to be taken in the same order.
+\end_layout
+
 \begin_layout Subsubsection
 Priority Inheritance Protocol
 \end_layout
@@ -2145,8 +2149,7 @@ Limitations
 \end_layout
 
 \begin_layout Itemize
-Does not prevent deadlocks when locks are not taken in the same order (see
- Figure [NUMBER])
+Does not prevent deadlocks when locks are not taken in the same order.
 \end_layout
 
 \begin_layout Itemize
@@ -2176,8 +2179,14 @@ The Priority Ceiling Protocol
 \begin_layout Standard
 The Priority Inheritance protocol solves the problem of unbounded priority
  inversion, however deadlocks and chained blocking are no prevented.
- The intent of the Priority Ceiling Protocol is to mitigate the limitations
- of the Priority Inheritance Protocol.
+ The intent of the Priority Ceiling Protocol 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "sha1990priority"
+
+\end_inset
+
+ is to mitigate the limitations of the Priority Inheritance Protocol.
  It does so by having an 
 \shape italic
 ungreedy 
@@ -2202,7 +2211,8 @@ A new parameter is introduced : the highest ceiling of all locked resources
 \end_layout
 
 \begin_layout Itemize
-A task resource usage is known offline (before the tasks's execution).
+A task resource usage is known offline (before runtime we know which tasks
+ use which resources).
 \end_layout
 
 \begin_layout Itemize
@@ -2984,7 +2994,14 @@ Increases the number of context switches (it is time consuming to switch
 \end_layout
 
 \begin_layout Itemize
-Implementation is complex
+Limited to fixed priority scheduling policies.
+\end_layout
+
+\begin_layout Itemize
+Implementation is complex because many complicated scenarios arise when
+ two or more tasks request access to the same resources.
+ The algorithm for resolving a long chain of nested resource locks is complex.
+ 
 \end_layout
 
 \begin_layout Subsubsection
@@ -3422,20 +3439,7 @@ Same advantages as PCP
 Additional advantage of less context switches
 \end_layout
 
-\begin_layout Subparagraph
-
-\series bold
-Performance
-\end_layout
-
-\begin_layout Standard
-\begin_inset space ~
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
+\begin_layout Itemize
 Same worst case performance as the Priority Ceiling Protocol
 \end_layout
 
@@ -4016,16 +4020,28 @@ Easier to implement (than PCP) as no need for inheritance, no need to block
  execution times
 \end_layout
 
-\begin_layout Subparagraph
-
-\series bold
-Performance
-\end_layout
-
 \begin_layout Standard
 
 \series bold
 Limitations
+\end_layout
+
+\begin_layout Itemize
+Long resources access puts a high contention on the cpu with the task spinning.
+\end_layout
+
+\begin_layout Itemize
+In the case where a task dies with the lock, no lock state restoration is
+ specified, and we could end up with tasks blocked for ever that could take
+ the system down.
+ One might think that it is user responsibility to ensure that it does not
+ happen, however in real-world systems that situation 
+\shape italic
+can 
+\shape default
+happen for a number of reasons and it is always good to foresee and prevent
+ even the most unlikely situations.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -4048,7 +4064,7 @@ Local resources can be managed by uniprocessor protocols such as SRP or
 \end_layout
 
 \begin_layout Subparagraph
-Remote blocking
+The remote blocking problem
 \end_layout
 
 \begin_layout Standard
@@ -5643,12 +5659,24 @@ Advantages
 
 \end_layout
 
-\begin_layout Standard
-In MRSP tasks access on access global resources non-preemptively, when the
+\begin_layout Itemize
+In MSRP tasks access on access global resources non-preemptively, when the
  resource is not available, tasks spin in a FIFO queue.
  High priority task blocking is limited to at most one critical section
  of any lower priority task.
  
+\end_layout
+
+\begin_layout Itemize
+MSRP performs better than MPCP when global critical sections are short and
+ access to local resources dominates access to global resources 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "gai2003comparison"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Subparagraph
@@ -5662,24 +5690,8 @@ Constraints
 
 \end_layout
 
-\begin_layout Standard
+\begin_layout Itemize
 Global to global resources nesting is not allowed.
-\end_layout
-
-\begin_layout Subparagraph
-Performance
-\end_layout
-
-\begin_layout Standard
-MSRP performs better than MPCP when global critical sections are short and
- access to local resources dominates access to global resources 
-\begin_inset CommandInset citation
-LatexCommand cite
-key "gai2003comparison"
-
-\end_inset
-
-.
 \end_layout
 
 \begin_layout Subsubsection
@@ -6976,23 +6988,62 @@ Advantages
 \end_layout
 
 \begin_layout Itemize
-Having tasks spin at the local resource ceiling has the advantage of not
- punishing high priority tasks and at the same time bounds the blocking
- time ([Andy paper] equations 4 and 5)
+Resource access time is increased but task parallelism obstacles are reduced
+ to a minimum
 \end_layout
 
 \begin_layout Itemize
 Nested resource usage is allowed at the condition of statically (offline)
- ordering resource usage
+ ordering resource usage.
 \end_layout
 
-\begin_layout Subsubsection
-A schedulability compatible protocol
+\begin_layout Itemize
+Resource ceiling as opposed to processor ceiling for global resource associated
+ to task migration brings an additional advantage compared to MSRP because
+ higher priority task blocking is suppressed.
+ 
+\end_layout
+
+\begin_layout Itemize
+Exhibits similar practical schedulability analysis as SRP with added resource
+ access time because of the spinning FIFO queue.
+\end_layout
+
+\begin_layout Subparagraph
+Limitations
+\end_layout
+
+\begin_layout Itemize
+Busy-waiting is very costly when access to resources is long, cpu cycles
+ are 
+\shape italic
+wasted 
+\shape default
+while lower tasks could execute.
+\end_layout
+
+\begin_layout Itemize
+The principle of partitioning is broken because task can migrate between
+ processors.
+\end_layout
+
+\begin_layout Itemize
+In practice task cooperation is handled through task migration, the cost
+ of two migrations has to be less than the interference of a high priority
+ task.
+\end_layout
+
+\begin_layout Itemize
+Under certain unlikely conditions each processor could have a task spinning
+ for one contended lock.
 \end_layout
 
 \begin_layout Standard
-MrsP being a variant of MRSP, which itself is a PCP-based protocol, it exhibits
- the same properties with regards to schedulability.
+In summary the MrsP exhibits similar properties to MSRP with the added benefit
+ of attempting to continue to execute in the case where a task holding a
+ lock is being preempted locally, without impacting tasks on other cpus
+ as migration is made possible only where it would actually reduce access
+ time to the lock for any waiting task.
 \end_layout
 
 \begin_layout Subsubsection
@@ -7015,7 +7066,7 @@ Most multiprocessor resource sharing protocols (which protocols ? give examples)
  dequeing, rescheduling), with the possibility of a priority inversion (a
  lower task with high ceiling priority can preempt the current resource
  holder).
- Additionally some protocols also implement priority inheritance which price
+ Additionally some protocols also implement priority inheritance whose price
  is more overheads.
  The size of suspension queues is theoretically bounded by the maximum number
  of tasks that can be run concurrently in a given RTOS.
@@ -7028,10 +7079,23 @@ Most multiprocessor resource sharing protocols (which protocols ? give examples)
 \end_layout
 
 \begin_layout Standard
-In his paper [realtime-suspend or spin] Brandenburg evaluates the impact
- of spinning as opposed to suspension and he comes to the conclusion that
- unless at least 20% of a program is spent in mutually exclusive areas,
- spinning is always preferable to suspending.
+In his paper 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "brandenburg2008real"
+
+\end_inset
+
+ Brandenburg evaluates the impact of spinning as opposed to suspension and
+ he comes to the conclusion that unless at least 20% of a program is spent
+ in mutually exclusive areas, spinning is always preferable to suspending.
+ Factors such as the power consumption (crucial in embedded devices) of
+ spinning versus suspending is not factored in the study.
+ Embedded devices for instance commonly use dynamic frequency scaling, that
+ is processor frequency and thus consumption dynamically adjusts to task
+ load.
+ We can therefore deduce safely that a processor executing a busy-waiting
+ task will need more power than an idle one using suspension.
 \end_layout
 
 \begin_layout Subsection
@@ -7040,7 +7104,8 @@ A task migration approach
 
 \begin_layout Standard
 While the protocol developed is intended for partitioned systems, thread
- migration between processors is a common feature in SMP operating systems.
+ migration between processors is a common feature in multiprocessor operating
+ systems.
 \end_layout
 
 \begin_layout Standard
@@ -7056,25 +7121,18 @@ key "carpenter2004categorization"
  The first reason is the prohibitive cost of transferring a task's context.
  The second reason is the lack of research in that area of scheduling, partition
 ed systems have thus become the approach of choice.
+ Carpenter cite results of recent experiments demonstrating that scheduling
+ algorithms allowing migration are competitive in terms of schedulability
+ with those that do not use it, even after incorporating migration overheads
  
 \series bold
-Carpenter cite results of recent experiments demonstrating that scheduling
- algorithms that allow migration are competitive in terms of schedulability
- with those that do not migrate, even after incorporating migration overheads
- [26].
-
-\series default
- 
+.
 \end_layout
 
 \begin_layout Standard
-Migration addresses points 5 and 6 of the protocol : A thread that is spinning
- for a lock already held on another processor must be able to give way to
- the preempted holder locally.
-\end_layout
-
-\begin_layout Subsection
-Schedulability Analysis
+Migration addresses the cooperative aspect of the protocol: a thread that
+ is spinning for a lock already held on another processor must be able to
+ give way to the preempted holder locally.
 \end_layout
 
 \begin_layout Subsection
@@ -7142,14 +7200,45 @@ Functional Requirements
 \end_layout
 
 \begin_layout Standard
+Requirements for realising MrsP are clearly presented in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "burns2013schedulability"
+
+\end_inset
+
+, they are however too coarse grained and need refining before giving a
+ set of requirements that could be used at design and implementation level.
+ Together with the MrsP specification, a prototype described in section
+ 4.4 helped us derive fine-grained requirements.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 \begin_inset Tabular
-<lyxtabular version="3" rows="18" columns="4">
-<features islongtable="true" longtabularalignment="center">
+<lyxtabular version="3" rows="18" columns="5">
+<features islongtable="true" longtabularalignment="left">
+<column alignment="center" valignment="top" width="0">
 <column alignment="center" valignment="top" width="0">
 <column alignment="center" valignment="top" width="5cm">
 <column alignment="left" valignment="middle" width="5cm">
 <column alignment="center" valignment="top" width="0">
 <row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Req.
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -7188,6 +7277,15 @@ Level
 </cell>
 </row>
 <row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -7231,6 +7329,15 @@ High
 \begin_inset Text
 
 \begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 FR_1.1
 \end_layout
 
@@ -7265,6 +7372,15 @@ High
 </cell>
 </row>
 <row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -7307,6 +7423,15 @@ High
 \begin_inset Text
 
 \begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 FR_2
 \end_layout
 
@@ -7341,6 +7466,15 @@ High
 </cell>
 </row>
 <row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -7383,6 +7517,15 @@ Medium
 \begin_inset Text
 
 \begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 FR_2.2
 \end_layout
 
@@ -7417,6 +7560,15 @@ High
 </cell>
 </row>
 <row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -7460,6 +7612,15 @@ High
 \begin_inset Text
 
 \begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 FR_3
 \end_layout
 
@@ -7499,6 +7660,15 @@ High
 \begin_inset Text
 
 \begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 FR_3.1
 \end_layout
 
@@ -7533,6 +7703,15 @@ High
 </cell>
 </row>
 <row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -7576,6 +7755,15 @@ High
 \begin_inset Text
 
 \begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 FR_4
 \end_layout
 
@@ -7611,6 +7799,15 @@ High
 </cell>
 </row>
 <row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -7654,6 +7851,15 @@ High
 \begin_inset Text
 
 \begin_layout Plain Layout
+1,6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 FR_4.2
 \end_layout
 
@@ -7688,6 +7894,15 @@ High
 </cell>
 </row>
 <row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N/A
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -7730,6 +7945,15 @@ Optional
 \begin_inset Text
 
 \begin_layout Plain Layout
+N/A
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 FR_6
 \end_layout
 
@@ -7764,6 +7988,15 @@ High
 </cell>
 </row>
 <row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N/A
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -7806,6 +8039,15 @@ High
 \begin_inset Text
 
 \begin_layout Plain Layout
+N/A
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
 FR_8
 \end_layout
 
@@ -7815,7 +8057,7 @@ FR_8
 \begin_inset Text
 
 \begin_layout Plain Layout
-Global Fixed-Priority and EDF scheduling must be supported
+Global Fixed-Priority and EDF scheduling should be supported
 \end_layout
 
 \end_inset
@@ -7847,12 +8089,118 @@ Future work
 \end_layout
 
 \begin_layout Standard
-Functional requirement 1 is derived directly from MrsP description which
- requires one priority ceiling per lock.
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+On the Req.
+ column we have put the requirements numbers as they are defined in section
+ 3.1, the other columns described the refined requirements that are more
+ suited to the implementation phase because of their greater detail.
+ Some sub-requirement do not have a parent, this is because they are derived
+ from the wider concepts of real-time programming such as scheduling policies
+ and particular resource usage like nesting.
 \end_layout
 
 \begin_layout Subsubsection
 Non-functional Requirements
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+In our case, factoring in that we work with the Linux kernel, we think of
+ non-functional requirements as quality attributes that are for instance
+ desirable behaviour at runtime (other than functional requirements) or
+ desirable aspects for the system design.
+ We personally describe it as the 
+\shape italic
+level of comfort
+\shape default
+ of a given system, how easy it is to : 
+\end_layout
+
+\begin_layout Itemize
+effectively modify the system
+\end_layout
+
+\begin_layout Itemize
+use the system
+\end_layout
+
+\begin_layout Itemize
+test the system
+\end_layout
+
+\begin_layout Itemize
+etc..
+\end_layout
+
+\begin_layout Standard
+Considering that we work at kernel level, some quality attributes are directly
+ ruled out such as : 
+\end_layout
+
+\begin_layout Itemize
+Reusability : kernel code is by nature very specific and not easy to generalise.
+\end_layout
+
+\begin_layout Itemize
+Availability : this is handled throughout the whole kernel, our sole contributio
+n to this aspect is to prevent any possibility for our modifications to
+ bring 
+\end_layout
+
+\begin_layout Itemize
+the system down.
+\end_layout
+
+\begin_layout Itemize
+Extensibility : we do not take into consideration easiness for adding new
+ functionality as we are following a precise specification, and according
+ to us it unrealistic to code at kernel level without a minimum of middleware
+ knowledge.
+\end_layout
+
+\begin_layout Standard
+Other quality attributes are desirable and are more pertinent for present
+ and future considerations, given the time allocated for this project, we
+ limit ourselves to three quality attributes :
+\end_layout
+
+\begin_layout Itemize
+Correctness : it is crucial for our system to deliver the exact behaviour
+ in the MrsP specification to allow for genuine protocol overhead measurement
+\end_layout
+
+\begin_layout Itemize
+Performance : as a schedulability compatible protocol, the MrsP implementation
+ should keep overheads as low as possible.
+\end_layout
+
+\begin_layout Itemize
+Scalability : we must keep in mind that the MrsP should work with an arbitrarily
+ high number of processors (specially considering massively multicore systems
+ with thousands of processors).
+\end_layout
+
+\begin_layout Standard
+From this we derive the following non-functional requirements :
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -7915,7 +8263,7 @@ NFR_1
 \begin_inset Text
 
 \begin_layout Plain Layout
-The system implementation shoud be reliable
+The system implementation must be correct
 \end_layout
 
 \end_inset
@@ -7924,7 +8272,7 @@ The system implementation shoud be reliable
 \begin_inset Text
 
 \begin_layout Plain Layout
-Real-time tasks and resource configuration should execute correctly
+Real-time tasks and resource configuration should execute as specified
 \end_layout
 
 \end_inset
@@ -7953,7 +8301,7 @@ NFR_2
 \begin_inset Text
 
 \begin_layout Plain Layout
-The system should be extendable
+The system must be scalable
 \end_layout
 
 \end_inset
@@ -7962,7 +8310,7 @@ The system should be extendable
 \begin_inset Text
 
 \begin_layout Plain Layout
-Additional features implementation is made easy
+Any number of processors is supported without modifications
 \end_layout
 
 \end_inset
@@ -7971,7 +8319,7 @@ Additional features implementation is made easy
 \begin_inset Text
 
 \begin_layout Plain Layout
-Optional
+High
 \end_layout
 
 \end_inset
@@ -7991,7 +8339,7 @@ NFR_3
 \begin_inset Text
 
 \begin_layout Plain Layout
-The system should have low overhead
+The system must have low overhead
 \end_layout
 
 \end_inset
@@ -8020,6 +8368,28 @@ High
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Summary
+\end_layout
+
+\begin_layout Standard
+We have presented the MrsP protocol in this chapter and have refined the
+ initial requirements into a comprehensive set of functional finer-grained
+ requirements.
+ We have also discussed the suitability of particular non-functional requirement
+s that are necessary and sufficient to achieve a good quality implementation
+ of MrsP.
+ In the next chapter, we describe the details of an implementation in a
+ LITMUS kernel.
 \end_layout
 
 \begin_layout Standard
@@ -8301,7 +8671,6 @@ RT
 
  stands for Linux Testbed for Multiprocessor Scheduling in Real-Time Systems
  and is a real-time patch for the Linux operating system.
- Linux is a popular UNIX-based open-source kernel.
  It was developed by Brandenburg et al [REF] with the intent to facilitate
  implementation and comparison of scheduling and locking algorithms.
  It supports partitioned, semi-partitioned, global and clustered scheduling
