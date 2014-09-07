@@ -337,7 +337,7 @@ This project is tasked with developing a working implementation of the MrsP
  One of the reasons for this is the lack of effective implementation in
  favour of simulations in research papers proposals.
  Some protocols, when implemented in genuine systems, generate too much
- overhead (due to requirements , constraints or specificitiesof the system)
+ overhead (due to requirements , constraints or specificities of the system)
  which in turn either render them too difficult to analyse from a predictability
  point of view or impractical to use.
  It would be extremely beneficial to have an implementation of MrsP within
@@ -1303,7 +1303,7 @@ end{figure}
 \end_layout
 
 \begin_layout Subsubsection
-Non Preemptive Protocol
+Non Preemptive Protocol (NPP)
 \end_layout
 
 \begin_layout Subparagraph
@@ -1712,7 +1712,7 @@ If resources are to be nested they have to be taken in the same order.
 \end_layout
 
 \begin_layout Subsubsection
-Priority Inheritance Protocol
+Priority Inheritance Protocol (PIP)
 \end_layout
 
 \begin_layout Standard
@@ -2173,7 +2173,7 @@ Priority Inheritance blocking : a medium task is blocked by a lower task
 \end_layout
 
 \begin_layout Subsubsection
-The Priority Ceiling Protocol
+The Priority Ceiling Protocol (PCP)
 \end_layout
 
 \begin_layout Standard
@@ -3005,7 +3005,7 @@ Implementation is complex because many complicated scenarios arise when
 \end_layout
 
 \begin_layout Subsubsection
-Immediate Priority Ceiling Protocol
+Immediate Priority Ceiling Protocol (IPCP)
 \end_layout
 
 \begin_layout Standard
@@ -3468,7 +3468,7 @@ Tasks accessing critical sections get their priority raised regardless of
 \end_layout
 
 \begin_layout Subsubsection
-Stack Resource Policy
+Stack Resource Policy (SRP)
 \end_layout
 
 \begin_layout Standard
@@ -8118,7 +8118,7 @@ Non-functional Requirements
 
 \begin_layout Itemize
 In our case, factoring in that we work with the Linux kernel, we think of
- non-functional requirements as quality attributes that are for instance
+ non-functional requirements as quality attributes, that can be for instance
  desirable behaviour at runtime (other than functional requirements) or
  desirable aspects for the system design.
  We personally describe it as the 
@@ -8156,11 +8156,7 @@ Reusability : kernel code is by nature very specific and not easy to generalise.
 \begin_layout Itemize
 Availability : this is handled throughout the whole kernel, our sole contributio
 n to this aspect is to prevent any possibility for our modifications to
- bring 
-\end_layout
-
-\begin_layout Itemize
-the system down.
+ bring the system down.
 \end_layout
 
 \begin_layout Itemize
@@ -9118,6 +9114,7 @@ LITMUS is concerned with making it easy to implement scheduling policies,
 
 \begin_layout Standard
 \begin_inset Float figure
+placement H
 wide false
 sideways false
 status open
@@ -10455,10 +10452,6 @@ key "burns2013schedulability"
 \end_layout
 
 \begin_layout Subsubsection
-Nested resources usage
-\end_layout
-
-\begin_layout Subsubsection
 C language implementation
 \end_layout
 
@@ -10470,7 +10463,158 @@ g policy to include MrsP.
 \end_layout
 
 \begin_layout Paragraph
+Static view of the system
+\end_layout
+
+\begin_layout Standard
+In figure 17 we describe where are the files that needed modification to
+ implement MrsP :
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset listings
+lstparams "basicstyle={\sffamily},showstringspaces=false"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Kernel root folder
+\end_layout
+
+\begin_layout Plain Layout
+
+ |
+\end_layout
+
+\begin_layout Plain Layout
+
+ |____ litmus
+\end_layout
+
+\begin_layout Plain Layout
+
+ |        |____ sched_pfp.c
+\end_layout
+
+\begin_layout Plain Layout
+
+ |        |____ litmus.c
+\end_layout
+
+\begin_layout Plain Layout
+
+ |        |____ fdso.c
+\end_layout
+
+\begin_layout Plain Layout
+
+ |
+\end_layout
+
+\begin_layout Plain Layout
+
+ |____ include
+\end_layout
+
+\begin_layout Plain Layout
+
+         |____ litmus
+\end_layout
+
+\begin_layout Plain Layout
+
+                |____ rt_param.h
+\end_layout
+
+\begin_layout Plain Layout
+
+                |____ locking.h
+\end_layout
+
+\begin_layout Plain Layout
+
+                |____ fdso.h
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Static view of the system
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+litmus.c : this file contains the generic scheduler described in figure 15.
+ In our case it uses sched_pfp.c .
+\end_layout
+
+\begin_layout Itemize
+fdso.c : this file contains helpers that are in charge of the low-level operation
+s when opening, allocating, freeing...
+ locks
+\end_layout
+
+\begin_layout Itemize
+sched_pfp.c : this file contains the logic for the preemptive fixed-priority
+ scheduler.
+ It is here that most of our modifications are made.
+\end_layout
+
+\begin_layout Itemize
+rt_param.h : this header file contains the definition of the structure needed
+ to handle real time tasks.
+\end_layout
+
+\begin_layout Itemize
+locking.h : we have put the structure definition of the MrsP lock in this
+ file rather than in sched_pfp.c as it is done for other lock structures
+ (MPCP, FMLP..) because rt_param.h needs to know the MrsP definition.
+\end_layout
+
+\begin_layout Paragraph
 The MrsP lock structure 
+\end_layout
+
+\begin_layout Standard
+As said in the previous section, MrsP definition is in locking.h.
+ We describe in details each variable needed for realising MrsP
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -10604,6 +10748,19 @@ The LITMUS real-time task structure
 \end_layout
 
 \begin_layout Standard
+The 
+\family sans
+rt_task 
+\family default
+defined in rt_param.h represents the real-time parameters of a task, and
+ is tied to the main 
+\family sans
+task_struct 
+\family default
+used by the stock Linux kernel that represents as task (process or thread).
+\end_layout
+
+\begin_layout Standard
 \begin_inset listings
 lstparams "language=C,numbers=left"
 inline false
@@ -10682,18 +10839,6 @@ struct rt_task {
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-The 
-\family sans
-rt_task 
-\family default
-represents the real-time parameters of a task, and is tied to the main 
-\family sans
-task_struct 
-\family default
-used by the stock Linux kernel that represents as task (process or thread).
 \end_layout
 
 \begin_layout Itemize
@@ -10833,6 +10978,25 @@ The fields in bold are modifications to the original structure.
 
 \begin_layout Paragraph
 Mrsp Lock
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The MrsP locking function is added to the sched_pfp.c file because each schedulin
+g policy needs a slightly different implementation.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -11115,8 +11279,11 @@ The memory barrier
 \family sans
 smp_wmb()
 \family default
- is used to be sure to have the latest version of the next variable and
- not a cached one.
+ is used to be sure to have the latest version of the 
+\family sans
+next
+\family default
+ variable and not a cached one.
  We then get the current ticket number and increase 
 \family sans
 next
@@ -11174,6 +11341,13 @@ ticket
 
 \begin_layout Paragraph
 MrsP Unlock
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -11370,7 +11544,7 @@ In order to comply with MrsP requirements of task migration, we had to modify
  In a migration case, the target cpu is the next cpu, if for instance we
  are currently on cpu 3 on a four processor machine, we wrap and start counting
  checking again from cpu 0.
- The modifications are outlined in blue in figure 17.
+ The modifications are outlined in blue in figure 18.
 \end_layout
 
 \begin_layout Standard
@@ -11777,12 +11951,126 @@ pfp_mrsp_close
 pfp_mrsp_free
 \end_layout
 
+\begin_layout Subsubsection
+Nested resources usage
+\end_layout
+
+\begin_layout Standard
+We do not handle the nested resource usage in our implementation mainly
+ because the time allocated for this project did not permit it, however
+ we give recommendations in case the reader would like to provide support
+ it.
+\end_layout
+
+\begin_layout Standard
+Nested resource usage is declared to be straightforward to implement in
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "burns2013schedulability"
+
+\end_inset
+
+ using a scheme were tasks are not allowed to take a lock that has a lower
+ ID, we agree with that statement, conceptually there is no major obstacle
+ for it, however in practice implementation would need at least the following
+ : 
+\end_layout
+
+\begin_layout Itemize
+one unsigned integer to the 
+\family sans
+mrsp_semaphore 
+\family default
+that holds a lock order id
+\end_layout
+
+\begin_layout Itemize
+one LIFO linked list in the 
+\family sans
+rt_param 
+\family default
+that contains all the locks acquired by the task (a stack)
+\end_layout
+
+\begin_layout Itemize
+a modification to the 
+\family sans
+pfp_mrsp_lock 
+\family default
+function that checks that the lock the task tries to take has a value superior
+ to the one currently held (to avoid deadlocks), and adds it to the LIFO
+ list.
+\end_layout
+
+\begin_layout Itemize
+a modification to the 
+\family sans
+pfp_mrsp_unlock 
+\family default
+function that possibly checks that the lock are released in order and removes
+ them from the LIFO list.
+\end_layout
+
+\begin_layout Itemize
+We need to decide what to do when a task that holds many locks is scheduled
+ to migrate :
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Do we take into account the affinities of all the locks to choose where
+ to migrate ?
+\end_layout
+
+\begin_layout Itemize
+Do we take only into account the affinities of the innermost lock ?
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+We see here that nested resource support is relatively straightforward,
+ certain questions have to be answered though and thorough testing is required.
+\end_layout
+
+\begin_layout Subsubsection
+Problems encountered
+\end_layout
+
+\begin_layout Standard
+Few problems were encountered during the course of this project, however
+ the one that was the most difficult to work with was the slowness of the
+ virtual machine QEMU running on my laptop.
+ Compiling the kernel after modifications took a very long time which could
+ have been used for implementing the optional parts of the protocol such
+ as nested resources or MrsP for P-EDF scheduling policy.
+ Working with the linux kernel was also hard because documentation on certain
+ parts of the code is not easy to obtain and in some cases going through
+ many source files was necessary to understand exactly the implications
+ or constraints of a kernel idiom.
+ 
+\end_layout
+
 \begin_layout Subsection
 Limitations
 \end_layout
 
 \begin_layout Standard
-The project covers only preemptive fixed priority
+We reiterate here the scope of the project and the limitations associated
+ :
+\end_layout
+
+\begin_layout Itemize
+The implementation covers only preemptive fixed priority as the paper we
+ base our implementation on, limits itself only to that scheduling policy.
+\end_layout
+
+\begin_layout Itemize
+Nested resource usage is not supported
+\end_layout
+
+\begin_layout Itemize
+We do not provide a means to test MrsP schedulability for tasks set
 \end_layout
 
 \begin_layout Standard
@@ -11804,6 +12092,11 @@ We have produced a working and testable version of the MrsP, in this section
 
 \begin_layout Subsection
 Tests & Results
+\end_layout
+
+\begin_layout Standard
+In this section we proceed to measure MrsP performance and compare it with
+ other resource sharing protocols.
 \end_layout
 
 \begin_layout Subsubsection
@@ -11828,9 +12121,17 @@ Measurements & Performance
 
 \begin_layout Standard
 We reproduce here the task and resource configurations used in the MrsP
- paper [REF] in order to measure the performance of our implementation.
- The experiments have been conducted on a 4 processor machine with frenquency
- 3.10GHz, on an idle system
+ paper 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "burns2013schedulability"
+
+\end_inset
+
+ (p.
+ 9) in order to measure the performance of our implementation.
+ The experiments have been conducted on a machine with four processors Intel®
+ CoreTM i5-2400 CPU at 3.10GHz , on an idle system, with a GNU environment.
 \end_layout
 
 \begin_layout Standard
@@ -11838,15 +12139,11 @@ We compare the response time of the Non-Preemptive protocol, the Ceiling
  protocol in which a task requesting a lock immediately raises its priority
  to the resource ceiling and spin in a FIFO manner when the lock is already
  held.
- The following parameters have been used :
+ 
 \end_layout
 
-\begin_layout Itemize
-lock access time : 0.50 ns.
-\end_layout
-
-\begin_layout Itemize
-High thread execution time : 
+\begin_layout Standard
+The following parameters hold :
 \end_layout
 
 \begin_layout Itemize
@@ -11855,7 +12152,7 @@ Ceiling priorities for ceiling and MrsP have inferior priority than the
 \end_layout
 
 \begin_layout Itemize
-The tests use processes.
+The tests use processes (not threads).
 \end_layout
 
 \begin_layout Itemize
@@ -11864,7 +12161,7 @@ The scheduling policy used is preemptive fixed-priority on a fully partitioned
 \end_layout
 
 \begin_layout Itemize
-All measures are expressed in microseconds
+All measures are expressed in microseconds.
 \end_layout
 
 \begin_layout Paragraph
@@ -11876,8 +12173,8 @@ Configuration 1
 \end_layout
 
 \begin_layout Itemize
-2 identical low priority tasks running on cpu 0 and cpu 1 share one lock
- and a high priority task on cpu0.
+2 identical low priority tasks running on cpu0 and cpu1 share one global
+ lock, also there is a high priority task on cpu0.
  The release time of the tasks is configured in a way that produces the
  following scenario : the low task on cpu0 (L0) acquires the lock, the low
  task on cpu1 (L1) tries to acquire it, fails, and start to spin for it.
@@ -11895,10 +12192,10 @@ Configuration 1
 \end_layout
 
 \begin_layout Standard
-Response time of low priority task on cpu 1 is illustrated in figure [TODO].
+Response time of low priority task on cpu1 is illustrated in figure 19.
  We make the execution duration of the high thread execute vary in axis
  x.
- In axis Y is the response time in microseconds.
+ In axis Y is the response time of L1.
 \end_layout
 
 \begin_layout Standard
@@ -11910,6 +12207,7 @@ status open
 \begin_layout Plain Layout
 \begin_inset Graphics
 	filename /home/buddha/diss/Dissertation/fig1.png
+	scale 80
 
 \end_inset
 
@@ -11935,19 +12233,20 @@ Response time of low priority task on cpu 1
 
 \begin_layout Standard
 Surprisingly MrsP appears to be faster than the Non-Preemptive protocol,
- after further tests, we have found that the reason for that lies in the
+ after code analysis we have found that the reason for that lies in the
  added branch condition in the 
 \family sans
 pfp_schedule() 
 \family default
 function (to handle the case where a task holding a MrsP lock is about to
- get preempted and thus tries to migrate) returns early comparatively to
- the main code flow that needs to perform more operations to determine the
- next task to schedule.
+ get preempted and thus tries to migrate) that returns early comparatively
+ to the main code flow that needs to perform more operations to determine
+ the next task to schedule.
  MrsP runs in nearly half the time of NP (16 µs - 30µs).
  As expected both MrsP and NP have a constant response time because their
  execution is not delayed by the higher priority task, the Ceiling protocol
- however is fully impacted as the L0 as to wait the higher task finishes.
+ however is fully impacted as L0 as to wait the higher task finishes before
+ making progress.
 \end_layout
 
 \begin_layout Standard
@@ -11958,12 +12257,13 @@ function (to handle the case where a task holding a MrsP lock is about to
 \end_layout
 
 \begin_layout Standard
-Response time of high priority task is illustrated in figure [TODO].
- We make the execution duration of L0 vary in axis y.
+Response time of high priority task is illustrated in figure 20.
+ We make the execution duration of L0 vary in axis x.
 \end_layout
 
 \begin_layout Standard
 \begin_inset Float figure
+placement H
 wide false
 sideways false
 status open
@@ -11971,6 +12271,7 @@ status open
 \begin_layout Plain Layout
 \begin_inset Graphics
 	filename /home/buddha/diss/Dissertation/fig2.png
+	scale 80
 
 \end_inset
 
@@ -11989,18 +12290,14 @@ Response time of high priority task on cpu 0
 
 \end_layout
 
-\begin_layout Plain Layout
-
-\end_layout
-
 \end_inset
 
 
 \end_layout
 
 \begin_layout Standard
-We can see that NP impacts severely the high thread's response time, MrsP
- and Ceiling on the other hand limit priority inversion.
+We can see that the non-preemptive protocol impacts severely the high thread's
+ response time, MrsP and Ceiling on the other hand limit priority inversion.
 \end_layout
 
 \begin_layout Paragraph
@@ -12010,11 +12307,12 @@ Configuration 2
 \end_layout
 
 \begin_layout Itemize
-3 identical low priority tasks running on cpu 0, cpu 1, cpu 2 and two high
- priority tasks running on cpu 0 and cpu 1.
- The tasks release time are configured to produce the following scenario
- : the low task on cpu 0 (L0) acquires the lock, then the low task on cpu
- 1 (L1) and the low task on cpu 2 (L2) respectively spin for it.
+3 identical low priority tasks running on cpu0, cpu1, cpu2 and two high
+ priority tasks running on cpu0 and cpu1.
+ The tasks release time and resource ceiling priorities are configured to
+ produce the following scenario : the low task on cpu0 (L0) acquires the
+ lock, then the low task on cpu1 (L1) and the low task on cpu2 (L2) respectively
+ spin for it.
  Immediately after L0 acquired the lock the high priority tasks are released.
  The intent here is to produce chained migrations under MrsP : L0 is expected
  to migrate to cpu 1 and then cpu 2.
@@ -12041,6 +12339,7 @@ status open
 \begin_layout Plain Layout
 \begin_inset Graphics
 	filename /home/buddha/diss/Dissertation/fig3.png
+	scale 80
 
 \end_inset
 
@@ -12100,7 +12399,14 @@ Our implementation of MrsP benefits greatly from being incorporated directly
  In comparison with the MrsP paper, our results are an order of magnitude
  faster, we have response times about a thousand time quicker.
  Additionally we note that the machine we have used is slightly less powerful
- than the one used in the paper [TODO]
+ than the one used in the paper 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "burns2013schedulability"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection
@@ -13933,6 +14239,40 @@ All tests have been carried out successfully and we have good confidence
 Testing of non-functional requirements
 \end_layout
 
+\begin_layout Standard
+We discuss in this section the extent to which the non-functional requirements
+ described in section 3.3.2 have been fulfilled in accordance with their fit
+ criterion :
+\end_layout
+
+\begin_layout Itemize
+NFR_1 Correctness : It is clear from section 5.1.3 that we have produced evidence
+ that the system works as intended.
+ We therefore consider this requirement to be totally fulfilled with the
+ exception of the nested resource handling for which we give recommendations
+ in section 
+\series bold
+TODO
+\series default
+ in case the reader project to implement it.
+\end_layout
+
+\begin_layout Itemize
+NFR_2 Scalability : Although we did not have the opportunity in the course
+ of this project to test the protocol on a machine that has more than 4
+ processors, we did perform tests that were successful in a virtual machine
+ with 32 cores emulated 
+\series bold
+TODO
+\end_layout
+
+\begin_layout Itemize
+NFR_3 Performance : We have proved in section 5.1.2 that our implementation
+ is competitive when compared to other resource scheduling algorithms.
+ In particular we note the vast gain in response time of our implementation
+ as compared with the MrsP specification implementation performance.
+\end_layout
+
 \begin_layout Subsubsection
 Summary
 \end_layout
@@ -13945,11 +14285,32 @@ Summary
 \end_layout
 
 \begin_layout Section
-Conclusion and Further Work
+Conclusion and Further Work 
 \end_layout
 
 \begin_layout Subsection
 Project Review
+\end_layout
+
+\begin_layout Standard
+This project provides a report on a working implementation of the MrsP protocol
+ specified by the Real Time System group a York University in the LITMUS
+ kernel.
+ During the course of this project we had the opportunity to learn kernel-level
+ programming which is greatly rewarding, we also have a broader knowledge
+ of the resource sharing field.
+ This project shows that LITMUS and by extension Linux are a good option
+ for future resource sharing related implementation.
+ The performance gains procured by a low-level kernel implementation are
+ huge and improve schedulability under preemptive fixed-priority policy
+ by reducing overheads.
+ MrsP with task migration virtually removes priority inversion on higher
+ priority task and at the same gives an opportunity to waiting tasks to
+ reduce their waiting time.
+ It has proved to be a viable alternative for multiprocessor resource sharing
+ thereby helping to leverage more efficiently the processing power of multicore
+ architectures.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -13962,6 +14323,10 @@ Strengths
 
 \begin_layout Subsection
 Weaknesses
+\end_layout
+
+\begin_layout Standard
+Future Work
 \end_layout
 
 \begin_layout Subsection
