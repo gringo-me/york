@@ -184,7 +184,7 @@ Supervisor : Andy Wellings
 \end_layout
 
 \begin_layout Standard
-Word count is TODO as counted by detex.
+Word count is TODO as counted by Lyx.
 \end_layout
 
 \begin_layout Standard
@@ -241,26 +241,26 @@ LatexCommand tableofcontents
 \end_layout
 
 \begin_layout Abstract
-Real-time systems are concerned with the timing and response time of programs.
- Programs share resources whose access must be managed in order to avoid
+Real-time systems is a branch of computing concerned with the timing and
+ response time of programs.
+ They are for instance found in critical devices such as electronic car
+ brakes, insuling pumps or planes.
+ These systems have to respond to external input within a guaranteed timeframe
+ otherwise, in the worst case, life losses can happen.
+ Real-time programs on uniprocessors are an industry standard, they allow
+ to share resources whose access is mutually exclusive to prevent resource
  state corruption.
- Multiprocessor real-time resource sharing algorithms are currently an active
- research topic as multicore architecture become a de facto standard.
+ Multiprocessor real-time resource sharing protocols are relatively undeveloped
+ in comparison but get an increasing attention from the real time research
+ community as multicore architectures become widely adopted.
 \end_layout
 
 \begin_layout Abstract
-This project intends to contribute to the field of multiprocessor resource
- sharing protocols in real-time systems.
- Multiprocessor architectures are found in small embedded devices as well
- as enterprise servers.
- Multiple processing units architectures offer increasing computational
- capacity performance that need to be efficiently employed.
- While we can expect massively multi-core processors chips to be available
- soon, research in the real-time systems has been mainly designed for single
- processors.
- Multicore architectures popularity is challenging the real-time systems
+Multicore architectures popularity is challenging the real-time systems
  area for a protocol that could make a consensus and presenting features
  that are at least as good as the single processor protocols.
+ This project intends to contribute to the field of multiprocessor resource
+ sharing protocols in real-time systems.
  Many multiprocessor resource sharing protocols have been proposed, however
  they do not always offer effective schedulability analysis and impose many
  usage restrictions.
@@ -269,16 +269,16 @@ This project intends to contribute to the field of multiprocessor resource
  The little experience of real-life experimentation in these protocols is
  the motivation for this project .
  This report describes a working implementation of the Multiprocessor Resource
- Sharing Protocol into LITMUS
+ Sharing Protocol into the LITMUS
 \begin_inset script superscript
 
 \begin_layout Plain Layout
-RT,
+RT
 \end_layout
 
 \end_inset
 
- an open source real-time operating system based on Linux.
+ real-time operating system based on Linux.
 \end_layout
 
 \begin_layout Abstract
@@ -369,7 +369,7 @@ g.
 \end_layout
 
 \begin_layout Itemize
-Understand how real-time scheduling is done in LITMUS.
+Understand how real-time scheduling is done in LITMUS^RT.
 \end_layout
 
 \begin_layout Itemize
@@ -403,7 +403,11 @@ The Linux operating system is a complex piece of software, a lot of programming
  level.
  While general system or module behaviour is available, detailled specification
  is lacking.
- Developing an ability to read low-level code and kernel idioms has been
+ 
+\end_layout
+
+\begin_layout Standard
+Developing an ability to read low-level code and kernel idioms has been
  essential for this project.
 \end_layout
 
@@ -421,7 +425,7 @@ Non-trivial software projects require a development strategy in order to
  In order to determine whether that was possible and what would the effort
  required, an analysis of the current standard Linux kernel scheduling design
  with the real-time patch was done.
- Later on, the project was moved to the LITMUS kernel.
+ Later on, the project was moved to the LITMUS^RT kernel.
  We have used two different development lifecyle : at first the exploratory
  prototyping model and then an incremental model.
 \end_layout
@@ -450,6 +454,144 @@ Incremental model : After the experience gained on the Linux kernel with
 
 \begin_layout Subsection
 Deliverables
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In the following table are the deliverables for this project :
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Date
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Document
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+18/08/14
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+First draft
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+31/08/14
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Second iteration of draft
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+08/09/14
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Final report
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+11/09/14
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Presentation
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -7057,8 +7199,8 @@ There are two possible approaches when request access to a resource already
 \end_layout
 
 \begin_layout Standard
-Most multiprocessor resource sharing protocols (which protocols ? give examples)
- use suspension-based algorithms.
+Some multiprocessor resource sharing protocols (MPCP, FMLP) use suspension-based
+ algorithms.
  Suspension is chosed over spinning to avoid wasting processor cycles, however
  implementation of suspend-based protocols often consists of enqueuing tasks
  to a FIFO queue while waiting for the resource to become available.
@@ -8001,7 +8143,7 @@ N/A
 \begin_inset Text
 
 \begin_layout Plain Layout
-FR_7
+R_7
 \end_layout
 
 \end_inset
@@ -8103,6 +8245,12 @@ On the Req.
  Some sub-requirement do not have a parent, this is because they are derived
  from the wider concepts of real-time programming such as scheduling policies
  and particular resource usage like nesting.
+\end_layout
+
+\begin_layout Standard
+It should be noted that the situations where a task dies with the lock is
+ ignored in our requirements because we consider it is user responsibility
+ to ensure such a situation does not happen.
 \end_layout
 
 \begin_layout Subsubsection
@@ -8385,7 +8533,7 @@ We have presented the MrsP protocol in this chapter and have refined the
 s that are necessary and sufficient to achieve a good quality implementation
  of MrsP.
  In the next chapter, we describe the details of an implementation in a
- LITMUS kernel.
+ LITMUS^RT kernel.
 \end_layout
 
 \begin_layout Standard
@@ -8403,9 +8551,9 @@ MrsP : Design and Implementation
 This chapter details the implementation of requirements presented in section
  3.3.
  The operating system chosen to implement the Multiprocessor Resource Sharing
- Protocol is LITMUS, which is a patch to the mainline Linux kernel.
+ Protocol is LITMUS^RT, which is a patch to the mainline Linux kernel.
  First a general description of Linux and programming at kernel level will
- be given, followed by a presentation of the LITMUS patch.
+ be given, followed by a presentation of the LITMUS^RT patch.
  We will then explain design choices and how requirements have been meet.
 \end_layout
 
@@ -8652,7 +8800,7 @@ Tasks suspend themselves by adding themselves to linked-list of waiting
 \end_layout
 
 \begin_layout Subsection
-LITMUS
+LITMUS^RT
 \begin_inset script superscript
 
 \begin_layout Plain Layout
@@ -8665,7 +8813,7 @@ RT
 \end_layout
 
 \begin_layout Standard
-LITMUS
+LITMUS^RT
 \begin_inset script superscript
 
 \begin_layout Plain Layout
@@ -8680,7 +8828,7 @@ RT
  implementation and comparison of scheduling and locking algorithms.
  It supports partitioned, semi-partitioned, global and clustered scheduling
  policies.
- The main contributions of LITMUS
+ The main contributions of LITMUS^RT
 \begin_inset script superscript
 
 \begin_layout Plain Layout
@@ -8716,7 +8864,7 @@ Architecture overview
 \end_layout
 
 \begin_layout Standard
-LITMUS
+LITMUS^RT
 \begin_inset script superscript
 
 \begin_layout Plain Layout
@@ -8740,7 +8888,7 @@ key "brandenburg2011scheduling"
 A core infrastructure that hooks into the Linux Kernel scheduling decision
  algorithm and provides a level of indirection that allows dynamically choosing
  a scheduling protocol at runtime.
- This is possible by the addition of a LITMUS
+ This is possible by the addition of a LITMUS^RT
 \begin_inset script superscript
 
 \begin_layout Plain Layout
@@ -8775,7 +8923,7 @@ e.g.
 schedule() 
 \family default
 that returns the next task to be scheduled for execution.
- A flowchart depicts the LITMUS
+ A flowchart depicts the LITMUS^RT
 \begin_inset script superscript
 
 \begin_layout Plain Layout
@@ -8818,7 +8966,7 @@ status open
 \begin_inset Caption
 
 \begin_layout Plain Layout
-LITMUS
+LITMUS^RT
 \begin_inset script superscript
 
 \begin_layout Plain Layout
@@ -9077,10 +9225,10 @@ key "brandenburg2011scheduling"
 \emph on
 T
 \series default
-he focus of LITMUSRT is algorithmic changes; it does not improve the Linux
- kernel’s real-time capabilities in terms of interrupt latencies and does
- not force split interrupt handling.
- [...] This also implies that LITMUSRT is not applicable to workloads with
+he focus of LITMUS^RTRT is algorithmic changes; it does not improve the
+ Linux kernel’s real-time capabilities in terms of interrupt latencies and
+ does not force split interrupt handling.
+ [...] This also implies that LITMUS^RTRT is not applicable to workloads with
  very short relative deadlines, like mainline Linux itself.
  
 \end_layout
@@ -9093,17 +9241,17 @@ he focus of LITMUSRT is algorithmic changes; it does not improve the Linux
 \end_layout
 
 \begin_layout Standard
-Even though LITMUS patch adds only a small overhead compared to the PREEMPT-RT
- patch, its focus is not performance but rather enabling implementation
+Even though LITMUS^RT patch adds only a small overhead compared to the PREEMPT-R
+T patch, its focus is not performance but rather enabling implementation
  of custom schedulers.
 \end_layout
 
 \begin_layout Subsubsection
-LITMUS Priority Fixed Processor implementation
+LITMUS^RT Priority Fixed Processor implementation
 \end_layout
 
 \begin_layout Standard
-LITMUS is concerned with making it easy to implement scheduling policies,
+LITMUS^RT is concerned with making it easy to implement scheduling policies,
  that also includes resource sharing protocols.
  Resource sharing protocols are embedded in the implementation of scheduling
  policies such as preemptive fixed-priority (P-FP), earliest-deadline-first
@@ -9453,7 +9601,7 @@ FR_4, tasks have to migrate to a cpu included in their affinities.
 
 \begin_layout Standard
 The experience gained in modifying the Linux kernel has given me a clear
- view of the steps to undertake in LITMUS.
+ view of the steps to undertake in LITMUS^RT.
 \end_layout
 
 \begin_layout Subsection
@@ -9472,9 +9620,9 @@ FIFO Spinlock
 \end_layout
 
 \begin_layout Standard
-Kernel ticket spinlock only appear in the 3.16 version (LITMUS part is based
- on version 3.10.41), therefore we had to implement our own version of FIFO
- spinlocks.
+Kernel ticket spinlock only appear in the 3.16 version (LITMUS^RT part is
+ based on version 3.10.41), therefore we had to implement our own version
+ of FIFO spinlocks.
 \end_layout
 
 \begin_layout Standard
@@ -10744,7 +10892,7 @@ is a copy of the tasks cpumask affinities prior to obtaining the lock
 \end_layout
 
 \begin_layout Paragraph
-The LITMUS real-time task structure
+The LITMUS^RT real-time task structure
 \end_layout
 
 \begin_layout Standard
@@ -11538,7 +11686,7 @@ Preemptive Fixed-priority modifications for MrsP
 
 \begin_layout Standard
 In order to comply with MrsP requirements of task migration, we had to modify
- the LITMUS Preemptive Fixed-Priority implementation.
+ the LITMUS^RT Preemptive Fixed-Priority implementation.
  We add a new branch in the scheduling decision that offers the opportunity
  to migrate for those tasks which are holding a MrsP lock and have waiters.
  In a migration case, the target cpu is the next cpu, if for instance we
@@ -11549,6 +11697,7 @@ In order to comply with MrsP requirements of task migration, we had to modify
 
 \begin_layout Standard
 \begin_inset Float figure
+placement H
 wide false
 sideways false
 status open
@@ -11725,7 +11874,7 @@ node [decision, below of=new,node distance=4cm] (exhausted_sleep) {is bugdet
 
     
 \backslash
-node [block, left of=exhausted_sleep, node distance=4cm] (requeue) {requeue
+node [block, left of=exhausted_sleep, node distance=3cm] (requeue) {requeue
  task};
 \end_layout
 
@@ -12073,6 +12222,10 @@ Nested resource usage is not supported
 We do not provide a means to test MrsP schedulability for tasks set
 \end_layout
 
+\begin_layout Itemize
+Our implementation considers only periodic and sporadic tasks
+\end_layout
+
 \begin_layout Standard
 \begin_inset Newpage newpage
 \end_inset
@@ -12111,8 +12264,8 @@ ity.
  that the MrsP operates.
  Different configurations are experimented in order to have a more accurate
  picture of the protocol's performance.
- The tests are performed with a LITMUS kernel installed on a physical machine
- (as opposed to a virtual machine).
+ The tests are performed with a LITMUS^RT kernel installed on a physical
+ machine (as opposed to a virtual machine).
 \end_layout
 
 \begin_layout Subsubsection
@@ -12152,6 +12305,16 @@ Ceiling priorities for ceiling and MrsP have inferior priority than the
 \end_layout
 
 \begin_layout Itemize
+Migration have an average of cost of 4µs as measured by printed timestamps
+ before/after migrations.
+\end_layout
+
+\begin_layout Itemize
+Context switches have an average cost of 0.1µs as measured by printed timestamps
+ before/after context switch.
+\end_layout
+
+\begin_layout Itemize
 The tests use processes (not threads).
 \end_layout
 
@@ -12162,6 +12325,11 @@ The scheduling policy used is preemptive fixed-priority on a fully partitioned
 
 \begin_layout Itemize
 All measures are expressed in microseconds.
+\end_layout
+
+\begin_layout Itemize
+Tasks execution consists of continuously checking a value in a loop (they
+ check whether a certain amount of time has passed)
 \end_layout
 
 \begin_layout Paragraph
@@ -12240,8 +12408,8 @@ pfp_schedule()
 \family default
 function (to handle the case where a task holding a MrsP lock is about to
  get preempted and thus tries to migrate) that returns early comparatively
- to the main code flow that needs to perform more operations to determine
- the next task to schedule.
+ to the main code flow that needs to perform more operations (task lookup
+ and priority check) to determine the next task to schedule.
  MrsP runs in nearly half the time of NP (16 µs - 30µs).
  As expected both MrsP and NP have a constant response time because their
  execution is not delayed by the higher priority task, the Ceiling protocol
@@ -12298,6 +12466,8 @@ Response time of high priority task on cpu 0
 \begin_layout Standard
 We can see that the non-preemptive protocol impacts severely the high thread's
  response time, MrsP and Ceiling on the other hand limit priority inversion.
+ Again MrsP outperforms the Ceiling protocol because less instructions are
+ needed.
 \end_layout
 
 \begin_layout Paragraph
@@ -12326,12 +12496,13 @@ Configuration 2
 \end_layout
 
 \begin_layout Standard
-Response time of task L2 is illustrated on figure [TODO], we make the high
- thread execution time vary in axis x.
+Response time of task L2 is illustrated on figure 21, we make the high thread
+ execution time vary in axis x.
 \end_layout
 
 \begin_layout Standard
 \begin_inset Float figure
+placement H
 wide false
 sideways false
 status open
@@ -12358,10 +12529,6 @@ Response time of low priority task on cpu 2
 
 \end_layout
 
-\begin_layout Plain Layout
-
-\end_layout
-
 \end_inset
 
 
@@ -12381,16 +12548,51 @@ As expected, the low priority on cpu 2 is fully impacted by the added execution
  lower) due to migration costs.
 \end_layout
 
-\begin_layout Enumerate
-Case of ordered nested lock.
+\begin_layout Paragraph
+Limitations
 \end_layout
 
-\begin_layout Enumerate
-(Optional MrsP implementation in G-EDF)
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+It should be noted that these results could be optimistic because :
+\end_layout
+
+\begin_layout Itemize
+We are using an idle system, no other tasks is interfering
+\end_layout
+
+\begin_layout Itemize
+Tasks are not using memory while they are executing, therefore migration
+ costs and context switches are reduced (because the data to transfer to
+ the target cpu is minimal).
+\end_layout
+
+\begin_layout Itemize
+We are using desktop computer, we do not know what could be the impact of
+ intensive spinning (on the mid and long term) on the battery of embedded
+ devices
+\end_layout
+
+\begin_layout Itemize
+Aperiodic tasks interference has not been investigated (out of the scope
+ of this project)
 \end_layout
 
 \begin_layout Paragraph
 Summary
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -12406,7 +12608,10 @@ key "burns2013schedulability"
 
 \end_inset
 
-
+.
+ We however recall the reader that more thorough tests and probably on a
+ larger scale have to be performed to obtain a more accurate picture of
+ MrsP performance.
 \end_layout
 
 \begin_layout Subsubsection
@@ -12424,12 +12629,12 @@ Validation testing is used to verify that a given software is complying
  Unit testing is well suited for the FIFO spinlock algorithm as that part
  of the code is independent and self-contained.
  Modifications to the scheduling algorithm require a different type of testing
- as it is tightly integrated with LITMUS.
+ as it is tightly integrated with LITMUS^RT.
  We choose to perform system level testing for the project, verifying whether
  it meets the requirements as a whole.
  Care must be taken however as we are adding more functionalities to an
  existing program, we thus also run the regression tests that are provided
- with LITMUS.
+ with LITMUS^RT.
 \end_layout
 
 \begin_layout Standard
@@ -13728,14 +13933,6 @@ Pass
 \end_layout
 
 \begin_layout Paragraph
-Task dies with lock
-\end_layout
-
-\begin_layout Paragraph
-Task becomes non-realtime when holding lock
-\end_layout
-
-\begin_layout Paragraph
 Task tries to unlock lock it doesn't own
 \end_layout
 
@@ -13885,10 +14082,6 @@ Pass
 \end_inset
 
 
-\end_layout
-
-\begin_layout Paragraph
-Task migrates to cpu, but cpu is currently running high priority thread
 \end_layout
 
 \begin_layout Paragraph
@@ -14200,7 +14393,7 @@ Status
 \begin_inset Text
 
 \begin_layout Plain Layout
-Pass
+Not implemented
 \end_layout
 
 \end_inset
@@ -14232,11 +14425,181 @@ s have been fulfilled.
 
 \begin_layout Standard
 All tests have been carried out successfully and we have good confidence
- in our system.
+ in the correctness of our system.
 \end_layout
 
 \begin_layout Subsubsection
 Testing of non-functional requirements
+\end_layout
+
+\begin_layout Paragraph
+Scalability
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We wanted to assess how well our implementation copes with a relatively
+ high number of tasks contended on one lock.
+ It is a kind of a stress test that also aims to test if the system is scalable.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="6" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="8cm">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Test case ID
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SNF_2
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Requirements
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+NFR_2
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Description
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+MrsP must work with an arbitrarily high number of processors
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Input
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+20 tasks identical low tasks share one MrsP lock L1.
+ They take the lock a hundred time each in a loop.
+ 10 high task are scheduled to migrate randomly to cpus.
+ We set up a virtual machine with 16 cores for this test.
+ The lock has one priority per cpu.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Expected output
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FIFO order is respected, priority raising is effectively done.
+ Affinities are correctly updated.
+ Migration are done on inherited cpu affinities.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Status
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Pass
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -14250,20 +14613,16 @@ NFR_1 Correctness : It is clear from section 5.1.3 that we have produced evidenc
  that the system works as intended.
  We therefore consider this requirement to be totally fulfilled with the
  exception of the nested resource handling for which we give recommendations
- in section 
-\series bold
-TODO
-\series default
- in case the reader project to implement it.
+ in section 4.5.10 in case the reader wants to implement it.
 \end_layout
 
 \begin_layout Itemize
 NFR_2 Scalability : Although we did not have the opportunity in the course
  of this project to test the protocol on a machine that has more than 4
- processors, we did perform tests that were successful in a virtual machine
- with 32 cores emulated 
-\series bold
-TODO
+ processors, we have tested it successfully on a virtual machine with 16
+ processors (test case SNF_2).
+ Our implementation is agnostic of the number of processors and we are confident
+ if our system is to be tested on massively multicore systems.
 \end_layout
 
 \begin_layout Itemize
@@ -14275,6 +14634,21 @@ NFR_3 Performance : We have proved in section 5.1.2 that our implementation
 
 \begin_layout Subsubsection
 Summary
+\end_layout
+
+\begin_layout Standard
+To sum up, we have produced a system that fulfills all the mandatory requirement
+s of the project.
+ It also exhibits qualities such as performance and scalability that are
+ necessary for making MrsP viable
+\end_layout
+
+\begin_layout Paragraph
+Strengths
+\end_layout
+
+\begin_layout Paragraph
+Weaknesses
 \end_layout
 
 \begin_layout Standard
@@ -14294,12 +14668,12 @@ Project Review
 
 \begin_layout Standard
 This project provides a report on a working implementation of the MrsP protocol
- specified by the Real Time System group a York University in the LITMUS
+ specified by the Real Time System group a York University in the LITMUS^RT
  kernel.
  During the course of this project we had the opportunity to learn kernel-level
  programming which is greatly rewarding, we also have a broader knowledge
  of the resource sharing field.
- This project shows that LITMUS and by extension Linux are a good option
+ This project shows that LITMUS^RT and by extension Linux are a good option
  for future resource sharing related implementation.
  The performance gains procured by a low-level kernel implementation are
  huge and improve schedulability under preemptive fixed-priority policy
@@ -14314,23 +14688,34 @@ This project provides a report on a working implementation of the MrsP protocol
 \end_layout
 
 \begin_layout Subsection
-Overview of the project
-\end_layout
-
-\begin_layout Subsection
-Strengths
-\end_layout
-
-\begin_layout Subsection
-Weaknesses
-\end_layout
-
-\begin_layout Standard
 Future Work
 \end_layout
 
-\begin_layout Subsection
-Limitations
+\begin_layout Standard
+There are many enhancements that could be done to this project :
+\end_layout
+
+\begin_layout Itemize
+Support of nested resources and analysis of their impact on schedulability
+\end_layout
+
+\begin_layout Itemize
+Support of other scheduling policies such as global EDF in order to compare
+ performance
+\end_layout
+
+\begin_layout Itemize
+Develop tools to calculate programatically calculate schedulability of a
+ task set using MrsP and different scheduling policies (EDF..)
+\end_layout
+
+\begin_layout Itemize
+Thorough schedulability tests with random tasks and resource configurations
+ to have an idea of the percentage of schedulable tasks set with MrsP
+\end_layout
+
+\begin_layout Itemize
+Analysis of MrsP on embedded devices
 \end_layout
 
 \begin_layout Subsection
