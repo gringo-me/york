@@ -8404,8 +8404,8 @@ MrsP : Design and Implementation
 \end_layout
 
 \begin_layout Standard
-This section details the implementation of requirements presented in section
- 3.5.
+This chapter details the implementation of requirements presented in section
+ 3.3.
  The operating system chosen to implement the Multiprocessor Resource Sharing
  Protocol is LITMUS, which is a patch to the mainline Linux kernel.
  First a general description of Linux and programming at kernel level will
@@ -8427,9 +8427,14 @@ n and sale of Linux but requires that all any distributed copy be released
  source code.
  The GPL license permitted the contributions from thousands of developers
  around the world [http://go.linuxfoundation.org/who-writes-linux-2012], Linux
- has been estimated to be worth over a 1 billion dollars [http://www.linuxfoundat
-ion.org/sites/main/files/publications/estimatinglinux.html] and comprises
- more than 6 million lines of code.
+ has been estimated to be worth over a 1 billion dollars 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "estimLinux"
+
+\end_inset
+
+ and comprises more than 6 million lines of code.
  This section describes in further details the Linux kernel and specificities
  of kernel level programming.
 \end_layout
@@ -8508,10 +8513,6 @@ Kernel and userpace programs relation
 
 \end_layout
 
-\begin_layout Plain Layout
-
-\end_layout
-
 \end_inset
 
 
@@ -8549,7 +8550,8 @@ Kernel configuration
 
 \begin_layout Standard
 When compiling the kernel a configuration file must be provided.
- 
+ Certain features are dependent on other features and therefore enabling
+ or disabling them must be done in a knowledgeable fashion.
 \end_layout
 
 \begin_layout Subsubsection
@@ -8558,13 +8560,10 @@ Fully preemptible Kernel
 
 \begin_layout Itemize
 Linux, prior to the 2.5 Linux Kernel, was a non-preemptive kernel.
- That means that whenever a thread was running in 
-\series bold
-kernel context
-\series default
- (for instance a user application making a system call) that thread would
- not be preempted unless it volunteered to schedule (calls yield() function),
- a basic non-preemption scheme was applied.
+ That means that whenever a thread was running in kernel context (for instance
+ a user application making a system call) that thread would not be preempted
+ unless it volunteered to schedule (calls yield() function), a basic non-preempt
+ion scheme was applied.
  The 2.6 version of the Linux Kernel introduces preemption and protects critical
  section through the use of spinlocks 
 \begin_inset CommandInset citation
@@ -8646,6 +8645,16 @@ There is two runqueue per processor, one of which is listing the active
 waitqueues
 \end_layout
 
+\begin_layout Standard
+Tasks suspend themselves by adding themselves to linked-list of waiting
+ tasks.
+ Waitqueues do no have any FIFO mechanism, instead tasks are woken up by
+ a signaling system which inevitable leads to competition for a lock in
+ case many tasks wait for it.
+ Higher-level constructs have to wrap waitqueues to ensure a particular
+ lock access policy.
+\end_layout
+
 \begin_layout Subsection
 LITMUS
 \begin_inset script superscript
@@ -8720,8 +8729,15 @@ RT
 
 \end_inset
 
- is composed of four logical components as shown in figure [REF] taken from
- [REF] :
+ is composed of four logical components as shown in figure 14 taken from
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "brandenburg2011scheduling"
+
+\end_inset
+
+ (p.183):
 \end_layout
 
 \begin_layout Itemize
@@ -8772,15 +8788,17 @@ RT
 
 \end_inset
 
- wrapper scheduler in figure [REF].
+ wrapper scheduler in figure 14.
 \end_layout
 
 \begin_layout Itemize
-User-space API
+User-space API : liblitmus that allows to safely call locking, unlocking,
+ lock allocation...etc, kernel level constructs.
 \end_layout
 
 \begin_layout Itemize
-User-space library and tools
+User-space library and tools : this not discussed as it is not relevant
+ to our project.
 \end_layout
 
 \begin_layout Standard
@@ -8827,7 +8845,8 @@ RT
 \end_layout
 
 \begin_layout Standard
-Scheduling decision flowchart :
+The scheduling decision that is the responsibility of the scheduler plugin
+ is constructed as described in figure 15.
 \end_layout
 
 \begin_layout Standard
@@ -9038,6 +9057,25 @@ Limitations
 \end_layout
 
 \begin_layout Standard
+We cite Brandenburg 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "brandenburg2011scheduling"
+
+\end_inset
+
+(p.
+ 181) :
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 
 \series bold
 \emph on
@@ -9046,20 +9084,36 @@ T
 he focus of LITMUSRT is algorithmic changes; it does not improve the Linux
  kernel’s real-time capabilities in terms of interrupt latencies and does
  not force split interrupt handling.
- LITMUSRT is thus complimentary in goals to the PREEMPT RT patch, which
- targets these areas but does not change or augment the implemented scheduling
- algorithms (see page 156).
- However, this also implies that LITMUSRT is not applicable to workloads
- with very short relative deadlines, like mainline Linux itself.
+ [...] This also implies that LITMUSRT is not applicable to workloads with
+ very short relative deadlines, like mainline Linux itself.
  
 \end_layout
 
-\begin_layout Subsubsection
-Programming Constraints
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Even though LITMUS patch adds only a small overhead compared to the PREEMPT-RT
+ patch, its focus is not performance but rather enabling implementation
+ of custom schedulers.
 \end_layout
 
 \begin_layout Subsubsection
 LITMUS Priority Fixed Processor implementation
+\end_layout
+
+\begin_layout Standard
+LITMUS is concerned with making it easy to implement scheduling policies,
+ that also includes resource sharing protocols.
+ Resource sharing protocols are embedded in the implementation of scheduling
+ policies such as preemptive fixed-priority (P-FP), earliest-deadline-first
+ (EDF) etc...
+ We give a high-level representation of the policy that is of concern to
+ us in this project in figure 16
 \end_layout
 
 \begin_layout Standard
