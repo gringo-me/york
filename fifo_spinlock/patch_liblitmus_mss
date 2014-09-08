@@ -1,0 +1,65 @@
+diff -uNrp liblitmus//include/litmus.h my_liblitmus//include/litmus.h
+--- liblitmus//include/litmus.h	2014-09-08 17:38:12.000000000 +0200
++++ my_liblitmus//include/litmus.h	2014-09-08 17:38:37.000000000 +0200
+@@ -29,6 +29,10 @@ extern "C" {
+ 
+ #include <sys/types.h>
+ #include <stdint.h>
++#include <stdarg.h>
++#include <stdlib.h>
++#include <stdio.h>
++#include <errno.h>
+ 
+ /* Include kernel header.
+  * This is required for the rt_param
+@@ -159,6 +163,7 @@ typedef enum  {
+ 	DPCP_SEM	= 4, /**< Distributed Priority Ceiling Protocol */
+ 	PCP_SEM		= 5, /**< Priority Ceiling Protocol */
+ 	DFLP_SEM	= 6, /**< Distributed FIFO Locking Protocol */
++	MRSP_SEM	= 7,
+ } obj_type_t;
+ 
+ /**
+@@ -377,6 +382,42 @@ static inline int open_mpcp_sem(int fd,
+ }
+ 
+ /**
++ * Allocate a semaphore following the MRSP protocol
++ * @param fd File descriptor to associate lock with
++ * @param name Name of the lock, user-chosen integer
++ * @return Object descriptor for given lock
++ */
++static inline int open_mrsp_sem(int fd, int name, void * prio_per_cpu)
++{
++	return od_openx(fd, MRSP_SEM, name, prio_per_cpu);
++}
++
++static inline int * init_prio_per_cpu(int count, ...)
++{
++	va_list prios;
++	int i, val;
++	int *prio_per_cpu;
++
++	if(num_online_cpus() != count)
++		return NULL;
++
++	prio_per_cpu = malloc (sizeof(int) * count);
++	
++	if (!prio_per_cpu)
++		return NULL;
++
++	va_start(prios,count);
++	for (i = 0; i < count ; i++){
++		val = va_arg(prios,int);
++		if (val < LITMUS_HIGHEST_PRIORITY || val > LITMUS_LOWEST_PRIORITY)
++			return NULL;
++		prio_per_cpu[i] = val;
++	}
++	va_end(prios);
++	
++	return prio_per_cpu;
++}
++/**
+  * Allocate a semaphore following the DPCP protocol
+  * @param fd File descriptor to associate lock with
+  * @param name Name of the lock, user-chosen integer
