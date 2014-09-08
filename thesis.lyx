@@ -184,7 +184,7 @@ Supervisor : Andy Wellings
 \end_layout
 
 \begin_layout Standard
-Word count is 20688 as counted by Lyx.
+Word count is 21085 as counted by Lyx.
 \end_layout
 
 \begin_layout Standard
@@ -706,7 +706,46 @@ Report structure
 \end_layout
 
 \begin_layout Standard
-TODO...
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+This report is organised as follows :
+\end_layout
+
+\begin_layout Description
+Chapter 1 : Introduction to the report, motivation for undertaking this
+ project, the project goals, the development lifecycle and the ethics used
+ to complete it.
+\end_layout
+
+\begin_layout Description
+Chapter 2 : Literature review, we explain concepts related to real-time
+ resource sharing, presents related work with an analysis of advantages
+ and limitations.
+ We also analyse issues specific to multiprocessor architectures
+\end_layout
+
+\begin_layout Description
+Chapter 3 : In this chapter we describe how the MrsP protocol behaves and
+ what are its elicited functional and non-functional requirements.
+\end_layout
+
+\begin_layout Description
+Chapter 4 : We discuss our implementation in the real-time operating system
+ LITMUS^RT specifying its scope
+\end_layout
+
+\begin_layout Description
+Chapter 5 : We assess the performance of our implementation and its limitations
+\end_layout
+
+\begin_layout Description
+Chapter 6 : This chapter provides a summary of the whole report and recommendati
+ons for possible extensions
 \end_layout
 
 \begin_layout Standard
@@ -6337,17 +6376,13 @@ T13 : LP2 can execute again.
 \end_layout
 
 \begin_layout Subparagraph
-Constraints
+Advantages
 \end_layout
 
 \begin_layout Itemize
-Long resource requests can not be nested in short resource requests.
-\end_layout
-
-\begin_layout Subparagraph
 FMLP has better performance than MSRP.
- This advantage is at least partly due to the fact that FMLP removes the
- restriction on task allocation required by MSRP 
+ This advantage is partly due to the fact that FMLP removes the restriction
+ on task allocation required by MSRP 
 \begin_inset CommandInset citation
 LatexCommand cite
 key "davis2011survey"
@@ -6356,6 +6391,14 @@ key "davis2011survey"
 
 .
  
+\end_layout
+
+\begin_layout Subparagraph
+Constraints
+\end_layout
+
+\begin_layout Itemize
+Long resource requests can not be nested in short resource requests.
 \end_layout
 
 \begin_layout Subsection
@@ -6524,6 +6567,9 @@ Processor affinity enables the pinning of a process or a thread to a processor
  processor set.
  Affinities help to define dynamic clusters on which a task is allowed to
  execute.
+ Note that in this report we use indifferently the term task for processes
+ of threads.
+ Tasks are composed of a sequence of jobs.
 \end_layout
 
 \begin_layout Subsubsection
@@ -6594,9 +6640,15 @@ Complex multiprocessor resource sharing protocol are difficult to analyse
 
 \begin_layout Standard
 In proposal papers, overheads are deemed negligible, however in practice
- their implementation has too much overhead which results in impractically
- slow response times.
+ their influence on implementation results in impractically slow response
+ times.
  
+\end_layout
+
+\begin_layout Standard
+Multiprocessor machines introduce a range of new parameters to take into
+ account, notably the cost of migration and the importance of memory barriers
+ that allow synchronization between processors.
 \end_layout
 
 \begin_layout Standard
@@ -7357,7 +7409,14 @@ Requirements of MrsP
 \begin_layout Standard
 This section specifies the requirements for implementing the Multiprocessor
  Resource Sharing Protocol as recommended in the section 3.2 of IEEE 830-1998
- standard [REF].
+ standard 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "ieee1998ieee"
+
+\end_inset
+
+.
  Each requirement has : 
 \end_layout
 
@@ -7441,9 +7500,9 @@ key "burns2013schedulability"
 <features islongtable="true" longtabularalignment="left">
 <column alignment="center" valignment="top" width="0">
 <column alignment="center" valignment="top" width="0">
-<column alignment="center" valignment="top" width="5cm">
-<column alignment="left" valignment="middle" width="5cm">
-<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="3.5cm">
+<column alignment="left" valignment="middle" width="3.5cm">
+<column alignment="center" valignment="top" width="2cm">
 <row>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
@@ -7567,7 +7626,7 @@ Tasks must spin at local resource ceiling immediately after resource request
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -7614,7 +7673,7 @@ Tasks must recover their original priority upon releasing the resource
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -7708,7 +7767,7 @@ Ticket spinlocks should not have an upper bound value
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -7755,7 +7814,7 @@ Ticket spinlocks must not be subject to race conditions
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -7802,7 +7861,7 @@ Updating resource owner must not be subject to race conditions
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -7946,7 +8005,7 @@ Tasks migrated to a different cpu while holding the lock must migrate back
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -7994,7 +8053,7 @@ Tasks preempted while holding the lock must migrate to cpu included in their
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8041,7 +8100,7 @@ When being migrated tasks should preempt the waiting task on target cpu
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8089,7 +8148,7 @@ Priority level higher than resource local ceiling should be available
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8136,7 +8195,7 @@ Nested resources should be supported
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8183,7 +8242,7 @@ The sporadic task model must be supported
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8230,7 +8289,7 @@ Partitionned Preemptive Fixed-Priority scheduling policy must be supported
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8277,7 +8336,7 @@ Global Fixed-Priority and EDF scheduling should be supported
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -8425,8 +8484,8 @@ From this we derive the following non-functional requirements :
 <lyxtabular version="3" rows="4" columns="4">
 <features tabularvalignment="middle">
 <column alignment="center" valignment="top" width="0">
-<column alignment="center" valignment="top" width="4cm">
-<column alignment="center" valignment="top" width="5cm">
+<column alignment="center" valignment="top" width="3.5cm">
+<column alignment="center" valignment="top" width="3.5cm">
 <column alignment="center" valignment="top" width="0pt">
 <row>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
@@ -8691,7 +8750,7 @@ if tasks were free to access system and hardware resources without the kernel's
 \end_layout
 
 \begin_layout Standard
-The figure [REF] illustrates the relation between kernel, hardware and userspace
+The figure 13 illustrates the relation between kernel, hardware and userspace
  programs.
 \end_layout
 
@@ -8897,8 +8956,15 @@ RT
 
  stands for Linux Testbed for Multiprocessor Scheduling in Real-Time Systems
  and is a real-time patch for the Linux operating system.
- It was developed by Brandenburg et al [REF] with the intent to facilitate
- implementation and comparison of scheduling and locking algorithms.
+ It was developed by Brandenburg et al 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "calandrino2006litmus"
+
+\end_inset
+
+ with the intent to facilitate implementation and comparison of scheduling
+ and locking algorithms.
  It supports partitioned, semi-partitioned, global and clustered scheduling
  policies.
  The main contributions of LITMUS^RT
@@ -9623,16 +9689,108 @@ Preemptive-Fixed Priority Flow chart
 Tools
 \end_layout
 
+\begin_layout Standard
+Kernel development flow consists of small modifications and regular builds
+ to check the that the changes bring the intended functionality.
+ Because there is a risk to render the machine unusable, virtual machines
+ are commonly used to provide an extra layer of abstraction.
+ In our project we have used QEMU.
+\end_layout
+
 \begin_layout Subsubsection
 QEMU
+\end_layout
+
+\begin_layout Standard
+QEMU for Quick EMulation is an open source hypervisor capable of emulating
+ hardware.
+ That was very helpful because the only available machine at our disposition
+ was a 2-processor laptop.
+ QEMU enabled us to work with 4 and 16 processors during tests.
 \end_layout
 
 \begin_layout Subsubsection
 Hardware used
 \end_layout
 
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+i686 Intel® 1.8Ghz X 2, 2GB memory
+\end_layout
+
+\begin_layout Itemize
+CoreTM i5-2400 Intel® 3.10GHz X 4, 8GB memory
+\end_layout
+
 \begin_layout Subsubsection
 Debugging
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Not many options are available, we have used basic printing (printk() and
+ TRACE_* functions) and gdb.
+ LITMUS provides a more developed tracing module but we have not used it
+ in this project.
+\end_layout
+
+\begin_layout Subsubsection
+Kernel configuration options
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Correct kernel configuration is hard, some requirements are necessary for
+ LITMUS^RT to work correctly 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "wikiLitmus"
+
+\end_inset
+
+ :
+\end_layout
+
+\begin_layout Itemize
+Relocatable kernel must be disabled
+\end_layout
+
+\begin_layout Itemize
+Group processor scheduling must be disabled
+\end_layout
+
+\begin_layout Itemize
+Dynamic frequency scaling must be disabled
+\end_layout
+
+\begin_layout Itemize
+Write on lock option must be disabled
+\end_layout
+
+\begin_layout Itemize
+LITMUS tracing should be enabled
+\end_layout
+
+\begin_layout Itemize
+In-kernel preemption must be enabled
 \end_layout
 
 \begin_layout Subsection
@@ -10669,7 +10827,16 @@ key "burns2013schedulability"
 
  doesn't specify what method to use to choose the target cpu to migrate
  to.
- Our implementation chooses the next contiguous cpu in the cpumask list.
+ Our implementation chooses the next contiguous cpu in the cpumask list
+ using our own function
+\family sans
+ get_nearest_cpu_affinity().
+ 
+\family default
+In the case we
+\family sans
+ are on the last cpu (cpu 3 on a four-processor machine), the function wraps
+ up and starts again from cpu 0.
 \end_layout
 
 \begin_layout Subsubsection
@@ -10734,12 +10901,27 @@ Kernel root folder
 
 \begin_layout Plain Layout
 
- |        |____ litmus.c
+ |        |____ fdso.c
 \end_layout
 
 \begin_layout Plain Layout
 
- |        |____ fdso.c
+ |
+\end_layout
+
+\begin_layout Plain Layout
+
+ |____ kernel
+\end_layout
+
+\begin_layout Plain Layout
+
+ |        |____ sched
+\end_layout
+
+\begin_layout Plain Layout
+
+ |              |____ litmus.c
 \end_layout
 
 \begin_layout Plain Layout
@@ -10796,7 +10978,7 @@ Static view of the system
 
 \begin_layout Itemize
 litmus.c : this file contains the generic scheduler described in figure 15.
- In our case it uses sched_pfp.c .
+ In our case it calls sched_pfp.c .
 \end_layout
 
 \begin_layout Itemize
@@ -12161,16 +12343,33 @@ Modified P-FP for MrsP
 MrsP helper functions
 \end_layout
 
-\begin_layout Itemize
-pfp_mrsp_open
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We have implemented helper functions that are necessary when using MrsP
+ :
 \end_layout
 
 \begin_layout Itemize
-pfp_mrsp_close
+pfp_new_mrsp : allocates and initialises a MrsP lock in memory.
 \end_layout
 
 \begin_layout Itemize
-pfp_mrsp_free
+pfp_mrsp_open : opens a MrsP lock, an array containing the priorities per
+ processors must be provided in parameter.
+\end_layout
+
+\begin_layout Itemize
+pfp_mrsp_close : closes a lock without freeing the memory.
+\end_layout
+
+\begin_layout Itemize
+pfp_mrsp_free : frees the lock from memory.
 \end_layout
 
 \begin_layout Subsubsection
@@ -14781,25 +14980,6 @@ Thorough schedulability tests with random tasks and resource configurations
 
 \begin_layout Itemize
 Analysis of MrsP on embedded devices
-\end_layout
-
-\begin_layout Subsection
-Recommendation for further research
-\end_layout
-
-\begin_layout Standard
-Given the plethora of available resource sharing protocols.
-\end_layout
-
-\begin_layout Standard
-Each resource sharing protocol seems to suit a particular type of programming
- (slow or quick resources, intensive or sparse sharing, number of tasks,
- etc..).
- An approach that might be considered is to build a framework that automatically
- selects the best resource sharing algorithm for a given program.
- Why not even think about dynamically changing a policy during runtime,
- going to the realm of strategy (schedulability) and tactics (different
- protocols).
 \end_layout
 
 \begin_layout Standard
