@@ -184,7 +184,14 @@ Supervisor : Andy Wellings
 \end_layout
 
 \begin_layout Standard
-Word count is TODO as counted by Lyx.
+Word count is 20688 as counted by Lyx.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -210,31 +217,14 @@ If printed, please print in colour.
 \end_inset
 
 
-\begin_inset CommandInset toc
-LatexCommand tableofcontents
-
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
-\begin_inset Newpage newpage
+\begin_inset space ~
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-\begin_inset FloatList figure
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Newpage newpage
+\begin_inset Newpage cleardoublepage
 \end_inset
 
 
@@ -282,6 +272,83 @@ RT
 \end_layout
 
 \begin_layout Abstract
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Date
+
+\series bold
+\size larger
+Acknowledgments
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Date
+
+\size normal
+I would like to thank Andy Wellings for his inestimable guidance throughout
+ this project.
+\end_layout
+
+\begin_layout Standard
+\begin_inset space ~
+\end_inset
+
+
+\end_layout
+
+\begin_layout Date
+
+\size normal
+This project report is dedicated to my family and to Emma, their support
+ has been an invaluable blessing.
+ 
+\size default
+ 
+\begin_inset Newpage newpage
+\end_inset
+
+
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FloatList figure
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 \begin_inset Newpage newpage
 \end_inset
 
@@ -599,7 +666,13 @@ Ethics in the project
 \end_layout
 
 \begin_layout Standard
-As outlined on University of York Computer Science department page [10]
+As outlined on University of York Computer Science department page 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "ethics"
+
+\end_inset
+
  this project will: 
 \end_layout
 
@@ -14640,15 +14713,7 @@ Summary
 To sum up, we have produced a system that fulfills all the mandatory requirement
 s of the project.
  It also exhibits qualities such as performance and scalability that are
- necessary for making MrsP viable
-\end_layout
-
-\begin_layout Paragraph
-Strengths
-\end_layout
-
-\begin_layout Paragraph
-Weaknesses
+ necessary for making MrsP viable.
 \end_layout
 
 \begin_layout Standard
@@ -14735,10 +14800,6 @@ Each resource sharing protocol seems to suit a particular type of programming
  Why not even think about dynamically changing a policy during runtime,
  going to the realm of strategy (schedulability) and tactics (different
  protocols).
-\end_layout
-
-\begin_layout Subsection
-Final Words
 \end_layout
 
 \begin_layout Standard
