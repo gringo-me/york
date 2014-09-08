@@ -1,6 +1,6 @@
 diff -uNrp litmus-rt//include/litmus/fdso.h my_litmus-rt//include/litmus/fdso.h
---- litmus-rt//include/litmus/fdso.h	2014-09-01 10:58:37.000000000 +0200
-+++ my_litmus-rt//include/litmus/fdso.h	2014-09-01 11:01:05.000000000 +0200
+--- litmus-rt//include/litmus/fdso.h	2014-09-08 17:09:16.000000000 +0200
++++ my_litmus-rt//include/litmus/fdso.h	2014-09-08 17:25:44.000000000 +0200
 @@ -26,8 +26,9 @@ typedef enum  {
  	PCP_SEM         = 5,
  
@@ -13,9 +13,9 @@ diff -uNrp litmus-rt//include/litmus/fdso.h my_litmus-rt//include/litmus/fdso.h
  
  struct inode_obj_id {
 diff -uNrp litmus-rt//include/litmus/locking.h my_litmus-rt//include/litmus/locking.h
---- litmus-rt//include/litmus/locking.h	2014-09-01 10:58:37.000000000 +0200
-+++ my_litmus-rt//include/litmus/locking.h	2014-09-01 11:01:05.000000000 +0200
-@@ -25,4 +25,26 @@ struct litmus_lock_ops {
+--- litmus-rt//include/litmus/locking.h	2014-09-08 17:09:16.000000000 +0200
++++ my_litmus-rt//include/litmus/locking.h	2014-09-08 17:25:44.000000000 +0200
+@@ -25,4 +25,25 @@ struct litmus_lock_ops {
  	void (*deallocate)(struct litmus_lock*);
  };
  
@@ -31,20 +31,19 @@ diff -uNrp litmus-rt//include/litmus/locking.h my_litmus-rt//include/litmus/lock
 +	/* priority ceiling per cpu */
 +	unsigned int prio_ceiling[NR_CPUS];
 +
-+	/* should jobs spin "virtually" for this resource? */
-+	int vspin;
-+	 
 +	volatile pid_t taskid;
 +	volatile unsigned int owner_ticket;
 +	volatile unsigned int  next;
 +	int *prio_per_cpu;
 +	volatile unsigned char task_prio;
 +	struct cpumask saved_cpumask;
++	//Not used for now -- nested lock id
++	unsigned int order;
 +};
  #endif
 diff -uNrp litmus-rt//include/litmus/rt_param.h my_litmus-rt//include/litmus/rt_param.h
---- litmus-rt//include/litmus/rt_param.h	2014-09-01 10:58:37.000000000 +0200
-+++ my_litmus-rt//include/litmus/rt_param.h	2014-09-01 11:01:05.000000000 +0200
+--- litmus-rt//include/litmus/rt_param.h	2014-09-08 17:09:16.000000000 +0200
++++ my_litmus-rt//include/litmus/rt_param.h	2014-09-08 17:25:44.000000000 +0200
 @@ -71,6 +71,8 @@ typedef enum {
  	((p) >= LITMUS_HIGHEST_PRIORITY &&	\
  	 (p) <= LITMUS_LOWEST_PRIORITY)
@@ -54,20 +53,25 @@ diff -uNrp litmus-rt//include/litmus/rt_param.h my_litmus-rt//include/litmus/rt_
  struct rt_task {
  	lt_t 		exec_cost;
  	lt_t 		period;
-@@ -81,6 +83,9 @@ struct rt_task {
+@@ -81,6 +83,14 @@ struct rt_task {
  	task_class_t	cls;
  	budget_policy_t  budget_policy;  /* ignored by pfair */
  	release_policy_t release_policy;
 +	struct mrsp_semaphore* mrsp_lock;
 +	unsigned int 	saved_priority;
 +	unsigned int	migration_bool;
++};
++
++struct mrsp_config {
++	int prio_per_cpu[4];
++	unsigned int order ;
  };
  
  union np_flag {
 diff -uNrp litmus-rt//kernel/sched/litmus.c my_litmus-rt//kernel/sched/litmus.c
---- litmus-rt//kernel/sched/litmus.c	2014-09-01 10:58:37.000000000 +0200
-+++ my_litmus-rt//kernel/sched/litmus.c	2014-09-01 11:00:18.000000000 +0200
-@@ -61,12 +61,14 @@ litmus_schedule(struct rq *rq, struct ta
+--- litmus-rt//kernel/sched/litmus.c	2014-09-08 17:09:16.000000000 +0200
++++ my_litmus-rt//kernel/sched/litmus.c	2014-09-08 17:23:36.000000000 +0200
+@@ -61,8 +61,8 @@ litmus_schedule(struct rq *rq, struct ta
  		 * the case of cross or circular migrations.  It's the job of
  		 * the plugin to make sure that doesn't happen.
  		 */
@@ -78,31 +82,9 @@ diff -uNrp litmus-rt//kernel/sched/litmus.c my_litmus-rt//kernel/sched/litmus.c
  		if (next->rt_param.stack_in_use != NO_CPU) {
  			TRACE_TASK(next, "waiting to deschedule\n");
  			_maybe_deadlock = litmus_clock();
- 		}
-+		TRACE_TASK(next, "litmus.c got here 1\n");
-+
- 		while (next->rt_param.stack_in_use != NO_CPU) {
- 			cpu_relax();
- 			mb();
-@@ -102,6 +104,7 @@ litmus_schedule(struct rq *rq, struct ta
- 			mb();
- 		}
- #endif
-+		TRACE_TASK(next, "litmus.c got here 2\n");
- 		double_rq_lock(rq, other_rq);
- 		mb();
- 		if (is_realtime(prev) && is_running(prev) != was_running) {
-@@ -118,6 +121,7 @@ litmus_schedule(struct rq *rq, struct ta
- 				litmus->task_wake_up(prev);
- 			}
- 		}
-+		TRACE_TASK(next, "litmus.c got here 3\n");
- 
- 		set_task_cpu(next, smp_processor_id());
- 
 diff -uNrp litmus-rt//litmus/fdso.c my_litmus-rt//litmus/fdso.c
---- litmus-rt//litmus/fdso.c	2014-09-01 10:58:37.000000000 +0200
-+++ my_litmus-rt//litmus/fdso.c	2014-09-01 11:00:10.000000000 +0200
+--- litmus-rt//litmus/fdso.c	2014-09-08 17:09:16.000000000 +0200
++++ my_litmus-rt//litmus/fdso.c	2014-09-08 17:23:28.000000000 +0200
 @@ -28,6 +28,7 @@ static const struct fdso_ops* fdso_ops[]
  	&generic_lock_ops, /* DPCP_SEM */
  	&generic_lock_ops, /* PCP_SEM */
@@ -112,8 +94,8 @@ diff -uNrp litmus-rt//litmus/fdso.c my_litmus-rt//litmus/fdso.c
  
  static int fdso_create(void** obj_ref, obj_type_t type, void* __user config)
 diff -uNrp litmus-rt//litmus/litmus.c my_litmus-rt//litmus/litmus.c
---- litmus-rt//litmus/litmus.c	2014-09-01 10:58:37.000000000 +0200
-+++ my_litmus-rt//litmus/litmus.c	2014-09-01 11:00:10.000000000 +0200
+--- litmus-rt//litmus/litmus.c	2014-09-08 17:09:16.000000000 +0200
++++ my_litmus-rt//litmus/litmus.c	2014-09-08 17:23:28.000000000 +0200
 @@ -157,8 +157,10 @@ asmlinkage long sys_set_rt_task_param(pi
  		goto out_unlock;
  	}
@@ -127,8 +109,8 @@ diff -uNrp litmus-rt//litmus/litmus.c my_litmus-rt//litmus/litmus.c
        out_unlock:
  	read_unlock_irq(&tasklist_lock);
 diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
---- litmus-rt//litmus/sched_pfp.c	2014-09-01 10:58:37.000000000 +0200
-+++ my_litmus-rt//litmus/sched_pfp.c	2014-09-01 11:00:10.000000000 +0200
+--- litmus-rt//litmus/sched_pfp.c	2014-09-08 17:09:16.000000000 +0200
++++ my_litmus-rt//litmus/sched_pfp.c	2014-09-08 17:23:28.000000000 +0200
 @@ -10,6 +10,7 @@
  #include <linux/list.h>
  #include <linux/spinlock.h>
@@ -137,7 +119,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  
  #include <litmus/litmus.h>
  #include <litmus/wait.h>
-@@ -138,6 +139,75 @@ static void job_completion(struct task_s
+@@ -138,6 +139,72 @@ static void job_completion(struct task_s
  		sched_trace_task_release(t);
  }
  
@@ -187,33 +169,30 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +	BUG_ON(smp_processor_id() != target_cpu && is_realtime(t));
 +}
 +int get_nearest_cpu_affinity(struct task_struct *t){
-+	struct cpumask holder_mask; 
 +	int current_cpu, nb_cpus;
-+	int i;
++	int n;
 +
-+	if (!t) return -1 ;
++	if (!t) 
++	  return -EINVAL ;
 +
-+	if(!sched_getaffinity(t->pid, &holder_mask)) return -1;
-+	
 +	current_cpu = get_partition(t);
 +	nb_cpus = num_online_cpus();
-+	i = current_cpu + 1;
++	
++	n = cpumask_next(current_cpu, tsk_cpus_allowed(t));
 +
-+	while(i != nb_cpus){
++	if( n > nb_cpus)
++		n = cpumask_first(tsk_cpus_allowed(t));
 +
-+		if (i > nb_cpus) i = 0;
++	if(n == current_cpu || n > nb_cpus)
++	   return -1;	
 +
-+		if (cpumask_test_cpu(i,tsk_cpus_allowed(t)) && i != current_cpu)
-+			return i;
-+		i++;
-+	}
-+	return -1;	
++	return n;			
 +}
 +
  static struct task_struct* pfp_schedule(struct task_struct * prev)
  {
  	pfp_domain_t* 	pfp = local_pfp;
-@@ -182,6 +252,37 @@ static struct task_struct* pfp_schedule(
+@@ -182,6 +249,30 @@ static struct task_struct* pfp_schedule(
  	if (np && (out_of_time || preempt || sleep))
  		request_exit_np(pfp->scheduled);
  
@@ -223,26 +202,19 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +		int n;
 +		TRACE_TASK(prev,"Task is holding a MrsP lock, trying to migrate !\n");
 +		
-+		cpumask_clear_cpu(pfp->cpu,tsk_cpus_allowed(prev));
-+		cpumask_set_cpu(2,tsk_cpus_allowed(prev));
-+		
-+		n = cpumask_next(pfp->cpu, tsk_cpus_allowed(prev));
++		n = get_nearest_cpu_affinity(prev);
++	
++		if( n && n != pfp->cpu){
 +
-+		if( n > num_online_cpus())
-+			n = cpumask_first(tsk_cpus_allowed(prev));
-+			
-+		if( n <= num_online_cpus() && n != pfp->cpu){
-+
-+			TRACE_TASK(next, "preempts and scheduled at %llu going to %u\n", litmus_clock(),n);
 +			prev->rt_param.task_params.cpu = n;
 +			next = fp_prio_take(&pfp->ready_queue);
 +			pfp->scheduled = next;
 +			sched_state_task_picked();
 +			raw_spin_unlock(&pfp->slock);
++			TRACE_TASK(next, "preempts and scheduled at %llu going to %u\n", litmus_clock(),n);
 +			return next;
 +		}
 +		else {
-+		
 +			TRACE_TASK(prev,"Could not migrate n=%d cpu=%d \n",n,pfp->cpu);
 +			resched = 1;
 +		}
@@ -251,7 +223,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  	/* Any task that is preemptable and either exhausts its execution
  	 * budget or wants to sleep completes. We may have to reschedule after
  	 * this.
-@@ -204,7 +305,9 @@ static struct task_struct* pfp_schedule(
+@@ -204,7 +295,9 @@ static struct task_struct* pfp_schedule(
  		 */
  		if (pfp->scheduled && !blocks  && !migrate)
  			requeue(pfp->scheduled, pfp);
@@ -261,7 +233,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  		if (next == prev) {
  			struct task_struct *t = fp_prio_peek(&pfp->ready_queue);
  			TRACE_TASK(next, "next==prev sleep=%d oot=%d np=%d preempt=%d migrate=%d "
-@@ -234,23 +337,24 @@ static struct task_struct* pfp_schedule(
+@@ -234,23 +327,24 @@ static struct task_struct* pfp_schedule(
  
  	if (next) {
  		TRACE_TASK(next, "scheduled at %llu\n", litmus_clock());
@@ -290,7 +262,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  
  	if (is_realtime(prev) &&
  	    is_running(prev) &&
-@@ -262,6 +366,13 @@ static void pfp_finish_switch(struct tas
+@@ -262,6 +356,13 @@ static void pfp_finish_switch(struct tas
  
  		raw_spin_lock(&to->slock);
  
@@ -304,7 +276,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  		TRACE_TASK(prev, "adding to queue on P%d\n", to->cpu);
  		requeue(prev, to);
  		if (fp_preemption_needed(&to->ready_queue, to->scheduled))
-@@ -767,6 +878,11 @@ static inline struct mpcp_semaphore* mpc
+@@ -767,6 +868,11 @@ static inline struct mpcp_semaphore* mpc
  	return container_of(lock, struct mpcp_semaphore, litmus_lock);
  }
  
@@ -316,7 +288,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  int pfp_mpcp_lock(struct litmus_lock* l)
  {
  	struct task_struct* t = current;
-@@ -879,6 +995,105 @@ out:
+@@ -879,6 +985,98 @@ out:
  	return err;
  }
  
@@ -333,7 +305,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +
 +	/* prevent nested lock acquisition */
 +	if (tsk_rt(t)->num_locks_held ||
-+	    tsk_rt(t)->num_local_locks_held)
++			tsk_rt(t)->num_local_locks_held)
 +		return -EBUSY;
 +
 +	smp_wmb();
@@ -347,26 +319,19 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +
 +	spin_lock_irqsave(&sem->lock, flags);
 +	if (sem->owner) {
-+	   TRACE_CUR("On cpu %d lock has owner %d on cpu %d\n",
-+		get_partition(t),
-+		sem->owner->pid ,
-+		get_partition(sem->owner));
-+	   sched_getaffinity(sem->owner->pid, &holder_mask);
-+	   TRACE_CUR("Affinity before owner %d cpu[0] %d\n",sem->owner->pid,cpumask_test_cpu(0,&holder_mask));
-+	   TRACE_CUR("Affinity before owner %d cpu[1] %d\n",sem->owner->pid,cpumask_test_cpu(1,&holder_mask));
-+	   TRACE_CUR("Affinity before owner %d cpu[2] %d\n",sem->owner->pid,cpumask_test_cpu(2,&holder_mask));
-+	   TRACE_CUR("Affinity before owner %d cpu[3] %d\n",sem->owner->pid,cpumask_test_cpu(3,&holder_mask));
-+	   
-+	   cpumask_set_cpu(get_partition(t), &holder_mask);
-+           do_set_cpus_allowed(sem->owner, &holder_mask);
-+	   
-+	   TRACE_CUR("Affinity after owner %d cpu[0] %d\n",sem->owner->pid,cpumask_test_cpu(0,&holder_mask));
-+	   TRACE_CUR("Affinity after owner %d cpu[1] %d\n",sem->owner->pid,cpumask_test_cpu(1,&holder_mask));
-+	   TRACE_CUR("Affinity after owner %d cpu[2] %d\n",sem->owner->pid,cpumask_test_cpu(2,&holder_mask));
-+	   TRACE_CUR("Affinity after owner %d cpu[3] %d\n",sem->owner->pid,cpumask_test_cpu(3,&holder_mask));
++		TRACE_CUR("On cpu %d lock has owner %d on cpu %d\n",
++				get_partition(t),
++				sem->owner->pid ,
++				get_partition(sem->owner));
++		sched_getaffinity(sem->owner->pid, &holder_mask);
++
++		cpumask_set_cpu(get_partition(t), &holder_mask);
++		do_set_cpus_allowed(sem->owner, &holder_mask);
 +	}
++
 +	spin_unlock_irqrestore(&sem->lock, flags);
 +	TRACE_CUR("About to spin owner_ticket: %d | ticket: %d \n",sem->owner_ticket,ticket);	
++
 +	while (1){
 +		TRACE_CUR("Iteration waiting for lock\n");
 +		smp_wmb();
@@ -379,7 +344,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +		}
 +	}
 +	BUG_ON(sem->owner != t);
-+	TRACE_CUR("Obtained lock sem->owner is %d and current is %d\n",sem->owner,t);
++	TRACE_CUR("Obtained lock sem->owner is %d and current is %d, order%d:\n",sem->owner,t,sem->order);
 +	tsk_rt(t)->num_locks_held++;
 +	t->rt_param.task_params.mrsp_lock = sem;
 +	sched_getaffinity(t->pid, &sem->saved_cpumask);		 
@@ -422,15 +387,17 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  int pfp_mpcp_open(struct litmus_lock* l, void* config)
  {
  	struct task_struct *t = current;
-@@ -906,6 +1121,34 @@ int pfp_mpcp_open(struct litmus_lock* l,
+@@ -906,6 +1104,30 @@ int pfp_mpcp_open(struct litmus_lock* l,
  	return 0;
  }
  
-+int pfp_mrsp_open(struct litmus_lock* l, int *config)
++int pfp_mrsp_open(struct litmus_lock* l, void *config)
 +{
 +	struct task_struct *t = current;
-+	int cpu, local_cpu;
++	int local_cpu;
 +	struct mrsp_semaphore *sem = mrsp_from_lock(l);
++	struct mrsp_config *cfg = (struct mrsp_config*) config ;
++
 +	unsigned long flags;
 +
 +	if (!is_realtime(t))
@@ -441,15 +408,9 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +	
 +
 +	spin_lock_irqsave(&sem->lock, flags);
-+	sem->prio_per_cpu = config;
-+	for (cpu = 0; cpu < NR_CPUS; cpu++) {
-+		if (cpu != local_cpu) {
-+			sem->prio_ceiling[cpu] = min(sem->prio_ceiling[cpu],
-+						     get_priority(t));
-+			TRACE_CUR("priority ceiling for sem %p is now %d on cpu %d\n",
-+				  sem, sem->prio_ceiling[cpu], cpu);
-+		}
-+	}
++	sem->prio_per_cpu = cfg->prio_per_cpu;
++	sem->order = cfg->order;
++	TRACE_CUR("New MrsP lock order %d \n",sem->order);	
 +	spin_unlock_irqrestore(&sem->lock, flags);
 +
 +	return 0;
@@ -457,7 +418,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  int pfp_mpcp_close(struct litmus_lock* l)
  {
  	struct task_struct *t = current;
-@@ -926,11 +1169,34 @@ int pfp_mpcp_close(struct litmus_lock* l
+@@ -926,11 +1148,34 @@ int pfp_mpcp_close(struct litmus_lock* l
  	return 0;
  }
  
@@ -492,7 +453,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  static struct litmus_lock_ops pfp_mpcp_lock_ops = {
  	.close  = pfp_mpcp_close,
  	.lock   = pfp_mpcp_lock,
-@@ -939,6 +1205,13 @@ static struct litmus_lock_ops pfp_mpcp_l
+@@ -939,6 +1184,13 @@ static struct litmus_lock_ops pfp_mpcp_l
  	.deallocate = pfp_mpcp_free,
  };
  
@@ -506,14 +467,13 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  static struct litmus_lock* pfp_new_mpcp(int vspin)
  {
  	struct mpcp_semaphore* sem;
-@@ -961,6 +1234,27 @@ static struct litmus_lock* pfp_new_mpcp(
+@@ -961,6 +1213,23 @@ static struct litmus_lock* pfp_new_mpcp(
  	return &sem->litmus_lock;
  }
  
-+static struct litmus_lock* pfp_new_mrsp(int *prio_per_cpu)
++static struct litmus_lock* pfp_new_mrsp(void* config)
 +{
 +	struct mrsp_semaphore* sem;
-+	int cpu;
 +
 +	sem = kmalloc(sizeof(*sem), GFP_KERNEL);
 +	if (!sem)
@@ -522,19 +482,16 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +	sem->owner   = NULL;
 +	sem->owner_ticket = 0;
 +	sem->next = 0;
-+	sem->prio_per_cpu = prio_per_cpu; 
++	sem->prio_per_cpu = ((struct mrsp_config*) config)->prio_per_cpu; 
 +	spin_lock_init(&sem->lock);
 +	sem->litmus_lock.ops = &pfp_mrsp_lock_ops;
-+
-+	for (cpu = 0; cpu < NR_CPUS; cpu++)
-+		sem->prio_ceiling[cpu] = OMEGA_CEILING;
 +
 +	return &sem->litmus_lock;
 +}
  
  /* ******************** PCP support ********************** */
  
-@@ -1378,51 +1672,6 @@ static inline struct dpcp_semaphore* dpc
+@@ -1378,51 +1647,6 @@ static inline struct dpcp_semaphore* dpc
  	return container_of(lock, struct dpcp_semaphore, litmus_lock);
  }
  
@@ -586,27 +543,33 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  
  int pfp_dpcp_lock(struct litmus_lock* l)
  {
-@@ -1793,7 +2042,7 @@ static struct litmus_lock* pfp_new_dflp(
- static long pfp_allocate_lock(struct litmus_lock **lock, int type,
- 				 void* __user config)
+@@ -1795,6 +2019,7 @@ static long pfp_allocate_lock(struct lit
  {
--	int err = -ENXIO, cpu;
-+	int err = -ENXIO, cpu, *prio_per_cpu;
+ 	int err = -ENXIO, cpu;
  	struct srp_semaphore* srp;
++	void * prio_per_cpu = NULL;
  
  	/* P-FP currently supports the SRP for local resources and the FMLP
-@@ -1880,6 +2129,17 @@ static long pfp_allocate_lock(struct lit
+ 	 * for global resources. */
+@@ -1880,6 +2105,24 @@ static long pfp_allocate_lock(struct lit
  		if (*lock)
  			err = 0;
  		else
 +			err = -ENOMEM;
 +		break;
 +	
-+
 +	case MRSP_SEM:
-+		if (get_user(prio_per_cpu, (int*) config))
++
++		if(!config)
++		   return -EFAULT;
++
++		get_user(prio_per_cpu, (int*) config);
++		
++		if(!prio_per_cpu)
 +			return -EFAULT;
++		
 +		*lock = pfp_new_mrsp(prio_per_cpu);
++		
 +		if (*lock)
 +			err = 0;
 +		else
