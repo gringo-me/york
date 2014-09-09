@@ -1,6 +1,6 @@
 diff -uNrp litmus-rt//include/litmus/fdso.h my_litmus-rt//include/litmus/fdso.h
 --- litmus-rt//include/litmus/fdso.h	2014-09-08 17:09:16.000000000 +0200
-+++ my_litmus-rt//include/litmus/fdso.h	2014-09-08 17:25:44.000000000 +0200
++++ my_litmus-rt//include/litmus/fdso.h	2014-09-09 15:37:45.000000000 +0200
 @@ -26,8 +26,9 @@ typedef enum  {
  	PCP_SEM         = 5,
  
@@ -14,7 +14,7 @@ diff -uNrp litmus-rt//include/litmus/fdso.h my_litmus-rt//include/litmus/fdso.h
  struct inode_obj_id {
 diff -uNrp litmus-rt//include/litmus/locking.h my_litmus-rt//include/litmus/locking.h
 --- litmus-rt//include/litmus/locking.h	2014-09-08 17:09:16.000000000 +0200
-+++ my_litmus-rt//include/litmus/locking.h	2014-09-08 17:25:44.000000000 +0200
++++ my_litmus-rt//include/litmus/locking.h	2014-09-09 15:37:45.000000000 +0200
 @@ -25,4 +25,25 @@ struct litmus_lock_ops {
  	void (*deallocate)(struct litmus_lock*);
  };
@@ -43,7 +43,7 @@ diff -uNrp litmus-rt//include/litmus/locking.h my_litmus-rt//include/litmus/lock
  #endif
 diff -uNrp litmus-rt//include/litmus/rt_param.h my_litmus-rt//include/litmus/rt_param.h
 --- litmus-rt//include/litmus/rt_param.h	2014-09-08 17:09:16.000000000 +0200
-+++ my_litmus-rt//include/litmus/rt_param.h	2014-09-08 17:25:44.000000000 +0200
++++ my_litmus-rt//include/litmus/rt_param.h	2014-09-09 15:37:45.000000000 +0200
 @@ -71,6 +71,8 @@ typedef enum {
  	((p) >= LITMUS_HIGHEST_PRIORITY &&	\
  	 (p) <= LITMUS_LOWEST_PRIORITY)
@@ -70,7 +70,7 @@ diff -uNrp litmus-rt//include/litmus/rt_param.h my_litmus-rt//include/litmus/rt_
  union np_flag {
 diff -uNrp litmus-rt//kernel/sched/litmus.c my_litmus-rt//kernel/sched/litmus.c
 --- litmus-rt//kernel/sched/litmus.c	2014-09-08 17:09:16.000000000 +0200
-+++ my_litmus-rt//kernel/sched/litmus.c	2014-09-08 17:23:36.000000000 +0200
++++ my_litmus-rt//kernel/sched/litmus.c	2014-09-09 15:35:57.000000000 +0200
 @@ -61,8 +61,8 @@ litmus_schedule(struct rq *rq, struct ta
  		 * the case of cross or circular migrations.  It's the job of
  		 * the plugin to make sure that doesn't happen.
@@ -84,7 +84,7 @@ diff -uNrp litmus-rt//kernel/sched/litmus.c my_litmus-rt//kernel/sched/litmus.c
  			_maybe_deadlock = litmus_clock();
 diff -uNrp litmus-rt//litmus/fdso.c my_litmus-rt//litmus/fdso.c
 --- litmus-rt//litmus/fdso.c	2014-09-08 17:09:16.000000000 +0200
-+++ my_litmus-rt//litmus/fdso.c	2014-09-08 17:23:28.000000000 +0200
++++ my_litmus-rt//litmus/fdso.c	2014-09-09 15:35:47.000000000 +0200
 @@ -28,6 +28,7 @@ static const struct fdso_ops* fdso_ops[]
  	&generic_lock_ops, /* DPCP_SEM */
  	&generic_lock_ops, /* PCP_SEM */
@@ -95,7 +95,7 @@ diff -uNrp litmus-rt//litmus/fdso.c my_litmus-rt//litmus/fdso.c
  static int fdso_create(void** obj_ref, obj_type_t type, void* __user config)
 diff -uNrp litmus-rt//litmus/litmus.c my_litmus-rt//litmus/litmus.c
 --- litmus-rt//litmus/litmus.c	2014-09-08 17:09:16.000000000 +0200
-+++ my_litmus-rt//litmus/litmus.c	2014-09-08 17:23:28.000000000 +0200
++++ my_litmus-rt//litmus/litmus.c	2014-09-09 15:35:46.000000000 +0200
 @@ -157,8 +157,10 @@ asmlinkage long sys_set_rt_task_param(pi
  		goto out_unlock;
  	}
@@ -110,7 +110,7 @@ diff -uNrp litmus-rt//litmus/litmus.c my_litmus-rt//litmus/litmus.c
  	read_unlock_irq(&tasklist_lock);
 diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 --- litmus-rt//litmus/sched_pfp.c	2014-09-08 17:09:16.000000000 +0200
-+++ my_litmus-rt//litmus/sched_pfp.c	2014-09-08 17:23:28.000000000 +0200
++++ my_litmus-rt//litmus/sched_pfp.c	2014-09-09 16:51:20.000000000 +0200
 @@ -10,6 +10,7 @@
  #include <linux/list.h>
  #include <linux/spinlock.h>
@@ -119,7 +119,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  
  #include <litmus/litmus.h>
  #include <litmus/wait.h>
-@@ -138,6 +139,72 @@ static void job_completion(struct task_s
+@@ -138,6 +139,82 @@ static void job_completion(struct task_s
  		sched_trace_task_release(t);
  }
  
@@ -168,6 +168,10 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +
 +	BUG_ON(smp_processor_id() != target_cpu && is_realtime(t));
 +}
++
++/* Helper function for MrsP migration case
++ */
++
 +int get_nearest_cpu_affinity(struct task_struct *t){
 +	int current_cpu, nb_cpus;
 +	int n;
@@ -177,10 +181,16 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +
 +	current_cpu = get_partition(t);
 +	nb_cpus = num_online_cpus();
-+	
++
++	/*Gets the cpu affinity after current_cpu 
++	 * or value greater than nb_cpus if none
++ 	 */	
 +	n = cpumask_next(current_cpu, tsk_cpus_allowed(t));
 +
 +	if( n > nb_cpus)
++	/*Gets the first cpu affinity 
++	 * or value greater than nb_cpus if none
++	 */	
 +		n = cpumask_first(tsk_cpus_allowed(t));
 +
 +	if(n == current_cpu || n > nb_cpus)
@@ -192,10 +202,14 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  static struct task_struct* pfp_schedule(struct task_struct * prev)
  {
  	pfp_domain_t* 	pfp = local_pfp;
-@@ -182,6 +249,30 @@ static struct task_struct* pfp_schedule(
+@@ -182,6 +259,47 @@ static struct task_struct* pfp_schedule(
  	if (np && (out_of_time || preempt || sleep))
  		request_exit_np(pfp->scheduled);
  
++	/* Only if we are holding a MrsP lock
++	 * and the newly released task as higher 
++	 * prio shall we try to migrate
++	 */
 +	if(prev && preempt 
 +	   && prev->rt_param.task_params.mrsp_lock != NULL
 +	   && prev->rt_param.task_params.migration_bool == 1){
@@ -204,14 +218,27 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +		
 +		n = get_nearest_cpu_affinity(prev);
 +	
++		/* We do not want to migrate to the same cpu !
++		 */
 +		if( n && n != pfp->cpu){
-+
++			/* Set the target cpu*/
 +			prev->rt_param.task_params.cpu = n;
++			
++			/* We are being preempted by a higher task because the
++			 * preempt flag is set
++			 */
 +			next = fp_prio_take(&pfp->ready_queue);
++			
++			/* The higher task is the next task to execute
++			 * on this queue
++			 */
 +			pfp->scheduled = next;
 +			sched_state_task_picked();
++			
 +			raw_spin_unlock(&pfp->slock);
++			
 +			TRACE_TASK(next, "preempts and scheduled at %llu going to %u\n", litmus_clock(),n);
++			
 +			return next;
 +		}
 +		else {
@@ -223,7 +250,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  	/* Any task that is preemptable and either exhausts its execution
  	 * budget or wants to sleep completes. We may have to reschedule after
  	 * this.
-@@ -204,7 +295,9 @@ static struct task_struct* pfp_schedule(
+@@ -204,7 +322,9 @@ static struct task_struct* pfp_schedule(
  		 */
  		if (pfp->scheduled && !blocks  && !migrate)
  			requeue(pfp->scheduled, pfp);
@@ -233,7 +260,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  		if (next == prev) {
  			struct task_struct *t = fp_prio_peek(&pfp->ready_queue);
  			TRACE_TASK(next, "next==prev sleep=%d oot=%d np=%d preempt=%d migrate=%d "
-@@ -234,23 +327,24 @@ static struct task_struct* pfp_schedule(
+@@ -234,23 +354,24 @@ static struct task_struct* pfp_schedule(
  
  	if (next) {
  		TRACE_TASK(next, "scheduled at %llu\n", litmus_clock());
@@ -262,21 +289,24 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  
  	if (is_realtime(prev) &&
  	    is_running(prev) &&
-@@ -262,6 +356,13 @@ static void pfp_finish_switch(struct tas
+@@ -262,6 +383,16 @@ static void pfp_finish_switch(struct tas
  
  		raw_spin_lock(&to->slock);
  
 +		if(prev->rt_param.task_params.mrsp_lock != NULL){
++			/* Get the prio corresponding 
++			 * to the target cpu
++			 */
 +			old_prio = prev->rt_param.task_params.priority;
 +			new_prio = prev->rt_param.task_params.mrsp_lock->prio_per_cpu[to->cpu] -1;
 +			TRACE_TASK(prev, "modifying prio from %d to %d \n", old_prio,new_prio);
 +			prev->rt_param.task_params.priority =  new_prio;
-+
-+		}		
++		}
++		
  		TRACE_TASK(prev, "adding to queue on P%d\n", to->cpu);
  		requeue(prev, to);
  		if (fp_preemption_needed(&to->ready_queue, to->scheduled))
-@@ -767,6 +868,11 @@ static inline struct mpcp_semaphore* mpc
+@@ -767,6 +898,11 @@ static inline struct mpcp_semaphore* mpc
  	return container_of(lock, struct mpcp_semaphore, litmus_lock);
  }
  
@@ -288,7 +318,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  int pfp_mpcp_lock(struct litmus_lock* l)
  {
  	struct task_struct* t = current;
-@@ -879,6 +985,98 @@ out:
+@@ -879,6 +1015,110 @@ out:
  	return err;
  }
  
@@ -308,15 +338,19 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +			tsk_rt(t)->num_local_locks_held)
 +		return -EBUSY;
 +
++	/* Avoid memory barriers bugs*/
 +	smp_wmb();
++	/* Get a ticket*/
 +	ticket = xchg(&sem->next, sem->next +1);
 +
-+	/* Priority-boost ourself. Use the priority
-+	 * ceiling for the local partition. */
++	/* Priority-boost ourself */
 +	t->rt_param.task_params.saved_priority = t->rt_param.task_params.priority;	
 +	t->rt_param.task_params.priority = sem->prio_per_cpu[get_partition(t)];
 +	TRACE_CUR("Priority is now %d, partition %d\n",t->rt_param.task_params.priority,get_partition(t));
 +
++	/* Protect the owner's affinity against 
++	 * race condition
++         */
 +	spin_lock_irqsave(&sem->lock, flags);
 +	if (sem->owner) {
 +		TRACE_CUR("On cpu %d lock has owner %d on cpu %d\n",
@@ -325,29 +359,38 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +				get_partition(sem->owner));
 +		sched_getaffinity(sem->owner->pid, &holder_mask);
 +
++		/*Add our current cpu to owner's affinities*/
 +		cpumask_set_cpu(get_partition(t), &holder_mask);
 +		do_set_cpus_allowed(sem->owner, &holder_mask);
 +	}
-+
 +	spin_unlock_irqrestore(&sem->lock, flags);
-+	TRACE_CUR("About to spin owner_ticket: %d | ticket: %d \n",sem->owner_ticket,ticket);	
-+
++	
++	TRACE_CUR("About to spin owner_ticket: %d | ticket: %d \n",
++		  sem->owner_ticket,ticket);	
++	/* Spin*/
 +	while (1){
-+		TRACE_CUR("Iteration waiting for lock\n");
 +		smp_wmb();
 +		cmpxchg(&sem->owner_ticket,ticket,ticket);
-+
-+		TRACE_CUR("Atomic xchg owner_ticket: %d | ticket: %d\n",sem->owner_ticket,ticket);
++		TRACE_CUR("Atomic xchg owner_ticket: %d | ticket: %d\n",
++			  sem->owner_ticket,ticket);
++		/* Check if our turn has come*/
 +		if (sem->owner_ticket == ticket){
++			/* Save affinities here to
++			 * avoid race conditions
++ 			 */
++			sched_getaffinity(t->pid, &sem->saved_cpumask);		 
 +			sem->owner = t ;
 +			break;		
 +		}
 +	}
++	/* This should never happen 
++	 * but doesn't hurt to check
++         */
 +	BUG_ON(sem->owner != t);
-+	TRACE_CUR("Obtained lock sem->owner is %d and current is %d, order%d:\n",sem->owner,t,sem->order);
++	TRACE_CUR("Obtained lock sem->owner is %d and current is %d",
++		  sem->owner,t);
 +	tsk_rt(t)->num_locks_held++;
 +	t->rt_param.task_params.mrsp_lock = sem;
-+	sched_getaffinity(t->pid, &sem->saved_cpumask);		 
 +	return 0;
 +}
 +int pfp_mrsp_unlock(struct litmus_lock* l)
@@ -357,7 +400,6 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +	int err = 0;
 +	unsigned long flags;
 +
-+	preempt_disable();
 +
 +	if (sem->owner != t) {
 +		err = -EINVAL;
@@ -372,22 +414,22 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +
 +	do_set_cpus_allowed(t, &sem->saved_cpumask);
 +
-+	/* update the fifo spinlock */
-+	TRACE_CUR("MRSP  unlock owner_ticket: %d\n",sem->owner_ticket);
 +	smp_wmb();
++	/* Release the lock */
 +	xadd(&sem->owner_ticket,1);
 +	TRACE_CUR("MRSP AFTER unlock owner_ticket: %d\n",sem->owner_ticket);
 +out:
-+	preempt_enable();
-+
++	/* Re-migrate to original cpu*/
 +	t->rt_param.task_params.cpu = cpumask_first(tsk_cpus_allowed(t));
++	
++	/* Ask for re-schedule to effectively migrate*/
 +	schedule();
 +	return err;
 +}
  int pfp_mpcp_open(struct litmus_lock* l, void* config)
  {
  	struct task_struct *t = current;
-@@ -906,6 +1104,30 @@ int pfp_mpcp_open(struct litmus_lock* l,
+@@ -906,6 +1146,29 @@ int pfp_mpcp_open(struct litmus_lock* l,
  	return 0;
  }
  
@@ -410,7 +452,6 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
 +	spin_lock_irqsave(&sem->lock, flags);
 +	sem->prio_per_cpu = cfg->prio_per_cpu;
 +	sem->order = cfg->order;
-+	TRACE_CUR("New MrsP lock order %d \n",sem->order);	
 +	spin_unlock_irqrestore(&sem->lock, flags);
 +
 +	return 0;
@@ -418,7 +459,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  int pfp_mpcp_close(struct litmus_lock* l)
  {
  	struct task_struct *t = current;
-@@ -926,11 +1148,34 @@ int pfp_mpcp_close(struct litmus_lock* l
+@@ -926,11 +1189,34 @@ int pfp_mpcp_close(struct litmus_lock* l
  	return 0;
  }
  
@@ -453,7 +494,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  static struct litmus_lock_ops pfp_mpcp_lock_ops = {
  	.close  = pfp_mpcp_close,
  	.lock   = pfp_mpcp_lock,
-@@ -939,6 +1184,13 @@ static struct litmus_lock_ops pfp_mpcp_l
+@@ -939,6 +1225,13 @@ static struct litmus_lock_ops pfp_mpcp_l
  	.deallocate = pfp_mpcp_free,
  };
  
@@ -467,7 +508,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  static struct litmus_lock* pfp_new_mpcp(int vspin)
  {
  	struct mpcp_semaphore* sem;
-@@ -961,6 +1213,23 @@ static struct litmus_lock* pfp_new_mpcp(
+@@ -961,6 +1254,23 @@ static struct litmus_lock* pfp_new_mpcp(
  	return &sem->litmus_lock;
  }
  
@@ -491,7 +532,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  
  /* ******************** PCP support ********************** */
  
-@@ -1378,51 +1647,6 @@ static inline struct dpcp_semaphore* dpc
+@@ -1378,51 +1688,6 @@ static inline struct dpcp_semaphore* dpc
  	return container_of(lock, struct dpcp_semaphore, litmus_lock);
  }
  
@@ -543,7 +584,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  
  int pfp_dpcp_lock(struct litmus_lock* l)
  {
-@@ -1795,6 +2019,7 @@ static long pfp_allocate_lock(struct lit
+@@ -1795,6 +2060,7 @@ static long pfp_allocate_lock(struct lit
  {
  	int err = -ENXIO, cpu;
  	struct srp_semaphore* srp;
@@ -551,7 +592,7 @@ diff -uNrp litmus-rt//litmus/sched_pfp.c my_litmus-rt//litmus/sched_pfp.c
  
  	/* P-FP currently supports the SRP for local resources and the FMLP
  	 * for global resources. */
-@@ -1880,6 +2105,24 @@ static long pfp_allocate_lock(struct lit
+@@ -1880,6 +2146,24 @@ static long pfp_allocate_lock(struct lit
  		if (*lock)
  			err = 0;
  		else
